@@ -6,21 +6,33 @@
 <title>Mi catálogo de películas</title>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
-  :root { --azul:#0071e3; --fondo:#f5f5f7; --texto:#1d1d1f; --gris:#6e6e73; }
+  :root {
+    --fondo:#f5f5f7; --tarjeta:#ffffff; --texto:#1d1d1f; --gris:#6e6e73;
+    --azul:#0071e3; --borde:#d2d2d7; --boton-suave:#e8e8ed;
+    --tema-bg:rgba(0,113,227,.1); --tema-texto:#0071e3;
+    --sombra:0 2px 10px rgba(0,0,0,.06); --error:#c00;
+  }
+  body.oscuro {
+    --fondo:#000000; --tarjeta:#1c1c1e; --texto:#f5f5f7; --gris:#a1a1a6;
+    --azul:#0a84ff; --borde:#3a3a3c; --boton-suave:#2c2c2e;
+    --tema-bg:rgba(10,132,255,.18); --tema-texto:#64b5ff;
+    --sombra:0 2px 10px rgba(0,0,0,.5); --error:#ff6961;
+  }
+
   * { box-sizing:border-box; }
-  body { margin:0; font-family:-apple-system,"Segoe UI",Roboto,sans-serif; background:var(--fondo); color:var(--texto); }
+  body { margin:0; font-family:-apple-system,"Segoe UI",Roboto,sans-serif; background:var(--fondo); color:var(--texto); transition:background .25s, color .25s; }
   header { padding:28px 20px 10px; text-align:center; }
   h1 { margin:0 0 16px; font-size:26px; }
-  #buscar { width:min(560px,100%); padding:14px 18px; font-size:16px; border:1px solid #d2d2d7; border-radius:999px; outline:none; }
+  #buscar { width:min(560px,100%); padding:14px 18px; font-size:16px; border:1px solid var(--borde); border-radius:999px; outline:none; background:var(--tarjeta); color:var(--texto); }
   .filtros { display:flex; flex-wrap:wrap; gap:10px; justify-content:center; margin-top:14px; }
-  select, .pildora { padding:10px 14px; font-size:14px; border:1px solid #d2d2d7; border-radius:999px; background:#fff; }
-  .pildora { background:#e8e8ed; border:none; cursor:pointer; }
+  select, .pildora { padding:10px 14px; font-size:14px; border:1px solid var(--borde); border-radius:999px; background:var(--tarjeta); color:var(--texto); }
+  .pildora { background:var(--boton-suave); border:none; cursor:pointer; }
   .boton-login { background:var(--azul); color:#fff; border:none; padding:14px 28px; font-size:16px; cursor:pointer; border-radius:999px; }
   #chips { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-top:12px; min-height:4px; }
   .chip { background:var(--azul); color:#fff; font-size:13px; padding:6px 10px 6px 14px; border-radius:999px; cursor:pointer; }
   .chip span { margin-left:6px; opacity:.8; }
   #contador { color:var(--gris); font-size:14px; margin-top:12px; }
-  #error { color:#c00; margin-top:12px; }
+  #error { color:var(--error); margin-top:12px; }
   #login { text-align:center; margin-top:60px; }
   #app { display:none; }
 
@@ -28,14 +40,14 @@
   .destacados h3 { margin:0 0 12px; font-size:18px; color:var(--texto); }
   .carrusel { display:flex; gap:14px; overflow-x:auto; padding-bottom:10px; scroll-snap-type:x mandatory; }
   .carrusel .dest { flex:0 0 150px; scroll-snap-align:start; cursor:pointer; }
-  .carrusel img, .carrusel .sinportada-mini { width:150px; height:225px; object-fit:cover; border-radius:14px; box-shadow:0 2px 10px rgba(0,0,0,.1); display:block; }
-  .carrusel .sinportada-mini { background:#fff; font-size:44px; display:flex; align-items:center; justify-content:center; }
+  .carrusel img, .carrusel .sinportada-mini { width:150px; height:225px; object-fit:cover; border-radius:14px; box-shadow:var(--sombra); display:block; }
+  .carrusel .sinportada-mini { background:var(--tarjeta); font-size:44px; display:flex; align-items:center; justify-content:center; }
   .carrusel .dest-titulo { font-size:13px; margin-top:8px; line-height:1.3; }
   .carrusel .dest-anio { font-size:12px; color:var(--gris); }
 
   main { display:grid; grid-template-columns:repeat(auto-fill,minmax(270px,1fr)); gap:18px; padding:20px; max-width:1100px; margin:auto; }
   body.lista main { grid-template-columns:1fr; max-width:900px; }
-  .tarjeta, .fila { background:#fff; border-radius:18px; cursor:pointer; box-shadow:0 2px 10px rgba(0,0,0,.06); transition:transform .2s; }
+  .tarjeta, .fila { background:var(--tarjeta); border-radius:18px; cursor:pointer; box-shadow:var(--sombra); transition:transform .2s; }
   .tarjeta { padding:20px; }
   .tarjeta:hover, .fila:hover { transform:translateY(-2px); }
   .tarjeta h2 { margin:10px 0 4px; font-size:19px; }
@@ -45,15 +57,16 @@
   .sinopsis { font-size:14px; line-height:1.45; }
   .pastillas { display:flex; flex-wrap:wrap; gap:6px; margin:10px 0; }
   .pastilla { font-size:12px; padding:4px 10px; border-radius:999px; }
-  .pastilla.tema { background:rgba(0,113,227,.1); color:var(--azul); }
+  .pastilla.tema { background:var(--tema-bg); color:var(--tema-texto); }
   .boton { display:inline-block; background:var(--azul); color:#fff; text-decoration:none; padding:9px 18px; border-radius:999px; font-size:14px; }
   .fila { padding:14px 18px; display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
   .fila .info { flex:1; min-width:220px; }
   .fila h2 { margin:0 0 4px; font-size:17px; }
   .vacio { text-align:center; color:var(--gris); grid-column:1/-1; }
-  #modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,.4); align-items:center; justify-content:center; padding:20px; z-index:10; }
+
+  #modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); align-items:center; justify-content:center; padding:20px; z-index:10; }
   #modal.abierto { display:flex; }
-  .ventana { background:#fff; border-radius:18px; padding:24px; max-width:560px; width:100%; max-height:90vh; overflow:auto; position:relative; }
+  .ventana { background:var(--tarjeta); color:var(--texto); border-radius:18px; padding:24px; max-width:560px; width:100%; max-height:90vh; overflow:auto; position:relative; }
   .ventana h2 { margin:0 0 6px; font-size:22px; }
   .cerrar { position:absolute; top:12px; right:14px; background:none; border:none; font-size:26px; cursor:pointer; color:var(--gris); }
   .ventana .sinopsis { font-size:15px; margin:14px 0; }
@@ -85,6 +98,7 @@
       <option value="duracion">Ordenar: más largas</option>
     </select>
     <button id="vista" class="pildora">Ver como lista</button>
+    <button id="tema-btn" class="pildora">Modo oscuro</button>
     <button id="limpiar" class="pildora">Limpiar</button>
   </div>
   <div id="chips"></div>
@@ -140,6 +154,30 @@ const ordenes = {
   duracion: (a, b) => minutos(b) - minutos(a)
 };
 
+/* ---------- Modo oscuro ---------- */
+function aplicarTema(oscuro) {
+  document.body.classList.toggle("oscuro", oscuro);
+  $("tema-btn").textContent = oscuro ? "Modo claro" : "Modo oscuro";
+}
+
+function temaGuardado() {
+  try { return localStorage.getItem("tema"); } catch (e) { return null; }
+}
+
+function iniciarTema() {
+  const guardado = temaGuardado();
+  const oscuro = guardado ? guardado === "oscuro"
+    : window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+  aplicarTema(oscuro);
+}
+
+function alternarTema() {
+  const oscuro = !document.body.classList.contains("oscuro");
+  aplicarTema(oscuro);
+  try { localStorage.setItem("tema", oscuro ? "oscuro" : "claro"); } catch (e) {}
+}
+
+/* ---------- Filtros y render ---------- */
 function llenarFiltros() {
   const llenar = (el, arr) => [...new Set(arr.filter(x => x))].sort().forEach(x => el.add(new Option(x, x)));
   llenar(sel.tipo, peliculas.map(p => p.tipo));
@@ -281,6 +319,8 @@ async function cargarHoja(token) {
 }
 
 window.addEventListener("load", () => {
+  iniciarTema();
+
   tokenClient = google.accounts.oauth2.initTokenClient({
     client_id: CLIENT_ID,
     scope: "https://www.googleapis.com/auth/spreadsheets.readonly",
@@ -328,6 +368,8 @@ window.addEventListener("load", () => {
     $("vista").textContent = vistaLista ? "Ver con portadas" : "Ver como lista";
     pintar();
   });
+
+  $("tema-btn").addEventListener("click", alternarTema);
 
   $("limpiar").addEventListener("click", () => {
     buscar.value = "";
