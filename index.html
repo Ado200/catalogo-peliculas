@@ -286,4 +286,269 @@ function tarjeta(p, i) {
   const portada = p.portada ? '<img class="portada" src="' + esc(p.portada) + '" alt="">' : '<div class="sinportada">🎬</div>';
   return '<article class="tarjeta" data-i="' + i + '">' + portada +
     '<h2>' + esc(p.titulo) + '</h2>' +
-    '<div
+    '<div class="meta">' + esc(p.tipo) + ' · ' + esc(p["año"]) + ' · ' + esc(p.duracion) + ' · ' + esc(p.pais) + '</div>' +
+    '<div class="meta">Género: ' + esc(p.genero) + '</div>' +
+    '<div class="meta">Dirección: ' + esc(p.director) + '</div>' +
+    '<div class="pastillas">' + pastillasHtml(p) + '</div>' +
+    controlesHtml(p) +
+    '<p class="sinopsis">' + esc(p.sinopsis) + '</p>' +
+    '<a class="boton" href="' + esc(p.link) + '" target="_blank" rel="noopener">Ver</a></article>';
+}
+
+function filaHtml(p, i) {
+  return '<article class="fila" data-i="' + i + '"><div class="info">' +
+    '<h2>' + esc(p.titulo) + '</h2>' +
+    '<div class="meta">' + esc(p.tipo) + ' · ' + esc(p["año"]) + ' · ' + esc(p.duracion) + ' · ' + esc(p.pais) + '</div>' +
+    '<div class="pastillas">' + pastillasHtml(p) + '</div>' +
+    controlesHtml(p) +
+    '</div>' +
+    '<a class="boton" href="' + esc(p.link) + '" target="_blank" rel="noopener">Ver</a></article>';
+}
+
+function renderDestacados() {
+  const recientes = [...peliculas]
+    .filter(p => Number(p["año"]))
+    .sort((a, b) => Number(b["año"]) - Number(a["año"]))
+    .slice(0, 6);
+
+  $("carrusel").innerHTML = recientes.map(p => {
+    const idx = peliculas.indexOf(p);
+    const img = p.portada
+      ? '<img src="' + esc(p.portada) + '" alt="">'
+      : '<div class="sinportada-mini">🎬</div>';
+    return '<div class="dest" data-idx="' + idx + '">' + img +
+      '<div class="dest-titulo">' + esc(p.titulo) + '</div>' +
+      '<div class="dest-anio">' + esc(p["año"]) + '</div></div>';
+  }).join("");
+}
+
+function hayFiltros() {
+  return buscar.value.trim() !== "" || Object.values(sel).some(s => s.value !== "");
+}
+
+function textoOpcion(select) {
+  const opt = select.options[select.selectedIndex];
+  return opt ? opt.text.replace(/\s*\(\d+\)$/, "") : select.value;
+}
+
+function renderChips() {
+  const activos = [];
+  if (buscar.value.trim()) activos.push({ clave:"buscar", texto:'Búsqueda: "' + buscar.value.trim() + '"' });
+  Object.keys(sel).forEach(k => {
+    if (sel[k].value) activos.push({ clave:k, texto:etiquetas[k] + ": " + textoOpcion(sel[k]) });
+  });
+  chips.innerHTML = activos.map(a =>
+    '<span class="chip" data-clave="' + a.clave + '">' + esc(a.texto) + '<span>×</span></span>'
+  ).join("");
+}
+
+function coincideEstado(p, valor) {
+  if (!valor) return true;
+  const s = estadoDe(p);
+  if (valor === "vista") return s.vista;
+  if (valor === "sin_ver") return !s.vista;
+  if (valor === "pendiente") return s.pendiente;
+  if (valor === "favoritas") return s.estrellas >= 4;
+  return true;
+}
+
+function renderAgrupado() {
+  const temas = [...new Set(visibles.flatMap(temasDe))].sort((a, b) => a.localeCompare(b, "es"));
+  const bloques = temas.map(t => {
+    const grupo = visibles.filter(p => temasDe(p).includes(t));
+    return { nombre: t, items: grupo };
+  });
+  const sinTema = visibles.filter(p => temasDe(p).length === 0);
+  if (sinTema.length) bloques.push({ nombre: "Sin tema", items: sinTema });
+
+  return bloques.map(b => {
+    const cuerpo = b.items.map(p => {
+      const i = visibles.indexOf(p);
+      return vistaLista ? filaHtml(p, i) : tarjeta(p, i);
+    }).join("");
+    return '<section class="grupo"><h3>' + esc(b.nombre) + ' (' + b.items.length + ')</h3>' +
+      '<div class="grupo-items">' + cuerpo + '</div></section>';
+  }).join("");
+}
+
+function pintar() {
+  const f = buscar.value.trim().toLowerCase();
+  visibles = peliculas.filter(p => {
+    const texto = [p.titulo, p.director, p.reparto].join(" ").toLowerCase();
+    return texto.includes(f) &&
+      (!sel.tipo.value || p.tipo === sel.tipo.value) &&
+      (!sel.genero.value || generosDe(p).includes(sel.genero.value)) &&
+      (!sel.tema.value || temasDe(p).includes(sel.tema.value)) &&
+      (!sel.anio.value || String(p["año"]) === sel.anio.value) &&
+      (!sel.pais.value || p.pais === sel.pais.value) &&
+      enRangoDuracion(p, sel.duracion.value) &&
+      coincideEstado(p, sel.estado.value);
+  });
+  visibles.sort(ordenes[$("orden").value]);
+
+  const { vistas, pendientes } = contarEstados();
+  $("destacados").style.display = hayFiltros() ? "none" : "block";
+  renderChips();
+  contador.textContent = visibles.length + " de " + peliculas.length + " títulos · " +
+    vistas + " vistas · " + pendientes + " pendientes";
+
+  if (!visibles.length) {
+    lista.innerHTML = '<p class="vacio">No encontré nada con esos criterios.</p>';
+    return;
+  }
+  if (agrupado) {
+    lista.innerHTML = renderAgrupado();
+    return;
+  }
+  lista.innerHTML = visibles.map((p, i) => vistaLista ? filaHtml(p, i) : tarjeta(p, i)).join("");
+}
+
+function abrirDetalle(p) {
+  $("detalle").innerHTML =
+    (p.portada ? '<img class="portada" src="' + esc(p.portada) + '" alt="">' : '') +
+    '<h2>' + esc(p.titulo) + '</h2>' +
+    '<div class="meta">' + esc(p.tipo) + ' · ' + esc(p["año"]) + ' · ' + esc(p.duracion) + ' · ' + esc(p.pais) + '</div>' +
+    '<div class="meta">Género: ' + esc(p.genero) + '</div>' +
+    '<div class="meta">Dirección: ' + esc(p.director) + '</div>' +
+    '<div class="meta">Reparto: ' + esc(p.reparto) + '</div>' +
+    '<div class="pastillas">' + pastillasHtml(p) + '</div>' +
+    controlesHtml(p) +
+    '<p class="sinopsis">' + esc(p.sinopsis) + '</p>' +
+    '<a class="boton" href="' + esc(p.link) + '" target="_blank" rel="noopener">Ver</a>';
+  $("modal").classList.add("abierto");
+}
+
+function cerrarDetalle() { $("modal").classList.remove("abierto"); }
+
+function refrescarTodo() {
+  pintar();
+  if ($("modal").classList.contains("abierto")) {
+    const actual = peliculas.find(p => p.titulo === $("detalle").querySelector("h2")?.textContent);
+    if (actual) abrirDetalle(actual);
+  }
+}
+
+function mostrarError(msg) {
+  $("error").textContent = msg;
+  $("btnLogin").disabled = false;
+  $("btnLogin").textContent = "Iniciar sesión con Google";
+}
+
+async function cargarHoja(token) {
+  try {
+    const r = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${HOJA_ID}/values/A:Z`, {
+      headers: { Authorization: "Bearer " + token }
+    });
+    const json = await r.json();
+    if (!r.ok) throw new Error(json.error?.message || "No se pudo leer la hoja.");
+
+    const filas = json.values || [];
+    const enc = filas[0] || [];
+    peliculas = filas.slice(1).filter(f => f[0]).map(f => {
+      const o = {};
+      enc.forEach((n, i) => o[n] = f[i] ?? "");
+      return o;
+    });
+
+    $("login").style.display = "none";
+    $("app").style.display = "block";
+    llenarFiltros();
+    llenarSugerencias();
+    renderDestacados();
+    pintar();
+  } catch (e) {
+    mostrarError(e.message);
+  }
+}
+
+window.addEventListener("load", () => {
+  iniciarTema();
+
+  tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: CLIENT_ID,
+    scope: "https://www.googleapis.com/auth/spreadsheets.readonly",
+    callback: resp => {
+      if (resp.access_token) cargarHoja(resp.access_token);
+      else mostrarError("No se pudo iniciar sesión.");
+    }
+  });
+
+  $("btnLogin").addEventListener("click", () => {
+    $("btnLogin").disabled = true;
+    $("btnLogin").textContent = "Cargando películas...";
+    tokenClient.requestAccessToken();
+  });
+
+  [buscar, sel.tipo, sel.genero, sel.tema, sel.anio, sel.pais, sel.duracion, sel.estado, $("orden")]
+    .forEach(el => el.addEventListener("input", pintar));
+
+  chips.addEventListener("click", e => {
+    const chip = e.target.closest(".chip");
+    if (!chip) return;
+    const clave = chip.dataset.clave;
+    if (clave === "buscar") buscar.value = "";
+    else sel[clave].value = "";
+    pintar();
+  });
+
+  lista.addEventListener("click", e => {
+    if (e.target.closest("a, [data-accion]")) return;
+    const card = e.target.closest("[data-i]");
+    if (card) abrirDetalle(visibles[Number(card.dataset.i)]);
+  });
+
+  $("carrusel").addEventListener("click", e => {
+    const d = e.target.closest("[data-idx]");
+    if (d) abrirDetalle(peliculas[Number(d.dataset.idx)]);
+  });
+
+  document.addEventListener("click", e => {
+    const b = e.target.closest("[data-accion]");
+    if (!b) return;
+    e.preventDefault();
+    e.stopPropagation();
+
+    const titulo = b.dataset.clave;
+    const p = peliculas.find(x => x.titulo === titulo);
+    if (!p) return;
+    const s = estadoDe(p);
+
+    if (b.dataset.accion === "vista") {
+      cambiarEstado(titulo, { vista: !s.vista, pendiente: false });
+    } else if (b.dataset.accion === "pendiente") {
+      cambiarEstado(titulo, { pendiente: !s.pendiente, vista: false });
+    } else if (b.dataset.accion === "estrella") {
+      const n = Number(b.dataset.n);
+      cambiarEstado(titulo, { estrellas: s.estrellas === n ? 0 : n });
+    }
+    refrescarTodo();
+  });
+
+  $("cerrarModal").addEventListener("click", cerrarDetalle);
+  $("modal").addEventListener("click", e => { if (e.target.id === "modal") cerrarDetalle(); });
+
+  $("vista").addEventListener("click", () => {
+    vistaLista = !vistaLista;
+    document.body.classList.toggle("lista", vistaLista);
+    $("vista").textContent = vistaLista ? "Ver con portadas" : "Ver como lista";
+    pintar();
+  });
+
+  $("agrupar").addEventListener("click", () => {
+    agrupado = !agrupado;
+    $("agrupar").textContent = agrupado ? "Quitar agrupación" : "Agrupar por tema";
+    pintar();
+  });
+
+  $("tema-btn").addEventListener("click", alternarTema);
+
+  $("limpiar").addEventListener("click", () => {
+    buscar.value = "";
+    Object.values(sel).forEach(s => s.value = "");
+    $("orden").value = "titulo";
+    pintar();
+  });
+});
+</script>
+</body>
+</html>
