@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mi catálogo de películas</title>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<style>
+  :root { --azul:#0071e3; --fondo:#f5f5f7; --texto:#1d1d1f; --gris:#6e6e73; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:-apple-system,"Segoe UI",Roboto,sans-serif; background:var(--fondo); color:var(--texto); }
+  header { padding:28px 20px 10px; text-align:center; }
+  h1 { margin:0 0 16px; font-size:26px; }
+  #buscar { width:min(560px,100%); padding:14px 18px; font-size:16px; border:1px solid #d2d2d7; border-radius:999px; outline:none; }
+  .filtros { display:flex; flex-wrap:wrap; gap:10px; justify-content:center; margin-top:14px; }
+  select, #limpiar, .boton-login { padding:10px 14px; font-size:14px; border:1px solid #d2d2d7; border-radius:999px; background:#fff; }
+  #limpiar { background:#e8e8ed; border:none; cursor:pointer; }
+  .boton-login { background:var(--azul); color:#fff; border:none; padding:14px 28px; font-size:16px; cursor:pointer; }
+  #contador { color:var(--gris); font-size:14px; margin-top:12px; }
+  #error { color:#c00; margin-top:12px; }
+  #login { text-align:center; margin-top:60px; }
+  #app { display:none; }
+  main { display:grid; grid-template-columns:repeat(auto-fill,minmax(270px,1fr)); gap:18px; padding:20px; max-width:1100px; margin:auto; }
+  .tarjeta { background:#fff; border-radius:18px; padding:20px; box-shadow:0 2px 10px rgba(0,0,0,.06); }
+  .tarjeta h2 { margin:10px 0 4px; font-size:19px; }
+  .portada { width:100%; border-radius:12px; }
+  .sinportada { font-size:40px; }
+  .meta { color:var(--gris); font-size:14px; margin-bottom:6px; }
+  .sinopsis { font-size:14px; line-height:1.45; }
+  .pastillas { display:flex; flex-wrap:wrap; gap:6px; margin:10px 0; }
+  .pastilla { font-size:12px; padding:4px 10px; border-radius:999px; }
+  .pastilla.tema { background:rgba(0,113,227,.1); color:var(--azul); }
+  .boton { display:inline-block; background:var(--azul); color:#fff; text-decoration:none; padding:9px 18px; border-radius:999px; font-size:14px; }
+  .vacio { text-align:center; color:var(--gris); grid-column:1/-1; }
+</style>
+</head>
+<body>
+
+<div id="login">
+  <h1>Mi catálogo de películas</h1>
+  <button id="btnLogin" class="boton-login">Iniciar sesión con Google</button>
+  <div id="error"></div>
+</div>
+
+<div id="app">
+<header>
+  <h1>Mi catálogo de películas</h1>
+  <input id="buscar" type="search" placeholder="Busca por título, director o reparto">
+  <div class="filtros">
+    <select id="tipo"><option value="">Películas y series</option></select>
+    <select id="genero"><option value="">Todos los géneros</option></select>
+    <select id="tema"><option value="">Todos los temas</option></select>
+    <select id="anio"><option value="">Todos los años</option></select>
+    <select id="pais"><option value="">Todos los países</option></select>
+    <button id="limpiar">Limpiar</button>
+  </div>
+  <div id="contador"></div>
+</header>
+<main id="lista"></main>
+</div>
+
+<script>
+const CLIENT_ID = "45846987194-cm8mnhijljms8k8u8j44n8aeq674vuis.apps.googleusercontent.com";
+const HOJA_ID = "1W5oSA5yy4TpbVYxjya6S9T6NkeE6irwSHABXFAijO2k";
+
+let peliculas = [];
+let tokenClient;
+
+const $ = id => document.getElementById(id);
+const lista = $("lista"), buscar = $("buscar"), contador = $("contador");
+const sel = { tipo:$("tipo"), genero:$("genero"), tema:$("tema"), anio:$("anio"), pais:$("pais") };
+
+function esc(x) {
+  return String(x == null ? "" : x).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+function generosDe(p) { return String(p.genero || "").split(",").map(s => s.trim()).filter(Boolean); }
+function temasDe(p) { return String(p.temas || "").split(";").map(s => s.trim()).filter(Boolean); }
+
+function llenarFiltros() {
+  const llenar = (el, arr) => [...new Set(arr.filter(x => x))].sort().forEach(x => el.add(new Option(x, x)));
+  llenar(sel.tipo, peliculas.map(p => p.tipo));
+  llenar(sel.genero, peliculas.flatMap(generosDe));
+  llenar(sel.tema, peliculas.flatMap(temasDe));
+  llenar(sel.anio, peliculas.map(p => String(p["año"] || "")));
+  llenar(sel.pais, peliculas.map(p => p.pais));
+}
+
+function tarjeta(p) {
+  const pastillas = temasDe(p).map(t => '<span class="pastilla tema">' + esc(t) + '</span>').join("");
+  const portada = p.portada ? '<img class="portada" src="' + esc(p.portada) + '" alt="">' : '<div class="sinportada">🎬</div>';
+  return '<article class="tarjeta">' + portada +
+    '<h2>' + esc(p.titulo) + '</h2>' +
+    '<div class="meta">' + esc(p.tipo) + ' · ' + esc(p["año"]) + ' · ' + esc(p.duracion) + ' · ' + esc(p.pais) + '</div>' +
+    '<div class="meta">Género: ' + esc(p.genero) + '</div>' +
+    '<div class="meta">Dirección: ' + esc(p.director) + '</div>' +
+    '<div class="meta">Reparto: ' + esc(p.reparto) + '</div>' +
+    '<div class="pastillas">' + pastillas + '</div>' +
+    '<p class="sinopsis">' + esc(p.sinopsis) + '</p>' +
+    '<a class="boton" href="' + esc(p.link) + '" target="_blank" rel="noopener">Ver</a></article>';
+}
+
+function pintar() {
+  const f = buscar.value.trim().toLowerCase();
+  const r = peliculas.filter(p => {
+    const texto = [p.titulo, p.director, p.reparto].join(" ").toLowerCase();
+    return texto.includes(f) &&
+      (!sel.tipo.value || p.tipo === sel.tipo.value) &&
+      (!sel.genero.value || generosDe(p).includes(sel.genero.value)) &&
+      (!sel.tema.value || temasDe(p).includes(sel.tema.value)) &&
+      (!sel.anio.value || String(p["año"]) === sel.anio.value) &&
+      (!sel.pais.value || p.pais === sel.pais.value);
+  });
+  contador.textContent = r.length + " de " + peliculas.length + " títulos";
+  lista.innerHTML = r.length ? r.map(tarjeta).join("") : '<p class="vacio">No encontré nada con esos criterios.</p>';
+}
+
+function mostrarError(msg) { $("error").textContent = msg; }
+
+async function cargarHoja(token) {
+  try {
+    const r = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${HOJA_ID}/values/A:Z`, {
+      headers: { Authorization: "Bearer " + token }
+    });
+    const json = await r.json();
+    if (!r.ok) throw new Error(json.error?.message || "No se pudo leer la hoja.");
+
+    const filas = json.values || [];
+    const enc = filas[0] || [];
+    peliculas = filas.slice(1).filter(f => f[0]).map(f => {
+      const o = {};
+      enc.forEach((n, i) => o[n] = f[i] ?? "");
+      return o;
+    });
+
+    $("login").style.display = "none";
+    $("app").style.display = "block";
+    llenarFiltros();
+    pintar();
+  } catch (e) {
+    mostrarError(e.message);
+  }
+}
+
+window.addEventListener("load", () => {
+  tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: CLIENT_ID,
+    scope: "https://www.googleapis.com/auth/spreadsheets.readonly",
+    callback: resp => {
+      if (resp.access_token) cargarHoja(resp.access_token);
+      else mostrarError("No se pudo iniciar sesión.");
+    }
+  });
+  $("btnLogin").addEventListener("click", () => tokenClient.requestAccessToken());
+  [buscar, sel.tipo, sel.genero, sel.tema, sel.anio, sel.pais].forEach(el => el.addEventListener("input", pintar));
+  $("limpiar").addEventListener("click", () => {
+    buscar.value = "";
+    Object.values(sel).forEach(s => s.value = "");
+    pintar();
+  });
+});
+</script>
+</body>
+</html>
