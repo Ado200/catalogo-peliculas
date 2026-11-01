@@ -64,6 +64,11 @@
   .fila h2 { margin:0 0 4px; font-size:17px; }
   .vacio { text-align:center; color:var(--gris); grid-column:1/-1; }
 
+  .grupo { grid-column:1/-1; }
+  .grupo h3 { margin:10px 0 12px; font-size:18px; }
+  .grupo-items { display:grid; grid-template-columns:repeat(auto-fill,minmax(270px,1fr)); gap:18px; }
+  body.lista .grupo-items { grid-template-columns:1fr; }
+
   .controles { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:10px; }
   .chipc { border:1px solid var(--borde); background:var(--tarjeta); color:var(--texto); border-radius:999px; padding:6px 12px; font-size:13px; cursor:pointer; }
   .chipc.activo { background:var(--azul); color:#fff; border-color:var(--azul); }
@@ -91,13 +96,20 @@
 <div id="app">
 <header>
   <h1>Mi catálogo de películas</h1>
-  <input id="buscar" type="search" placeholder="Busca por título, director o reparto">
+  <input id="buscar" type="search" list="sugerencias" placeholder="Busca por título, director o actor">
+  <datalist id="sugerencias"></datalist>
   <div class="filtros">
     <select id="tipo"><option value="">Películas y series</option></select>
     <select id="genero"><option value="">Todos los géneros</option></select>
     <select id="tema"><option value="">Todos los temas</option></select>
     <select id="anio"><option value="">Todos los años</option></select>
     <select id="pais"><option value="">Todos los países</option></select>
+    <select id="duracion">
+      <option value="">Cualquier duración</option>
+      <option value="corta">Menos de 1 h 30 min</option>
+      <option value="media">De 1 h 30 a 2 h</option>
+      <option value="larga">Más de 2 h</option>
+    </select>
     <select id="estado">
       <option value="">Todas las películas</option>
       <option value="vista">Vistas</option>
@@ -112,6 +124,7 @@
       <option value="duracion">Ordenar: más largas</option>
     </select>
     <button id="vista" class="pildora">Ver como lista</button>
+    <button id="agrupar" class="pildora">Agrupar por tema</button>
     <button id="tema-btn" class="pildora">Modo oscuro</button>
     <button id="limpiar" class="pildora">Limpiar</button>
   </div>
@@ -142,23 +155,37 @@ let peliculas = [];
 let visibles = [];
 let tokenClient;
 let vistaLista = false;
+let agrupado = false;
 
 const $ = id => document.getElementById(id);
 const lista = $("lista"), buscar = $("buscar"), contador = $("contador"), chips = $("chips");
-const sel = { tipo:$("tipo"), genero:$("genero"), tema:$("tema"), anio:$("anio"), pais:$("pais"), estado:$("estado") };
-const etiquetas = { tipo:"Tipo", genero:"Género", tema:"Tema", anio:"Año", pais:"País", estado:"Estado" };
+const sel = { tipo:$("tipo"), genero:$("genero"), tema:$("tema"), anio:$("anio"), pais:$("pais"), duracion:$("duracion"), estado:$("estado") };
+const etiquetas = { tipo:"Tipo", genero:"Género", tema:"Tema", anio:"Año", pais:"País", duracion:"Duración", estado:"Estado" };
 
 function esc(x) {
   return String(x == null ? "" : x).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 }
 function generosDe(p) { return String(p.genero || "").split(",").map(s => s.trim()).filter(Boolean); }
 function temasDe(p) { return String(p.temas || "").split(";").map(s => s.trim()).filter(Boolean); }
+function personasDe(p) {
+  return [...String(p.director || "").split(","), ...String(p.reparto || "").split(",")]
+    .map(s => s.trim()).filter(Boolean);
+}
 
 function minutos(p) {
   const s = String(p.duracion || "");
   const h = s.match(/(\d+)\s*h/);
   const m = s.match(/(\d+)\s*min/);
   return (h ? Number(h[1]) * 60 : 0) + (m ? Number(m[1]) : 0);
+}
+
+function enRangoDuracion(p, valor) {
+  if (!valor) return true;
+  const m = minutos(p);
+  if (valor === "corta") return m > 0 && m < 90;
+  if (valor === "media") return m >= 90 && m <= 120;
+  if (valor === "larga") return m > 120;
+  return true;
 }
 
 const ordenes = {
@@ -226,6 +253,18 @@ function alternarTema() {
   try { localStorage.setItem("tema", oscuro ? "oscuro" : "claro"); } catch (e) {}
 }
 
+/* ---------- Sugerencias de búsqueda ---------- */
+function llenarSugerencias() {
+  const nombres = new Set();
+  peliculas.forEach(p => {
+    nombres.add(p.titulo);
+    personasDe(p).forEach(n => nombres.add(n));
+  });
+  const dl = $("sugerencias");
+  dl.innerHTML = [...nombres].sort((a, b) => a.localeCompare(b, "es"))
+    .map(n => '<option value="' + esc(n) + '"></option>').join("");
+}
+
 /* ---------- Filtros y render ---------- */
 function llenarFiltros() {
   const llenar = (el, arr) => [...new Set(arr.filter(x => x))].sort().forEach(x => el.add(new Option(x, x)));
@@ -247,240 +286,4 @@ function tarjeta(p, i) {
   const portada = p.portada ? '<img class="portada" src="' + esc(p.portada) + '" alt="">' : '<div class="sinportada">🎬</div>';
   return '<article class="tarjeta" data-i="' + i + '">' + portada +
     '<h2>' + esc(p.titulo) + '</h2>' +
-    '<div class="meta">' + esc(p.tipo) + ' · ' + esc(p["año"]) + ' · ' + esc(p.duracion) + ' · ' + esc(p.pais) + '</div>' +
-    '<div class="meta">Género: ' + esc(p.genero) + '</div>' +
-    '<div class="meta">Dirección: ' + esc(p.director) + '</div>' +
-    '<div class="pastillas">' + pastillasHtml(p) + '</div>' +
-    controlesHtml(p) +
-    '<p class="sinopsis">' + esc(p.sinopsis) + '</p>' +
-    '<a class="boton" href="' + esc(p.link) + '" target="_blank" rel="noopener">Ver</a></article>';
-}
-
-function filaHtml(p, i) {
-  return '<article class="fila" data-i="' + i + '"><div class="info">' +
-    '<h2>' + esc(p.titulo) + '</h2>' +
-    '<div class="meta">' + esc(p.tipo) + ' · ' + esc(p["año"]) + ' · ' + esc(p.duracion) + ' · ' + esc(p.pais) + '</div>' +
-    '<div class="pastillas">' + pastillasHtml(p) + '</div>' +
-    controlesHtml(p) +
-    '</div>' +
-    '<a class="boton" href="' + esc(p.link) + '" target="_blank" rel="noopener">Ver</a></article>';
-}
-
-function renderDestacados() {
-  const recientes = [...peliculas]
-    .filter(p => Number(p["año"]))
-    .sort((a, b) => Number(b["año"]) - Number(a["año"]))
-    .slice(0, 6);
-
-  $("carrusel").innerHTML = recientes.map(p => {
-    const idx = peliculas.indexOf(p);
-    const img = p.portada
-      ? '<img src="' + esc(p.portada) + '" alt="">'
-      : '<div class="sinportada-mini">🎬</div>';
-    return '<div class="dest" data-idx="' + idx + '">' + img +
-      '<div class="dest-titulo">' + esc(p.titulo) + '</div>' +
-      '<div class="dest-anio">' + esc(p["año"]) + '</div></div>';
-  }).join("");
-}
-
-function hayFiltros() {
-  return buscar.value.trim() !== "" || Object.values(sel).some(s => s.value !== "");
-}
-
-function textoOpcion(select) {
-  const opt = select.options[select.selectedIndex];
-  return opt ? opt.text.replace(/\s*\(\d+\)$/, "") : select.value;
-}
-
-function renderChips() {
-  const activos = [];
-  if (buscar.value.trim()) activos.push({ clave:"buscar", texto:'Búsqueda: "' + buscar.value.trim() + '"' });
-  Object.keys(sel).forEach(k => {
-    if (sel[k].value) activos.push({ clave:k, texto:etiquetas[k] + ": " + textoOpcion(sel[k]) });
-  });
-  chips.innerHTML = activos.map(a =>
-    '<span class="chip" data-clave="' + a.clave + '">' + esc(a.texto) + '<span>×</span></span>'
-  ).join("");
-}
-
-function coincideEstado(p, valor) {
-  if (!valor) return true;
-  const s = estadoDe(p);
-  if (valor === "vista") return s.vista;
-  if (valor === "sin_ver") return !s.vista;
-  if (valor === "pendiente") return s.pendiente;
-  if (valor === "favoritas") return s.estrellas >= 4;
-  return true;
-}
-
-function pintar() {
-  const f = buscar.value.trim().toLowerCase();
-  visibles = peliculas.filter(p => {
-    const texto = [p.titulo, p.director, p.reparto].join(" ").toLowerCase();
-    return texto.includes(f) &&
-      (!sel.tipo.value || p.tipo === sel.tipo.value) &&
-      (!sel.genero.value || generosDe(p).includes(sel.genero.value)) &&
-      (!sel.tema.value || temasDe(p).includes(sel.tema.value)) &&
-      (!sel.anio.value || String(p["año"]) === sel.anio.value) &&
-      (!sel.pais.value || p.pais === sel.pais.value) &&
-      coincideEstado(p, sel.estado.value);
-  });
-  visibles.sort(ordenes[$("orden").value]);
-
-  const { vistas, pendientes } = contarEstados();
-  $("destacados").style.display = hayFiltros() ? "none" : "block";
-  renderChips();
-  contador.textContent = visibles.length + " de " + peliculas.length + " títulos · " +
-    vistas + " vistas · " + pendientes + " pendientes";
-
-  if (!visibles.length) {
-    lista.innerHTML = '<p class="vacio">No encontré nada con esos criterios.</p>';
-    return;
-  }
-  lista.innerHTML = visibles.map((p, i) => vistaLista ? filaHtml(p, i) : tarjeta(p, i)).join("");
-}
-
-function abrirDetalle(p) {
-  $("detalle").innerHTML =
-    (p.portada ? '<img class="portada" src="' + esc(p.portada) + '" alt="">' : '') +
-    '<h2>' + esc(p.titulo) + '</h2>' +
-    '<div class="meta">' + esc(p.tipo) + ' · ' + esc(p["año"]) + ' · ' + esc(p.duracion) + ' · ' + esc(p.pais) + '</div>' +
-    '<div class="meta">Género: ' + esc(p.genero) + '</div>' +
-    '<div class="meta">Dirección: ' + esc(p.director) + '</div>' +
-    '<div class="meta">Reparto: ' + esc(p.reparto) + '</div>' +
-    '<div class="pastillas">' + pastillasHtml(p) + '</div>' +
-    controlesHtml(p) +
-    '<p class="sinopsis">' + esc(p.sinopsis) + '</p>' +
-    '<a class="boton" href="' + esc(p.link) + '" target="_blank" rel="noopener">Ver</a>';
-  $("modal").classList.add("abierto");
-}
-
-function cerrarDetalle() { $("modal").classList.remove("abierto"); }
-
-function refrescarTodo() {
-  pintar();
-  if ($("modal").classList.contains("abierto")) {
-    const actual = peliculas.find(p => p.titulo === $("detalle").querySelector("h2")?.textContent);
-    if (actual) abrirDetalle(actual);
-  }
-}
-
-function mostrarError(msg) {
-  $("error").textContent = msg;
-  $("btnLogin").disabled = false;
-  $("btnLogin").textContent = "Iniciar sesión con Google";
-}
-
-async function cargarHoja(token) {
-  try {
-    const r = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${HOJA_ID}/values/A:Z`, {
-      headers: { Authorization: "Bearer " + token }
-    });
-    const json = await r.json();
-    if (!r.ok) throw new Error(json.error?.message || "No se pudo leer la hoja.");
-
-    const filas = json.values || [];
-    const enc = filas[0] || [];
-    peliculas = filas.slice(1).filter(f => f[0]).map(f => {
-      const o = {};
-      enc.forEach((n, i) => o[n] = f[i] ?? "");
-      return o;
-    });
-
-    $("login").style.display = "none";
-    $("app").style.display = "block";
-    llenarFiltros();
-    renderDestacados();
-    pintar();
-  } catch (e) {
-    mostrarError(e.message);
-  }
-}
-
-window.addEventListener("load", () => {
-  iniciarTema();
-
-  tokenClient = google.accounts.oauth2.initTokenClient({
-    client_id: CLIENT_ID,
-    scope: "https://www.googleapis.com/auth/spreadsheets.readonly",
-    callback: resp => {
-      if (resp.access_token) cargarHoja(resp.access_token);
-      else mostrarError("No se pudo iniciar sesión.");
-    }
-  });
-
-  $("btnLogin").addEventListener("click", () => {
-    $("btnLogin").disabled = true;
-    $("btnLogin").textContent = "Cargando películas...";
-    tokenClient.requestAccessToken();
-  });
-
-  [buscar, sel.tipo, sel.genero, sel.tema, sel.anio, sel.pais, sel.estado, $("orden")]
-    .forEach(el => el.addEventListener("input", pintar));
-
-  chips.addEventListener("click", e => {
-    const chip = e.target.closest(".chip");
-    if (!chip) return;
-    const clave = chip.dataset.clave;
-    if (clave === "buscar") buscar.value = "";
-    else sel[clave].value = "";
-    pintar();
-  });
-
-  // Abre el detalle al tocar una película, pero no si se tocó un control
-  lista.addEventListener("click", e => {
-    if (e.target.closest("a, [data-accion]")) return;
-    const card = e.target.closest("[data-i]");
-    if (card) abrirDetalle(visibles[Number(card.dataset.i)]);
-  });
-
-  $("carrusel").addEventListener("click", e => {
-    const d = e.target.closest("[data-idx]");
-    if (d) abrirDetalle(peliculas[Number(d.dataset.idx)]);
-  });
-
-  // Botones de vista, pendiente y estrellas (en tarjetas, filas y detalle)
-  document.addEventListener("click", e => {
-    const b = e.target.closest("[data-accion]");
-    if (!b) return;
-    e.preventDefault();
-    e.stopPropagation();
-
-    const titulo = b.dataset.clave;
-    const p = peliculas.find(x => x.titulo === titulo);
-    if (!p) return;
-    const s = estadoDe(p);
-
-    if (b.dataset.accion === "vista") {
-      cambiarEstado(titulo, { vista: !s.vista, pendiente: false });
-    } else if (b.dataset.accion === "pendiente") {
-      cambiarEstado(titulo, { pendiente: !s.pendiente, vista: false });
-    } else if (b.dataset.accion === "estrella") {
-      const n = Number(b.dataset.n);
-      cambiarEstado(titulo, { estrellas: s.estrellas === n ? 0 : n });
-    }
-    refrescarTodo();
-  });
-
-  $("cerrarModal").addEventListener("click", cerrarDetalle);
-  $("modal").addEventListener("click", e => { if (e.target.id === "modal") cerrarDetalle(); });
-
-  $("vista").addEventListener("click", () => {
-    vistaLista = !vistaLista;
-    document.body.classList.toggle("lista", vistaLista);
-    $("vista").textContent = vistaLista ? "Ver con portadas" : "Ver como lista";
-    pintar();
-  });
-
-  $("tema-btn").addEventListener("click", alternarTema);
-
-  $("limpiar").addEventListener("click", () => {
-    buscar.value = "";
-    Object.values(sel).forEach(s => s.value = "");
-    $("orden").value = "titulo";
-    pintar();
-  });
-});
-</script>
-</body>
-</html>
+    '<div
