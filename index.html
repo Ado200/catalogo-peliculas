@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Mi catálogo de películas</title>
-  <link rel="manifest" href="manifest.json">
+<link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0071e3">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Catálogo">
@@ -16,6 +16,7 @@
     --azul:#0071e3; --borde:#d2d2d7; --boton-suave:#e8e8ed;
     --tema-bg:rgba(0,113,227,.1); --tema-texto:#0071e3;
     --sombra:0 2px 10px rgba(0,0,0,.06); --error:#c00; --estrella:#ffb800;
+    --ease:cubic-bezier(.2,.8,.2,1);
   }
   body.oscuro {
     --fondo:#000000; --tarjeta:#1c1c1e; --texto:#f5f5f7; --gris:#a1a1a6;
@@ -28,14 +29,21 @@
   body { margin:0; font-family:-apple-system,"Segoe UI",Roboto,sans-serif; background:var(--fondo); color:var(--texto); transition:background .25s, color .25s; }
   header { padding:28px 20px 10px; text-align:center; }
   h1 { margin:0 0 16px; font-size:26px; }
-  #buscar { width:min(560px,100%); padding:14px 18px; font-size:16px; border:1px solid var(--borde); border-radius:999px; outline:none; background:var(--tarjeta); color:var(--texto); }
+  #buscar { width:min(560px,100%); padding:14px 18px; font-size:16px; border:1px solid var(--borde); border-radius:999px; outline:none; background:var(--tarjeta); color:var(--texto); transition:box-shadow .2s, border-color .2s; }
+  #buscar:focus { border-color:var(--azul); box-shadow:0 0 0 4px rgba(0,113,227,.15); }
   .filtros { display:flex; flex-wrap:wrap; gap:10px; justify-content:center; margin-top:14px; }
-  select, .pildora { padding:10px 14px; font-size:14px; border:1px solid var(--borde); border-radius:999px; background:var(--tarjeta); color:var(--texto); }
+  select, .pildora { padding:10px 14px; font-size:14px; border:1px solid var(--borde); border-radius:999px; background:var(--tarjeta); color:var(--texto); transition:transform .15s var(--ease), background .2s; }
   .pildora { background:var(--boton-suave); border:none; cursor:pointer; }
-  .boton-login { background:var(--azul); color:#fff; border:none; padding:14px 28px; font-size:16px; cursor:pointer; border-radius:999px; }
+  .pildora:hover, select:hover { transform:translateY(-1px); }
+  .pildora:active, select:active { transform:scale(.96); }
+  .boton-login { background:var(--azul); color:#fff; border:none; padding:14px 28px; font-size:16px; cursor:pointer; border-radius:999px; transition:transform .15s var(--ease); }
+  .boton-login:active { transform:scale(.96); }
+
   #chips { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-top:12px; min-height:4px; }
-  .chip { background:var(--azul); color:#fff; font-size:13px; padding:6px 10px 6px 14px; border-radius:999px; cursor:pointer; }
+  .chip { background:var(--azul); color:#fff; font-size:13px; padding:6px 10px 6px 14px; border-radius:999px; cursor:pointer; animation:entrarChip .3s var(--ease) both; }
   .chip span { margin-left:6px; opacity:.8; }
+  @keyframes entrarChip { from { opacity:0; transform:scale(.8); } to { opacity:1; transform:scale(1); } }
+
   #contador { color:var(--gris); font-size:14px; margin-top:12px; }
   #error { color:var(--error); margin-top:12px; }
   #login { text-align:center; margin-top:60px; }
@@ -44,7 +52,8 @@
   .destacados { max-width:1100px; margin:20px auto 0; padding:0 20px; }
   .destacados h3 { margin:0 0 12px; font-size:18px; color:var(--texto); }
   .carrusel { display:flex; gap:14px; overflow-x:auto; padding-bottom:10px; scroll-snap-type:x mandatory; }
-  .carrusel .dest { flex:0 0 150px; scroll-snap-align:start; cursor:pointer; }
+  .carrusel .dest { flex:0 0 150px; scroll-snap-align:start; cursor:pointer; transition:transform .25s var(--ease); }
+  .carrusel .dest:hover { transform:translateY(-4px); }
   .carrusel img, .carrusel .sinportada-mini { width:150px; height:225px; object-fit:cover; border-radius:14px; box-shadow:var(--sombra); display:block; }
   .carrusel .sinportada-mini { background:var(--tarjeta); font-size:44px; display:flex; align-items:center; justify-content:center; }
   .carrusel .dest-titulo { font-size:13px; margin-top:8px; line-height:1.3; }
@@ -52,9 +61,10 @@
 
   main { display:grid; grid-template-columns:repeat(auto-fill,minmax(270px,1fr)); gap:18px; padding:20px; max-width:1100px; margin:auto; }
   body.lista main { grid-template-columns:1fr; max-width:900px; }
-  .tarjeta, .fila { background:var(--tarjeta); border-radius:18px; cursor:pointer; box-shadow:var(--sombra); transition:transform .2s; }
+  .tarjeta, .fila { background:var(--tarjeta); border-radius:18px; cursor:pointer; box-shadow:var(--sombra); transition:transform .25s var(--ease), box-shadow .25s; }
   .tarjeta { padding:20px; }
-  .tarjeta:hover, .fila:hover { transform:translateY(-2px); }
+  .tarjeta:hover, .fila:hover { transform:translateY(-3px); box-shadow:0 8px 22px rgba(0,0,0,.1); }
+  .tarjeta:active, .fila:active { transform:scale(.99); }
   .tarjeta h2 { margin:10px 0 4px; font-size:19px; }
   .portada { width:100%; border-radius:12px; }
   .sinportada { font-size:40px; }
@@ -63,11 +73,17 @@
   .pastillas { display:flex; flex-wrap:wrap; gap:6px; margin:10px 0; }
   .pastilla { font-size:12px; padding:4px 10px; border-radius:999px; }
   .pastilla.tema { background:var(--tema-bg); color:var(--tema-texto); }
-  .boton { display:inline-block; background:var(--azul); color:#fff; text-decoration:none; padding:9px 18px; border-radius:999px; font-size:14px; }
+  .boton { display:inline-block; background:var(--azul); color:#fff; text-decoration:none; padding:9px 18px; border-radius:999px; font-size:14px; transition:transform .15s var(--ease), filter .2s; }
+  .boton:hover { filter:brightness(1.08); }
+  .boton:active { transform:scale(.95); }
   .fila { padding:14px 18px; display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
   .fila .info { flex:1; min-width:220px; }
   .fila h2 { margin:0 0 4px; font-size:17px; }
   .vacio { text-align:center; color:var(--gris); grid-column:1/-1; }
+
+  /* Aparición en cascada de tarjetas y filas */
+  .animar { animation:aparecer .5s var(--ease) both; animation-delay:var(--retraso, 0ms); }
+  @keyframes aparecer { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:translateY(0); } }
 
   .grupo { grid-column:1/-1; }
   .grupo h3 { margin:10px 0 12px; font-size:18px; }
@@ -75,19 +91,32 @@
   body.lista .grupo-items { grid-template-columns:1fr; }
 
   .controles { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:10px; }
-  .chipc { border:1px solid var(--borde); background:var(--tarjeta); color:var(--texto); border-radius:999px; padding:6px 12px; font-size:13px; cursor:pointer; }
-  .chipc.activo { background:var(--azul); color:#fff; border-color:var(--azul); }
+  .chipc { border:1px solid var(--borde); background:var(--tarjeta); color:var(--texto); border-radius:999px; padding:6px 12px; font-size:13px; cursor:pointer; transition:transform .15s var(--ease), background .25s, color .25s; }
+  .chipc:active { transform:scale(.92); }
+  .chipc.activo { background:var(--azul); color:#fff; border-color:var(--azul); animation:rebote .35s var(--ease); }
+  @keyframes rebote { 0% { transform:scale(.9); } 60% { transform:scale(1.06); } 100% { transform:scale(1); } }
   .estrellas { display:inline-flex; gap:2px; margin-left:4px; }
-  .estrella { background:none; border:none; font-size:20px; cursor:pointer; color:var(--borde); padding:0 1px; }
+  .estrella { background:none; border:none; font-size:20px; cursor:pointer; color:var(--borde); padding:0 1px; transition:transform .15s var(--ease), color .2s; }
+  .estrella:hover { transform:scale(1.2); }
+  .estrella:active { transform:scale(.85); }
   .estrella.on { color:var(--estrella); }
 
   #modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); align-items:center; justify-content:center; padding:20px; z-index:10; }
-  #modal.abierto { display:flex; }
+  #modal.abierto { display:flex; animation:fundo .25s ease both; }
+  #modal.abierto .ventana { animation:crecer .35s var(--ease) both; }
+  @keyframes fundo { from { opacity:0; } to { opacity:1; } }
+  @keyframes crecer { from { opacity:0; transform:scale(.92) translateY(10px); } to { opacity:1; transform:scale(1) translateY(0); } }
   .ventana { background:var(--tarjeta); color:var(--texto); border-radius:18px; padding:24px; max-width:560px; width:100%; max-height:90vh; overflow:auto; position:relative; }
   .ventana h2 { margin:0 0 6px; font-size:22px; }
-  .cerrar { position:absolute; top:12px; right:14px; background:none; border:none; font-size:26px; cursor:pointer; color:var(--gris); }
+  .cerrar { position:absolute; top:12px; right:14px; background:none; border:none; font-size:26px; cursor:pointer; color:var(--gris); transition:transform .2s var(--ease); }
+  .cerrar:hover { transform:rotate(90deg); }
   .ventana .sinopsis { font-size:15px; margin:14px 0; }
   .ventana .portada { max-width:200px; margin-bottom:12px; }
+
+  /* Reducir movimiento si el sistema lo pide */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation:none !important; transition:none !important; }
+  }
 </style>
 </head>
 <body>
@@ -287,9 +316,12 @@ function pastillasHtml(p) {
   return temasDe(p).map(t => '<span class="pastilla tema">' + esc(t) + '</span>').join("");
 }
 
+// El retraso hace que las tarjetas aparezcan una tras otra, sin pasar de 400 ms
+function retraso(i) { return "--retraso:" + Math.min(i * 40, 400) + "ms"; }
+
 function tarjeta(p, i) {
   const portada = p.portada ? '<img class="portada" src="' + esc(p.portada) + '" alt="">' : '<div class="sinportada">🎬</div>';
-  return '<article class="tarjeta" data-i="' + i + '">' + portada +
+  return '<article class="tarjeta animar" style="' + retraso(i) + '" data-i="' + i + '">' + portada +
     '<h2>' + esc(p.titulo) + '</h2>' +
     '<div class="meta">' + esc(p.tipo) + ' · ' + esc(p["año"]) + ' · ' + esc(p.duracion) + ' · ' + esc(p.pais) + '</div>' +
     '<div class="meta">Género: ' + esc(p.genero) + '</div>' +
@@ -301,7 +333,7 @@ function tarjeta(p, i) {
 }
 
 function filaHtml(p, i) {
-  return '<article class="fila" data-i="' + i + '"><div class="info">' +
+  return '<article class="fila animar" style="' + retraso(i) + '" data-i="' + i + '"><div class="info">' +
     '<h2>' + esc(p.titulo) + '</h2>' +
     '<div class="meta">' + esc(p.tipo) + ' · ' + esc(p["año"]) + ' · ' + esc(p.duracion) + ' · ' + esc(p.pais) + '</div>' +
     '<div class="pastillas">' + pastillasHtml(p) + '</div>' +
@@ -367,9 +399,9 @@ function renderAgrupado() {
   if (sinTema.length) bloques.push({ nombre: "Sin tema", items: sinTema });
 
   return bloques.map(b => {
-    const cuerpo = b.items.map(p => {
+    const cuerpo = b.items.map((p, k) => {
       const i = visibles.indexOf(p);
-      return vistaLista ? filaHtml(p, i) : tarjeta(p, i);
+      return vistaLista ? filaHtml(p, k) : tarjeta(p, k);
     }).join("");
     return '<section class="grupo"><h3>' + esc(b.nombre) + ' (' + b.items.length + ')</h3>' +
       '<div class="grupo-items">' + cuerpo + '</div></section>';
