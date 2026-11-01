@@ -36,6 +36,7 @@
   .pildora { background:var(--boton-suave); border:none; cursor:pointer; }
   .pildora:hover, select:hover { transform:translateY(-1px); }
   .pildora:active, select:active { transform:scale(.96); }
+  .pildora.destacado { background:var(--azul); color:#fff; }
   .boton-login { background:var(--azul); color:#fff; border:none; padding:14px 28px; font-size:16px; cursor:pointer; border-radius:999px; transition:transform .15s var(--ease); }
   .boton-login:active { transform:scale(.96); }
 
@@ -81,7 +82,6 @@
   .fila h2 { margin:0 0 4px; font-size:17px; }
   .vacio { text-align:center; color:var(--gris); grid-column:1/-1; }
 
-  /* Aparición en cascada de tarjetas y filas */
   .animar { animation:aparecer .5s var(--ease) both; animation-delay:var(--retraso, 0ms); }
   @keyframes aparecer { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:translateY(0); } }
 
@@ -112,8 +112,8 @@
   .cerrar:hover { transform:rotate(90deg); }
   .ventana .sinopsis { font-size:15px; margin:14px 0; }
   .ventana .portada { max-width:200px; margin-bottom:12px; }
+  .otra { margin-top:14px; }
 
-  /* Reducir movimiento si el sistema lo pide */
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation:none !important; transition:none !important; }
   }
@@ -157,6 +157,7 @@
       <option value="antiguas">Ordenar: más antiguas</option>
       <option value="duracion">Ordenar: más largas</option>
     </select>
+    <button id="aleatorio" class="pildora destacado">🎲 Aleatorio</button>
     <button id="vista" class="pildora">Ver como lista</button>
     <button id="agrupar" class="pildora">Agrupar por tema</button>
     <button id="tema-btn" class="pildora">Modo oscuro</button>
@@ -178,6 +179,7 @@
   <div class="ventana">
     <button class="cerrar" id="cerrarModal">×</button>
     <div id="detalle"></div>
+    <div id="otra" class="otra"></div>
   </div>
 </div>
 
@@ -190,6 +192,7 @@ let visibles = [];
 let tokenClient;
 let vistaLista = false;
 let agrupado = false;
+let desdeAleatorio = false;
 
 const $ = id => document.getElementById(id);
 const lista = $("lista"), buscar = $("buscar"), contador = $("contador"), chips = $("chips");
@@ -316,7 +319,6 @@ function pastillasHtml(p) {
   return temasDe(p).map(t => '<span class="pastilla tema">' + esc(t) + '</span>').join("");
 }
 
-// El retraso hace que las tarjetas aparezcan una tras otra, sin pasar de 400 ms
 function retraso(i) { return "--retraso:" + Math.min(i * 40, 400) + "ms"; }
 
 function tarjeta(p, i) {
@@ -399,10 +401,7 @@ function renderAgrupado() {
   if (sinTema.length) bloques.push({ nombre: "Sin tema", items: sinTema });
 
   return bloques.map(b => {
-    const cuerpo = b.items.map((p, k) => {
-      const i = visibles.indexOf(p);
-      return vistaLista ? filaHtml(p, k) : tarjeta(p, k);
-    }).join("");
+    const cuerpo = b.items.map((p, k) => vistaLista ? filaHtml(p, k) : tarjeta(p, k)).join("");
     return '<section class="grupo"><h3>' + esc(b.nombre) + ' (' + b.items.length + ')</h3>' +
       '<div class="grupo-items">' + cuerpo + '</div></section>';
   }).join("");
@@ -440,6 +439,7 @@ function pintar() {
   lista.innerHTML = visibles.map((p, i) => vistaLista ? filaHtml(p, i) : tarjeta(p, i)).join("");
 }
 
+/* ---------- Detalle y sugerencia aleatoria ---------- */
 function abrirDetalle(p) {
   $("detalle").innerHTML =
     (p.portada ? '<img class="portada" src="' + esc(p.portada) + '" alt="">' : '') +
@@ -452,10 +452,34 @@ function abrirDetalle(p) {
     controlesHtml(p) +
     '<p class="sinopsis">' + esc(p.sinopsis) + '</p>' +
     '<a class="boton" href="' + esc(p.link) + '" target="_blank" rel="noopener">Ver</a>';
+
+  // Si vino de Aleatorio, ofrece otra sugerencia sin cerrar la ventana
+  $("otra").innerHTML = desdeAleatorio
+    ? '<button class="pildora destacado" id="otraSugerencia">🎲 Otra sugerencia</button>'
+    : '';
   $("modal").classList.add("abierto");
 }
 
-function cerrarDetalle() { $("modal").classList.remove("abierto"); }
+function cerrarDetalle() {
+  $("modal").classList.remove("abierto");
+  desdeAleatorio = false;
+  $("otra").innerHTML = "";
+}
+
+function sugerirAleatoria() {
+  if (!visibles.length) {
+    contador.textContent = "No hay películas con esos criterios para sugerir.";
+    return;
+  }
+  // Evita repetir la misma película si hay más de una opción
+  let p = visibles[Math.floor(Math.random() * visibles.length)];
+  const actual = $("detalle").querySelector("h2")?.textContent;
+  if (visibles.length > 1 && p.titulo === actual) {
+    p = visibles[(visibles.indexOf(p) + 1) % visibles.length];
+  }
+  desdeAleatorio = true;
+  abrirDetalle(p);
+}
 
 function refrescarTodo() {
   pintar();
@@ -531,15 +555,23 @@ window.addEventListener("load", () => {
   lista.addEventListener("click", e => {
     if (e.target.closest("a, [data-accion]")) return;
     const card = e.target.closest("[data-i]");
-    if (card) abrirDetalle(visibles[Number(card.dataset.i)]);
+    if (card) {
+      desdeAleatorio = false;
+      abrirDetalle(visibles[Number(card.dataset.i)]);
+    }
   });
 
   $("carrusel").addEventListener("click", e => {
     const d = e.target.closest("[data-idx]");
-    if (d) abrirDetalle(peliculas[Number(d.dataset.idx)]);
+    if (d) {
+      desdeAleatorio = false;
+      abrirDetalle(peliculas[Number(d.dataset.idx)]);
+    }
   });
 
   document.addEventListener("click", e => {
+    if (e.target.id === "otraSugerencia") { sugerirAleatoria(); return; }
+
     const b = e.target.closest("[data-accion]");
     if (!b) return;
     e.preventDefault();
@@ -560,6 +592,8 @@ window.addEventListener("load", () => {
     }
     refrescarTodo();
   });
+
+  $("aleatorio").addEventListener("click", sugerirAleatoria);
 
   $("cerrarModal").addEventListener("click", cerrarDetalle);
   $("modal").addEventListener("click", e => { if (e.target.id === "modal") cerrarDetalle(); });
