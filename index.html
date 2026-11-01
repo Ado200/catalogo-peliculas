@@ -13,14 +13,15 @@
   h1 { margin:0 0 16px; font-size:26px; }
   #buscar { width:min(560px,100%); padding:14px 18px; font-size:16px; border:1px solid #d2d2d7; border-radius:999px; outline:none; }
   .filtros { display:flex; flex-wrap:wrap; gap:10px; justify-content:center; margin-top:14px; }
-  select, #limpiar, .boton-login { padding:10px 14px; font-size:14px; border:1px solid #d2d2d7; border-radius:999px; background:#fff; }
-  #limpiar { background:#e8e8ed; border:none; cursor:pointer; }
-  .boton-login { background:var(--azul); color:#fff; border:none; padding:14px 28px; font-size:16px; cursor:pointer; }
+  select, .pildora { padding:10px 14px; font-size:14px; border:1px solid #d2d2d7; border-radius:999px; background:#fff; }
+  .pildora { background:#e8e8ed; border:none; cursor:pointer; }
+  .boton-login { background:var(--azul); color:#fff; border:none; padding:14px 28px; font-size:16px; cursor:pointer; border-radius:999px; }
   #contador { color:var(--gris); font-size:14px; margin-top:12px; }
   #error { color:#c00; margin-top:12px; }
   #login { text-align:center; margin-top:60px; }
   #app { display:none; }
   main { display:grid; grid-template-columns:repeat(auto-fill,minmax(270px,1fr)); gap:18px; padding:20px; max-width:1100px; margin:auto; }
+  body.lista main { grid-template-columns:1fr; max-width:900px; }
   .tarjeta { background:#fff; border-radius:18px; padding:20px; box-shadow:0 2px 10px rgba(0,0,0,.06); }
   .tarjeta h2 { margin:10px 0 4px; font-size:19px; }
   .portada { width:100%; border-radius:12px; }
@@ -31,6 +32,9 @@
   .pastilla { font-size:12px; padding:4px 10px; border-radius:999px; }
   .pastilla.tema { background:rgba(0,113,227,.1); color:var(--azul); }
   .boton { display:inline-block; background:var(--azul); color:#fff; text-decoration:none; padding:9px 18px; border-radius:999px; font-size:14px; }
+  .fila { background:#fff; border-radius:14px; padding:14px 18px; display:flex; align-items:center; gap:16px; flex-wrap:wrap; box-shadow:0 2px 8px rgba(0,0,0,.05); }
+  .fila .info { flex:1; min-width:220px; }
+  .fila h2 { margin:0 0 4px; font-size:17px; }
   .vacio { text-align:center; color:var(--gris); grid-column:1/-1; }
 </style>
 </head>
@@ -52,7 +56,14 @@
     <select id="tema"><option value="">Todos los temas</option></select>
     <select id="anio"><option value="">Todos los años</option></select>
     <select id="pais"><option value="">Todos los países</option></select>
-    <button id="limpiar">Limpiar</button>
+    <select id="orden">
+      <option value="titulo">Ordenar: A a Z</option>
+      <option value="recientes">Ordenar: más recientes</option>
+      <option value="antiguas">Ordenar: más antiguas</option>
+      <option value="duracion">Ordenar: más largas</option>
+    </select>
+    <button id="vista" class="pildora">Ver como lista</button>
+    <button id="limpiar" class="pildora">Limpiar</button>
   </div>
   <div id="contador"></div>
 </header>
@@ -65,6 +76,7 @@ const HOJA_ID = "1W5oSA5yy4TpbVYxjya6S9T6NkeE6irwSHABXFAijO2k";
 
 let peliculas = [];
 let tokenClient;
+let vistaLista = false;
 
 const $ = id => document.getElementById(id);
 const lista = $("lista"), buscar = $("buscar"), contador = $("contador");
@@ -76,6 +88,20 @@ function esc(x) {
 function generosDe(p) { return String(p.genero || "").split(",").map(s => s.trim()).filter(Boolean); }
 function temasDe(p) { return String(p.temas || "").split(";").map(s => s.trim()).filter(Boolean); }
 
+function minutos(p) {
+  const s = String(p.duracion || "");
+  const h = s.match(/(\d+)\s*h/);
+  const m = s.match(/(\d+)\s*min/);
+  return (h ? Number(h[1]) * 60 : 0) + (m ? Number(m[1]) : 0);
+}
+
+const ordenes = {
+  titulo: (a, b) => String(a.titulo).localeCompare(String(b.titulo), "es"),
+  recientes: (a, b) => (Number(b["año"]) || 0) - (Number(a["año"]) || 0),
+  antiguas: (a, b) => (Number(a["año"]) || 0) - (Number(b["año"]) || 0),
+  duracion: (a, b) => minutos(b) - minutos(a)
+};
+
 function llenarFiltros() {
   const llenar = (el, arr) => [...new Set(arr.filter(x => x))].sort().forEach(x => el.add(new Option(x, x)));
   llenar(sel.tipo, peliculas.map(p => p.tipo));
@@ -85,8 +111,11 @@ function llenarFiltros() {
   llenar(sel.pais, peliculas.map(p => p.pais));
 }
 
+function pastillasHtml(p) {
+  return temasDe(p).map(t => '<span class="pastilla tema">' + esc(t) + '</span>').join("");
+}
+
 function tarjeta(p) {
-  const pastillas = temasDe(p).map(t => '<span class="pastilla tema">' + esc(t) + '</span>').join("");
   const portada = p.portada ? '<img class="portada" src="' + esc(p.portada) + '" alt="">' : '<div class="sinportada">🎬</div>';
   return '<article class="tarjeta">' + portada +
     '<h2>' + esc(p.titulo) + '</h2>' +
@@ -94,8 +123,17 @@ function tarjeta(p) {
     '<div class="meta">Género: ' + esc(p.genero) + '</div>' +
     '<div class="meta">Dirección: ' + esc(p.director) + '</div>' +
     '<div class="meta">Reparto: ' + esc(p.reparto) + '</div>' +
-    '<div class="pastillas">' + pastillas + '</div>' +
+    '<div class="pastillas">' + pastillasHtml(p) + '</div>' +
     '<p class="sinopsis">' + esc(p.sinopsis) + '</p>' +
+    '<a class="boton" href="' + esc(p.link) + '" target="_blank" rel="noopener">Ver</a></article>';
+}
+
+function filaHtml(p) {
+  return '<article class="fila"><div class="info">' +
+    '<h2>' + esc(p.titulo) + '</h2>' +
+    '<div class="meta">' + esc(p.tipo) + ' · ' + esc(p["año"]) + ' · ' + esc(p.duracion) + ' · ' + esc(p.pais) + '</div>' +
+    '<div class="pastillas">' + pastillasHtml(p) + '</div>' +
+    '</div>' +
     '<a class="boton" href="' + esc(p.link) + '" target="_blank" rel="noopener">Ver</a></article>';
 }
 
@@ -110,11 +148,21 @@ function pintar() {
       (!sel.anio.value || String(p["año"]) === sel.anio.value) &&
       (!sel.pais.value || p.pais === sel.pais.value);
   });
+  r.sort(ordenes[$("orden").value]);
+
   contador.textContent = r.length + " de " + peliculas.length + " títulos";
-  lista.innerHTML = r.length ? r.map(tarjeta).join("") : '<p class="vacio">No encontré nada con esos criterios.</p>';
+  if (!r.length) {
+    lista.innerHTML = '<p class="vacio">No encontré nada con esos criterios.</p>';
+    return;
+  }
+  lista.innerHTML = r.map(vistaLista ? filaHtml : tarjeta).join("");
 }
 
-function mostrarError(msg) { $("error").textContent = msg; }
+function mostrarError(msg) {
+  $("error").textContent = msg;
+  $("btnLogin").disabled = false;
+  $("btnLogin").textContent = "Iniciar sesión con Google";
+}
 
 async function cargarHoja(token) {
   try {
@@ -150,11 +198,27 @@ window.addEventListener("load", () => {
       else mostrarError("No se pudo iniciar sesión.");
     }
   });
-  $("btnLogin").addEventListener("click", () => tokenClient.requestAccessToken());
-  [buscar, sel.tipo, sel.genero, sel.tema, sel.anio, sel.pais].forEach(el => el.addEventListener("input", pintar));
+
+  $("btnLogin").addEventListener("click", () => {
+    $("btnLogin").disabled = true;
+    $("btnLogin").textContent = "Cargando películas...";
+    tokenClient.requestAccessToken();
+  });
+
+  [buscar, sel.tipo, sel.genero, sel.tema, sel.anio, sel.pais, $("orden")]
+    .forEach(el => el.addEventListener("input", pintar));
+
+  $("vista").addEventListener("click", () => {
+    vistaLista = !vistaLista;
+    document.body.classList.toggle("lista", vistaLista);
+    $("vista").textContent = vistaLista ? "Ver con portadas" : "Ver como lista";
+    pintar();
+  });
+
   $("limpiar").addEventListener("click", () => {
     buscar.value = "";
     Object.values(sel).forEach(s => s.value = "");
+    $("orden").value = "titulo";
     pintar();
   });
 });
