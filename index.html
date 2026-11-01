@@ -23,6 +23,16 @@
   #error { color:#c00; margin-top:12px; }
   #login { text-align:center; margin-top:60px; }
   #app { display:none; }
+
+  .destacados { max-width:1100px; margin:20px auto 0; padding:0 20px; }
+  .destacados h3 { margin:0 0 12px; font-size:18px; color:var(--texto); }
+  .carrusel { display:flex; gap:14px; overflow-x:auto; padding-bottom:10px; scroll-snap-type:x mandatory; }
+  .carrusel .dest { flex:0 0 150px; scroll-snap-align:start; cursor:pointer; }
+  .carrusel img, .carrusel .sinportada-mini { width:150px; height:225px; object-fit:cover; border-radius:14px; box-shadow:0 2px 10px rgba(0,0,0,.1); display:block; }
+  .carrusel .sinportada-mini { background:#fff; font-size:44px; display:flex; align-items:center; justify-content:center; }
+  .carrusel .dest-titulo { font-size:13px; margin-top:8px; line-height:1.3; }
+  .carrusel .dest-anio { font-size:12px; color:var(--gris); }
+
   main { display:grid; grid-template-columns:repeat(auto-fill,minmax(270px,1fr)); gap:18px; padding:20px; max-width:1100px; margin:auto; }
   body.lista main { grid-template-columns:1fr; max-width:900px; }
   .tarjeta, .fila { background:#fff; border-radius:18px; cursor:pointer; box-shadow:0 2px 10px rgba(0,0,0,.06); transition:transform .2s; }
@@ -80,6 +90,12 @@
   <div id="chips"></div>
   <div id="contador"></div>
 </header>
+
+<section id="destacados" class="destacados">
+  <h3>Estrenos recientes</h3>
+  <div id="carrusel" class="carrusel"></div>
+</section>
+
 <main id="lista"></main>
 </div>
 
@@ -131,7 +147,6 @@ function llenarFiltros() {
   llenar(sel.anio, peliculas.map(p => String(p["año"] || "")));
   llenar(sel.pais, peliculas.map(p => p.pais));
 
-  // Temas con contador: "negocios (6)"
   const conteo = {};
   peliculas.flatMap(temasDe).forEach(t => conteo[t] = (conteo[t] || 0) + 1);
   Object.keys(conteo).sort().forEach(t => sel.tema.add(new Option(`${t} (${conteo[t]})`, t)));
@@ -162,6 +177,27 @@ function filaHtml(p, i) {
     '<a class="boton" href="' + esc(p.link) + '" target="_blank" rel="noopener">Ver</a></article>';
 }
 
+function renderDestacados() {
+  const recientes = [...peliculas]
+    .filter(p => Number(p["año"]))
+    .sort((a, b) => Number(b["año"]) - Number(a["año"]))
+    .slice(0, 6);
+
+  $("carrusel").innerHTML = recientes.map(p => {
+    const idx = peliculas.indexOf(p);
+    const img = p.portada
+      ? '<img src="' + esc(p.portada) + '" alt="">'
+      : '<div class="sinportada-mini">🎬</div>';
+    return '<div class="dest" data-idx="' + idx + '">' + img +
+      '<div class="dest-titulo">' + esc(p.titulo) + '</div>' +
+      '<div class="dest-anio">' + esc(p["año"]) + '</div></div>';
+  }).join("");
+}
+
+function hayFiltros() {
+  return buscar.value.trim() !== "" || Object.values(sel).some(s => s.value !== "");
+}
+
 function renderChips() {
   const activos = [];
   if (buscar.value.trim()) activos.push({ clave:"buscar", texto:'Búsqueda: "' + buscar.value.trim() + '"' });
@@ -186,6 +222,7 @@ function pintar() {
   });
   visibles.sort(ordenes[$("orden").value]);
 
+  $("destacados").style.display = hayFiltros() ? "none" : "block";
   renderChips();
   contador.textContent = visibles.length + " de " + peliculas.length + " títulos";
   if (!visibles.length) {
@@ -236,6 +273,7 @@ async function cargarHoja(token) {
     $("login").style.display = "none";
     $("app").style.display = "block";
     llenarFiltros();
+    renderDestacados();
     pintar();
   } catch (e) {
     mostrarError(e.message);
@@ -261,7 +299,6 @@ window.addEventListener("load", () => {
   [buscar, sel.tipo, sel.genero, sel.tema, sel.anio, sel.pais, $("orden")]
     .forEach(el => el.addEventListener("input", pintar));
 
-  // Tocar un chip quita ese filtro
   chips.addEventListener("click", e => {
     const chip = e.target.closest(".chip");
     if (!chip) return;
@@ -271,11 +308,15 @@ window.addEventListener("load", () => {
     pintar();
   });
 
-  // Tocar una película abre su detalle, salvo el botón Ver
   lista.addEventListener("click", e => {
     if (e.target.closest("a")) return;
     const card = e.target.closest("[data-i]");
     if (card) abrirDetalle(visibles[Number(card.dataset.i)]);
+  });
+
+  $("carrusel").addEventListener("click", e => {
+    const d = e.target.closest("[data-idx]");
+    if (d) abrirDetalle(peliculas[Number(d.dataset.idx)]);
   });
 
   $("cerrarModal").addEventListener("click", cerrarDetalle);
