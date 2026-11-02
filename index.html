@@ -104,9 +104,9 @@
   .estrella:active { transform:scale(.85); }
   .estrella.on { color:var(--estrella); }
 
-  #modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); align-items:center; justify-content:center; padding:20px; z-index:10; }
-  #modal.abierto { display:flex; animation:fundo .25s ease both; }
-  #modal.abierto .ventana { animation:crecer .35s var(--ease) both; }
+  #modal, #statsModal { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); align-items:center; justify-content:center; padding:20px; z-index:10; }
+  #modal.abierto, #statsModal.abierto { display:flex; animation:fundo .25s ease both; }
+  #modal.abierto .ventana, #statsModal.abierto .ventana { animation:crecer .35s var(--ease) both; }
   @keyframes fundo { from { opacity:0; } to { opacity:1; } }
   @keyframes crecer { from { opacity:0; transform:scale(.92) translateY(10px); } to { opacity:1; transform:scale(1) translateY(0); } }
   .ventana { background:var(--tarjeta); color:var(--texto); border-radius:18px; padding:24px; max-width:560px; width:100%; max-height:90vh; overflow:auto; position:relative; }
@@ -126,6 +126,20 @@
   .trailer-caja { position:relative; width:100%; aspect-ratio:16/9; border-radius:14px; overflow:hidden; background:#000; }
   .trailer-caja iframe { position:absolute; inset:0; width:100%; height:100%; border:0; }
   .trailer-vacio { font-size:13px; color:var(--gris); }
+
+  /* Estadísticas */
+  .stats-resumen { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin:16px 0; }
+  .stat { background:var(--boton-suave); border-radius:14px; padding:12px 8px; text-align:center; }
+  .stat b { display:block; font-size:22px; }
+  .stat span { font-size:12px; color:var(--gris); }
+  .stats-sec { margin-top:18px; }
+  .stats-sec h3 { margin:0 0 10px; font-size:15px; color:var(--gris); font-weight:600; }
+  .barra-fila { display:grid; grid-template-columns:110px 1fr 36px; align-items:center; gap:10px; margin-bottom:8px; font-size:13px; }
+  .barra-pista { background:var(--boton-suave); border-radius:999px; height:12px; overflow:hidden; }
+  .barra-valor { height:100%; border-radius:999px; background:var(--azul); transition:width .6s var(--ease); }
+  .barra-valor.estrella { background:var(--estrella); }
+  .barra-num { text-align:right; color:var(--gris); }
+  .stats-vacio { color:var(--gris); font-size:14px; }
 
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation:none !important; transition:none !important; }
@@ -185,6 +199,7 @@
       <option value="apagada">Protección: apagada</option>
     </select>
     <button id="aleatorio" class="pildora destacado">🎲 Aleatorio</button>
+    <button id="estadisticas" class="pildora">📊 Estadísticas</button>
     <button id="vista" class="pildora">Ver como lista</button>
     <button id="agrupar" class="pildora">Agrupar por tema</button>
     <button id="limpiar" class="pildora">Limpiar</button>
@@ -207,6 +222,14 @@
     <button class="cerrar" id="cerrarModal">×</button>
     <div id="detalle"></div>
     <div id="otra" class="otra"></div>
+  </div>
+</div>
+
+<div id="statsModal">
+  <div class="ventana">
+    <button class="cerrar" id="cerrarStats">×</button>
+    <h2>Mis estadísticas</h2>
+    <div id="statsBody"></div>
   </div>
 </div>
 
@@ -362,6 +385,90 @@ function contarEstados() {
     if (s.pendiente) pendientes++;
   });
   return { vistas, pendientes };
+}
+
+/* ---------- Estadísticas ---------- */
+function barraHtml(etiqueta, valor, maximo, clase) {
+  const pct = maximo > 0 ? Math.round((valor / maximo) * 100) : 0;
+  return '<div class="barra-fila">' +
+    '<span>' + esc(etiqueta) + '</span>' +
+    '<div class="barra-pista"><div class="barra-valor ' + (clase || '') + '" style="width:' + pct + '%"></div></div>' +
+    '<span class="barra-num">' + valor + '</span></div>';
+}
+
+function renderEstadisticas() {
+  let vistas = 0, pendientes = 0, sinVer = 0, favoritas = 0;
+  let minutosVistos = 0, sumaEst = 0, conEst = 0;
+  const estrellas = [0, 0, 0, 0, 0, 0];
+  const generos = {};
+
+  peliculas.forEach(p => {
+    const s = estadoDe(p);
+    if (s.vista) {
+      vistas++;
+      minutosVistos += minutos(p);
+      generosDe(p).forEach(g => generos[g] = (generos[g] || 0) + 1);
+    } else {
+      sinVer++;
+    }
+    if (s.pendiente) pendientes++;
+    if (s.estrellas >= 4) favoritas++;
+    if (s.estrellas) {
+      sumaEst += s.estrellas;
+      conEst++;
+      estrellas[s.estrellas]++;
+    }
+  });
+
+  const total = peliculas.length;
+  const promedio = conEst ? (sumaEst / conEst).toFixed(1) : "—";
+  const horas = Math.floor(minutosVistos / 60);
+  const mins = minutosVistos % 60;
+
+  const topGeneros = Object.entries(generos).sort((a, b) => b[1] - a[1]).slice(0, 6);
+  const maxGen = topGeneros.length ? topGeneros[0][1] : 0;
+  const maxEst = Math.max(1, ...estrellas.slice(1));
+
+  let html = '<div class="stats-resumen">' +
+    '<div class="stat"><b>' + total + '</b><span>títulos</span></div>' +
+    '<div class="stat"><b>' + vistas + '</b><span>vistas</span></div>' +
+    '<div class="stat"><b>' + pendientes + '</b><span>pendientes</span></div>' +
+    '<div class="stat"><b>' + sinVer + '</b><span>sin ver</span></div>' +
+    '<div class="stat"><b>' + favoritas + '</b><span>favoritas</span></div>' +
+    '<div class="stat"><b>' + promedio + '</b><span>promedio ★</span></div>' +
+    '</div>';
+
+  html += '<p class="meta">Tiempo visto: <b>' + horas + ' h ' + mins + ' min</b> · ' +
+    conEst + ' películas calificadas</p>';
+
+  html += '<div class="stats-sec"><h3>Calificaciones</h3>';
+  if (conEst === 0) {
+    html += '<p class="stats-vacio">Aún no calificas películas. Usa las estrellas para empezar.</p>';
+  } else {
+    for (let n = 5; n >= 1; n--) {
+      html += barraHtml(n + " ★", estrellas[n], maxEst, "estrella");
+    }
+  }
+  html += '</div>';
+
+  html += '<div class="stats-sec"><h3>Géneros que más has visto</h3>';
+  if (!topGeneros.length) {
+    html += '<p class="stats-vacio">Marca películas como vistas para ver tus géneros.</p>';
+  } else {
+    topGeneros.forEach(([g, n]) => { html += barraHtml(g, n, maxGen); });
+  }
+  html += '</div>';
+
+  $("statsBody").innerHTML = html;
+}
+
+function abrirEstadisticas() {
+  renderEstadisticas();
+  $("statsModal").classList.add("abierto");
+}
+
+function cerrarEstadisticas() {
+  $("statsModal").classList.remove("abierto");
 }
 
 /* ---------- Posición del sol ---------- */
@@ -619,7 +726,6 @@ function pintar() {
 }
 
 /* ---------- Tráiler: español, inglés o idioma original con subtítulos ---------- */
-// Subtítulos en español activados por defecto; si el video no los tiene, YouTube muestra los suyos
 function iframeTrailer(codigo, titulo) {
   const parametros = "?cc_load_policy=1&cc_lang_pref=es&hl=es&rel=0";
   return '<iframe src="https://www.youtube.com/embed/' + esc(codigo) + parametros + '" title="Tráiler de ' + esc(titulo) + '" ' +
@@ -637,7 +743,6 @@ function bloqueTrailer(p) {
     return '<div class="trailer"><div class="trailer-vacio">Esta película no tiene tráiler disponible.</div></div>';
   }
 
-  // Hay ambos: se muestran los dos botones
   if (hayEs && hayEn) {
     return '<div class="trailer"><div class="trailer-titulo">Tráiler</div>' +
       '<div class="trailer-opciones">' +
@@ -647,13 +752,11 @@ function bloqueTrailer(p) {
       '<div class="trailer-caja" id="trailerCaja">' + iframeTrailer(es, p.titulo) + '</div></div>';
   }
 
-  // Solo español
   if (hayEs) {
     return '<div class="trailer"><div class="trailer-titulo">Tráiler en español</div>' +
       '<div class="trailer-caja">' + iframeTrailer(es, p.titulo) + '</div></div>';
   }
 
-  // Solo inglés: idioma original con subtítulos en español
   return '<div class="trailer"><div class="trailer-titulo">Tráiler en su idioma original (inglés)</div>' +
     '<div class="trailer-caja">' + iframeTrailer(en, p.titulo) + '</div>' +
     '<div class="trailer-nota">Activa los subtítulos en el reproductor (CC) para verlos en español.</div></div>';
@@ -861,7 +964,6 @@ window.addEventListener("load", () => {
       return;
     }
 
-    // Cambiar entre tráiler en español e inglés
     const idioma = e.target.closest("[data-trailer]");
     if (idioma) {
       const caja = $("trailerCaja");
@@ -893,6 +995,9 @@ window.addEventListener("load", () => {
   });
 
   $("aleatorio").addEventListener("click", sugerirAleatoria);
+  $("estadisticas").addEventListener("click", abrirEstadisticas);
+  $("cerrarStats").addEventListener("click", cerrarEstadisticas);
+  $("statsModal").addEventListener("click", e => { if (e.target.id === "statsModal") cerrarEstadisticas(); });
 
   $("cerrarModal").addEventListener("click", cerrarDetalle);
   $("modal").addEventListener("click", e => { if (e.target.id === "modal") cerrarDetalle(); });
