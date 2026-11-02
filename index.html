@@ -107,6 +107,10 @@
   .sinportada { font-size:40px; }
   .meta { color:var(--gris); font-size:14px; margin-bottom:6px; }
   .sinopsis { font-size:14px; line-height:1.45; }
+  .nota-bloque { margin:16px 0 8px; }
+  .nota-bloque label { display:block; font-size:13px; color:var(--gris); margin-bottom:6px; }
+  .nota-bloque textarea { width:100%; min-height:90px; padding:12px 14px; font:inherit; font-size:15px; line-height:1.45; border:1px solid var(--borde); border-radius:14px; background:var(--tarjeta); color:var(--texto); resize:vertical; outline:none; }
+  .nota-bloque textarea:focus { border-color:var(--azul); box-shadow:0 0 0 4px rgba(0,113,227,.15); }
   .pastillas { display:flex; flex-wrap:wrap; gap:6px; margin:10px 0; }
   .pastilla { font-size:12px; padding:4px 10px; border-radius:999px; }
   .pastilla.tema { background:var(--tema-bg); color:var(--tema-texto); }
@@ -848,6 +852,29 @@ function cambiarEstado(titulo, cambios) {
   programarGuardado();
 }
 
+// Guarda la nota en marcas.json; si queda vacía, se quita del archivo
+function guardarNota(titulo, texto) {
+  const t = String(texto || "").trim();
+  const nuevo = Object.assign({}, marcas[titulo] || {});
+  if (t) {
+    nuevo.nota = t;
+    nuevo.notaFecha = new Date().toISOString().slice(0, 10);
+  } else {
+    delete nuevo.nota;
+    delete nuevo.notaFecha;
+  }
+  marcas[titulo] = nuevo;
+  programarGuardado();
+}
+
+// Se guarda al salir del campo (evento change), sin botón
+document.addEventListener("change", e => {
+  if (e.target.id === "notaTexto" && detalleActual) {
+    guardarNota(detalleActual.titulo, e.target.value);
+    setEstado("Nota guardada");
+  }
+});
+
 function diasPendiente(p) {
   const f = (marcas[p.titulo] || {}).pendienteDesde;
   if (!f) return null;
@@ -1352,7 +1379,7 @@ function actualizarAvisoEstancados() {
 function pintar() {
   const f = buscar.value.trim().toLowerCase();
   visibles = peliculas.filter(p => {
-    const texto = [p.titulo, p.director, p.reparto].join(" ").toLowerCase();
+    const texto = [p.titulo, p.director, p.reparto, (marcas[p.titulo] || {}).nota || ""].join(" ").toLowerCase();
     return texto.includes(f) &&
       (!sel.tipo.value || p.tipo === sel.tipo.value) &&
       (!sel.genero.value || generosDe(p).includes(sel.genero.value)) &&
@@ -1465,6 +1492,8 @@ function abrirDetalle(p) {
     '<div class="pastillas">' + pastillasHtml(p) + '</div>' +
     controlesHtml(p) +
     '<p class="sinopsis">' + esc(p.sinopsis) + '</p>' +
+    '<div class="nota-bloque"><label for="notaTexto">Mi nota</label>' +
+      '<textarea id="notaTexto" placeholder="Escribe lo que te pareció, para recordarlo después...">' + esc((marcas[p.titulo] || {}).nota || "") + '</textarea></div>' +
     bloqueTrailer(p) +
     '<div class="acciones">' +
       '<a class="boton" href="' + esc(p.link) + '" target="_blank" rel="noopener">Ver película</a>' +
@@ -1855,7 +1884,7 @@ async function borrarMisMarcas() {
 $("borrarMarcas").addEventListener("click", borrarMisMarcas);
 
 function exportarCSV() {
-  const columnas = ["titulo", "tipo", "año", "duracion", "pais", "director", "genero", "reparto", "temas", "link", "vista", "pendiente", "estrellas"];
+  const columnas = ["titulo", "tipo", "año", "duracion", "pais", "director", "genero", "reparto", "temas", "link", "vista", "pendiente", "estrellas", "nota"];
 
   const esc = v => {
     const s = String(v == null ? "" : v);
@@ -1869,6 +1898,7 @@ function exportarCSV() {
       if (c === "vista") return s.vista ? "sí" : "no";
       if (c === "pendiente") return s.pendiente ? "sí" : "no";
       if (c === "estrellas") return s.estrellas || "";
+      if (c === "nota") return (marcas[p.titulo] || {}).nota || "";
       return p[c] ?? "";
     });
     filas.push(valores.map(esc).join(","));
