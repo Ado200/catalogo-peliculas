@@ -109,12 +109,12 @@
   #modal.abierto .ventana, #statsModal.abierto .ventana { animation:crecer .35s var(--ease) both; }
   @keyframes fundo { from { opacity:0; } to { opacity:1; } }
   @keyframes crecer { from { opacity:0; transform:scale(.92) translateY(10px); } to { opacity:1; transform:scale(1) translateY(0); } }
-  .ventana { background:var(--tarjeta); color:var(--texto); border-radius:18px; padding:24px; max-width:560px; width:100%; max-height:90vh; overflow:auto; position:relative; transition:background .4s ease; }
+  .ventana { background:var(--tarjeta); color:var(--texto); border-radius:18px; padding:24px; max-width:560px; width:100%; max-height:90vh; overflow:auto; position:relative; transition:background .5s ease; }
   .ventana h2 { margin:0 0 6px; font-size:22px; }
-  .cerrar { position:absolute; top:12px; right:14px; background:none; border:none; font-size:26px; cursor:pointer; color:var(--gris); transition:transform .2s var(--ease); }
+  .cerrar { position:absolute; top:12px; right:14px; background:none; border:none; font-size:26px; cursor:pointer; color:var(--gris); transition:transform .2s var(--ease); z-index:2; }
   .cerrar:hover { transform:rotate(90deg); }
   .ventana .sinopsis { font-size:15px; margin:14px 0; }
-  .ventana .portada { max-width:200px; margin-bottom:12px; }
+  .ventana .portada { max-width:200px; margin-bottom:12px; border-radius:12px; transition:box-shadow .5s ease; }
   .otra { margin-top:14px; }
 
   .acciones { display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-top:16px; }
@@ -300,8 +300,6 @@ function distancia(a, b) {
   return Math.sqrt((a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2 + (a[2] - b[2]) ** 2);
 }
 
-// Toma los colores más frecuentes, descarta los que son casi iguales entre sí
-// y los que aparecen en muy pocos píxeles. Devuelve hasta 3 colores [r, g, b].
 function paletaDePoster(url) {
   if (paletaCache.has(url)) return Promise.resolve(paletaCache.get(url));
   return new Promise(resolve => {
@@ -364,34 +362,43 @@ function hexARgb(hex) {
   return [parseInt(v.slice(0, 2), 16), parseInt(v.slice(2, 4), 16), parseInt(v.slice(4, 6), 16)];
 }
 
-// Convierte el texto de la hoja ("#aabbcc,#ddeeff") en una lista de colores
 function paletaDeTexto(texto) {
   return String(texto || "").split(",").map(hexARgb).filter(Boolean).slice(0, 3);
 }
 
-// Fondo de la ficha: el color principal arriba y los demás se van apagando hacia abajo
+// Resplandor ambiental usando gradientes radiales muy difuminados
 function fondoDesde(paleta) {
-  const a = paleta[0], b = paleta[1] || paleta[0], c = paleta[2] || b;
-  return "linear-gradient(180deg, rgba(" + a.join(",") + ",.45) 0%, rgba(" + b.join(",") +
-    ",.25) 55%, rgba(" + c.join(",") + ",.12) 80%, var(--tarjeta) 100%)";
+  const [a, b, c] = paleta.length >= 3 ? paleta : (paleta.length ? [paleta[0], paleta[0], paleta[0]] : [[0,0,0],[0,0,0],[0,0,0]]);
+  return `radial-gradient(circle at 0% 0%, rgba(${a.join(",")}, 0.2) 0%, transparent 50%), ` +
+         `radial-gradient(circle at 100% 0%, rgba(${b.join(",")}, 0.2) 0%, transparent 50%), ` +
+         `radial-gradient(circle at 50% -20%, rgba(${c.join(",")}, 0.25) 0%, transparent 60%), ` +
+         `var(--tarjeta)`;
 }
 
 function aplicarPaleta(p) {
   const caja = document.querySelector("#modal .ventana");
+  const posterModal = caja.querySelector(".portada");
   if (!caja) return;
   const paleta = paletaDeTexto(p[NOMBRE_PALETA]);
+  
   if (paleta.length) {
     caja.style.background = fondoDesde(paleta);
+    if(posterModal) posterModal.style.boxShadow = `0 12px 32px rgba(${paleta[0].join(",")}, 0.5)`;
     return;
   }
+  
   caja.style.background = "";
+  if(posterModal) posterModal.style.boxShadow = "";
   if (!p.portada) return;
+  
   paletaDePoster(p.portada).then(calc => {
-    if (calc.length && detalleActual === p) caja.style.background = fondoDesde(calc);
+    if (calc.length && detalleActual === p) {
+      caja.style.background = fondoDesde(calc);
+      if(posterModal) posterModal.style.boxShadow = `0 12px 32px rgba(${calc[0].join(",")}, 0.5)`;
+    }
   });
 }
 
-// Convierte un número de columna (0 = A) en letras de Sheets
 function letraColumna(n) {
   let s = "";
   n = n + 1;
@@ -413,7 +420,6 @@ async function sheetsFetch(path, metodo, cuerpo) {
   return r.json();
 }
 
-// Crea la columna paleta_poster en la hoja si todavía no existe
 async function asegurarColumnaPaleta() {
   if (COL_PALETA !== -1) return;
   COL_PALETA = encabezados.length;
@@ -423,7 +429,6 @@ async function asegurarColumnaPaleta() {
   });
 }
 
-// Calcula y guarda en la hoja la paleta de las películas que no la tienen
 async function guardarPaletasEnHoja() {
   const pendientes = peliculas.filter(p => !paletaDeTexto(p[NOMBRE_PALETA]).length && p.portada);
   if (!pendientes.length) {
@@ -456,7 +461,6 @@ async function guardarPaletasEnHoja() {
   }
 }
 
-/* ---------- Marcas personales en la carpeta privada de Drive ---------- */
 function marcasLocales() {
   try { return JSON.parse(localStorage.getItem("catalogo_estado") || "{}"); } catch (e) { return {}; }
 }
@@ -553,7 +557,6 @@ function contarEstados() {
   return { vistas, pendientes };
 }
 
-/* ---------- Estadísticas ---------- */
 function barraHtml(etiqueta, valor, maximo, clase) {
   const pct = maximo > 0 ? Math.round((valor / maximo) * 100) : 0;
   return '<div class="barra-fila">' +
@@ -637,7 +640,6 @@ function cerrarEstadisticas() {
   $("statsModal").classList.remove("abierto");
 }
 
-/* ---------- Posición del sol ---------- */
 const RAD = Math.PI / 180;
 
 function datosSolares(fecha) {
@@ -675,7 +677,6 @@ function horasSolares(fecha, lat, lon) {
   };
 }
 
-/* ---------- Tema claro u oscuro ---------- */
 function oscuroDelSistema() {
   return !!(window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches);
 }
@@ -708,7 +709,6 @@ function modoGuardado(clave, defecto) {
   try { return localStorage.getItem(clave) || defecto; } catch (e) { return defecto; }
 }
 
-/* ---------- Protección de la vista ---------- */
 function intensidadPorSol() {
   const alt = alturaSol(new Date(), ubicacion.lat, ubicacion.lon);
   const t = (4 - alt) / 10;
@@ -742,7 +742,6 @@ function pedirUbicacion() {
   );
 }
 
-/* ---------- Sugerencias de búsqueda ---------- */
 function llenarSugerencias() {
   const nombres = new Set();
   peliculas.forEach(p => {
@@ -754,7 +753,6 @@ function llenarSugerencias() {
     .map(n => '<option value="' + esc(n) + '"></option>').join("");
 }
 
-/* ---------- Filtros y render ---------- */
 function llenarFiltros() {
   const llenar = (el, arr) => [...new Set(arr.filter(x => x))].sort().forEach(x => el.add(new Option(x, x)));
   llenar(sel.tipo, peliculas.map(p => p.tipo));
@@ -891,7 +889,6 @@ function pintar() {
   lista.innerHTML = visibles.map((p, i) => vistaLista ? filaHtml(p, i) : tarjeta(p, i)).join("");
 }
 
-/* ---------- Tráiler ---------- */
 function iframeTrailer(codigo, titulo) {
   const parametros = "?cc_load_policy=1&cc_lang_pref=es&hl=es&rel=0";
   return '<iframe src="https://www.youtube.com/embed/' + esc(codigo) + parametros + '" title="Tráiler de ' + esc(titulo) + '" ' +
@@ -928,7 +925,6 @@ function bloqueTrailer(p) {
     '<div class="trailer-nota">Activa los subtítulos en el reproductor (CC) para verlos en español.</div></div>';
 }
 
-/* ---------- Compartir ---------- */
 function datosCompartir(p) {
   const es = String(p.trailer_es || "").trim();
   const en = String(p.trailer_en || "").trim();
