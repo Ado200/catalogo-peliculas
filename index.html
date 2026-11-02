@@ -100,6 +100,9 @@
   .carrusel .dest-titulo { font-size:13px; margin-top:8px; line-height:1.3; }
   .carrusel .dest-anio { font-size:12px; color:var(--gris); }
   .carrusel .dest-razon { font-size:11px; color:var(--tema-texto); margin-top:2px; line-height:1.3; }
+  .carrusel .porque-btn { margin-top:6px; font-size:11px; padding:4px 10px; }
+  .carrusel .porque-lista { margin:6px 0 0; padding-left:16px; font-size:11px; color:var(--gris); line-height:1.4; cursor:default; }
+  .carrusel .porque-lista li { margin-bottom:3px; }
 
   .ahora-card { display:flex; gap:14px; align-items:center; background:var(--tarjeta); border-radius:18px; padding:14px; box-shadow:var(--sombra); max-width:560px; }
   .ahora-card img { width:90px; border-radius:10px; flex-shrink:0; }
@@ -482,6 +485,7 @@ let deshacerDescarte = null;
 let avisoCerrado = false;
 let firmaAvisoCerrado = "";
 let seleccionDesc = new Set();
+let porQueAbiertos = new Set();
 const paletaCache = new Map();
 
 let ubicacion = { lat: 21.16, lon: -86.85 };
@@ -803,11 +807,19 @@ function actualizarResumenSemana() {
 /* ---------- Recomendaciones según calificaciones ---------- */
 function calcularRecomendaciones() {
   const pesoGenero = {}, pesoDirector = {};
+  const fuentesGenero = {}, fuentesDirector = {};
+
   peliculas.forEach(p => {
     const s = estadoDe(p);
     if (s.estrellas < 4) return;
-    generosDe(p).forEach(g => pesoGenero[g] = (pesoGenero[g] || 0) + 1);
-    directoresDe(p).forEach(d => pesoDirector[d] = (pesoDirector[d] || 0) + 2);
+    generosDe(p).forEach(g => {
+      pesoGenero[g] = (pesoGenero[g] || 0) + 1;
+      (fuentesGenero[g] = fuentesGenero[g] || []).push({ titulo: p.titulo, estrellas: s.estrellas });
+    });
+    directoresDe(p).forEach(d => {
+      pesoDirector[d] = (pesoDirector[d] || 0) + 2;
+      (fuentesDirector[d] = fuentesDirector[d] || []).push({ titulo: p.titulo, estrellas: s.estrellas });
+    });
   });
 
   if (!Object.keys(pesoGenero).length && !Object.keys(pesoDirector).length) return [];
@@ -819,11 +831,13 @@ function calcularRecomendaciones() {
 
     let puntaje = 0;
     let mejorRazon = null, mejorPeso = 0;
+    const desglose = [];
 
     directoresDe(p).forEach(d => {
       const w = pesoDirector[d] || 0;
       if (w > 0) {
         puntaje += w;
+        desglose.push({ etiqueta: "Director " + d, puntos: w, fuentes: fuentesDirector[d] });
         if (w > mejorPeso) { mejorPeso = w; mejorRazon = "Por el director " + d; }
       }
     });
@@ -831,15 +845,27 @@ function calcularRecomendaciones() {
       const w = pesoGenero[g] || 0;
       if (w > 0) {
         puntaje += w;
+        desglose.push({ etiqueta: "Género " + g, puntos: w, fuentes: fuentesGenero[g] });
         if (w > mejorPeso) { mejorPeso = w; mejorRazon = "Género: " + g; }
       }
     });
 
-    if (puntaje > 0) candidatas.push({ p, puntaje, razon: mejorRazon });
+    if (puntaje > 0) candidatas.push({ p, puntaje, razon: mejorRazon, desglose });
   });
 
   candidatas.sort((a, b) => b.puntaje - a.puntaje || String(a.p.titulo).localeCompare(String(b.p.titulo), "es"));
   return candidatas.slice(0, 6);
+}
+
+// Convierte el desglose real en líneas legibles: punto total y la película de mayor calificación que lo originó
+function lineasPorQue(desglose) {
+  return desglose.map(d => {
+    const fuentes = d.fuentes.slice().sort((a, b) => b.estrellas - a.estrellas);
+    const mejor = fuentes[0];
+    const otras = fuentes.length - 1;
+    return d.etiqueta + " (+" + d.puntos + ", por tu " + mejor.estrellas + "★ en " + mejor.titulo +
+      (otras > 0 ? " y " + otras + " más" : "") + ")";
+  });
 }
 
 function renderRecomendaciones() {
@@ -859,10 +885,16 @@ function renderRecomendaciones() {
     const img = (r.p.portada && !datosLimitados())
       ? '<img src="' + esc(r.p.portada) + '" alt="">'
       : '<div class="sinportada-mini">🎬</div>';
+    const abierto = porQueAbiertos.has(r.p.titulo);
+    const detalle = abierto
+      ? '<ul class="porque-lista">' + lineasPorQue(r.desglose).map(l => '<li>' + esc(l) + '</li>').join("") + '</ul>'
+      : '';
     return '<div class="dest" data-idx="' + idx + '">' + img +
       '<div class="dest-titulo">' + esc(r.p.titulo) + '</div>' +
       '<div class="dest-anio">' + esc(r.p["año"]) + '</div>' +
-      '<div class="dest-razon">' + esc(r.razon) + '</div></div>';
+      '<div class="dest-razon">' + esc(r.razon) + '</div>' +
+      '<button class="pildora porque-btn" data-porque="' + idx + '">' + (abierto ? 'Ocultar' : '¿Por qué?') + '</button>' +
+      detalle + '</div>';
   }).join("");
 }
 
@@ -1955,9 +1987,10 @@ function renderAvisoEstancados() {
   aviso.style.display = "block";
 }
 
-function mostrarDeshacer(texto, previo, titulo) {
+// Muestra el aviso con Deshacer. items: [{ titulo, previo }], donde previo es el estado anterior (o null)
+function mostrarDeshacer(texto, items) {
   if (deshacerDescarte && deshacerDescarte.timer) clearTimeout(deshacerDescarte.timer);
-  deshacerDescarte = { titulo, previo };
+  deshacerDescarte = { items };
   $("avisoDeshacerTexto").textContent = texto;
   $("avisoDeshacer").hidden = false;
   deshacerDescarte.timer = setTimeout(() => {
@@ -1968,8 +2001,9 @@ function mostrarDeshacer(texto, previo, titulo) {
 
 function deshacerUltimoDescarte() {
   if (!deshacerDescarte) return;
-  const { titulo, previo } = deshacerDescarte;
-  if (previo) marcas[titulo] = previo; else delete marcas[titulo];
+  deshacerDescarte.items.forEach(({ titulo, previo }) => {
+    if (previo) marcas[titulo] = previo; else delete marcas[titulo];
+  });
   clearTimeout(deshacerDescarte.timer);
   deshacerDescarte = null;
   $("avisoDeshacer").hidden = true;
@@ -2007,7 +2041,7 @@ function accionDecidir(accion, titulo) {
   if (accion === "descartar") {
     const previo = marcas[titulo] ? Object.assign({}, marcas[titulo]) : null;
     cambiarEstado(titulo, { descartada: true, pendiente: false, vista: false });
-    mostrarDeshacer("«" + titulo + "» descartada.", previo, titulo);
+    mostrarDeshacer("«" + titulo + "» descartada.", [{ titulo, previo }]);
     refrescarTodo();
   }
 }
@@ -2116,13 +2150,16 @@ function restaurarTitulos(titulos) {
   refrescarTodo();
 }
 
-// Descarta las seleccionadas desde la propia pestaña
+// Descarta las seleccionadas desde la propia pestaña, con aviso de Deshacer
 function descartarSeleccionadas() {
   const titulos = [...seleccionDesc];
   if (!titulos.length) { setEstado("Marca al menos una película para descartarla."); return; }
+  const items = titulos.map(t => ({ titulo: t, previo: marcas[t] ? Object.assign({}, marcas[t]) : null }));
   titulos.forEach(t => cambiarEstado(t, { descartada: true, pendiente: false, vista: false }));
   seleccionDesc.clear();
-  setEstado(titulos.length + (titulos.length === 1 ? " película descartada." : " películas descartadas."));
+  const texto = titulos.length + (titulos.length === 1 ? " película descartada." : " películas descartadas.");
+  mostrarDeshacer(texto, items);
+  setEstado(texto);
   refrescarTodo();
 }
 
@@ -2633,9 +2670,32 @@ window.addEventListener("load", () => {
     pintar();
   });
 
-  // Clic en tarjetas: no interfiere con botones, casillas ni enlaces de la pestaña Descartadas
+  // Un solo listener delegado para toda la lista: Descartadas primero, luego tarjetas
   lista.addEventListener("click", e => {
-    if (e.target.closest("a, [data-accion], [data-tag], [data-sel], [data-restaurar-una], [data-revision], button, input")) return;
+    if (e.target.id === "selTodasDesc") {
+      document.querySelectorAll("[data-fila-desc]").forEach(fila => {
+        if (fila.style.display === "none") return;
+        const t = fila.dataset.filaDesc;
+        seleccionDesc.add(t);
+        const cb = fila.querySelector("[data-sel]");
+        if (cb) cb.checked = true;
+      });
+      const btn = $("restaurarSelDesc");
+      if (btn) {
+        btn.textContent = "Restaurar seleccionadas (" + seleccionDesc.size + ")";
+        btn.disabled = seleccionDesc.size === 0;
+      }
+      return;
+    }
+    if (e.target.id === "restaurarSelDesc") { restaurarTitulos([...seleccionDesc]); return; }
+    if (e.target.id === "descartarBtnDesc") { descartarSeleccionadas(); return; }
+    const una = e.target.closest("[data-restaurar-una]");
+    if (una) { restaurarTitulos([una.dataset.restaurarUna]); return; }
+    const rev = e.target.closest("[data-revision]");
+    if (rev) { accionRevision(rev.dataset.revision, rev.dataset.clave); return; }
+
+    // Clic en tarjetas (los controles interactivos no abren la ficha)
+    if (e.target.closest("a, [data-accion], [data-tag], [data-sel], button, input")) return;
     const card = e.target.closest("[data-i]");
     if (card) {
       desdeAleatorio = false;
@@ -2663,30 +2723,6 @@ window.addEventListener("load", () => {
     }
   });
 
-  lista.addEventListener("click", e => {
-    if (e.target.id === "selTodasDesc") {
-      document.querySelectorAll("[data-fila-desc]").forEach(fila => {
-        if (fila.style.display === "none") return;
-        const t = fila.dataset.filaDesc;
-        seleccionDesc.add(t);
-        const cb = fila.querySelector("[data-sel]");
-        if (cb) cb.checked = true;
-      });
-      const btn = $("restaurarSelDesc");
-      if (btn) {
-        btn.textContent = "Restaurar seleccionadas (" + seleccionDesc.size + ")";
-        btn.disabled = seleccionDesc.size === 0;
-      }
-      return;
-    }
-    if (e.target.id === "restaurarSelDesc") { restaurarTitulos([...seleccionDesc]); return; }
-    if (e.target.id === "descartarBtnDesc") { descartarSeleccionadas(); return; }
-    const una = e.target.closest("[data-restaurar-una]");
-    if (una) { restaurarTitulos([una.dataset.restaurarUna]); return; }
-    const rev = e.target.closest("[data-revision]");
-    if (rev) { accionRevision(rev.dataset.revision, rev.dataset.clave); return; }
-  });
-
   $("carrusel").addEventListener("click", e => {
     const d = e.target.closest("[data-idx]");
     if (d) {
@@ -2695,7 +2731,16 @@ window.addEventListener("load", () => {
     }
   });
 
+  // Carrusel de recomendaciones: el botón ¿Por qué? despliega o oculta el desglose; el resto abre la ficha
   $("recomCarrusel").addEventListener("click", e => {
+    const pq = e.target.closest("[data-porque]");
+    if (pq) {
+      const titulo = peliculas[Number(pq.dataset.porque)].titulo;
+      if (porQueAbiertos.has(titulo)) porQueAbiertos.delete(titulo);
+      else porQueAbiertos.add(titulo);
+      renderRecomendaciones();
+      return;
+    }
     const d = e.target.closest("[data-idx]");
     if (d) {
       desdeAleatorio = false;
@@ -2856,6 +2901,7 @@ async function borrarMisMarcas() {
   idMarcas = null;
   marcas = {};
   seleccionDesc.clear();
+  porQueAbiertos.clear();
   try { localStorage.removeItem("catalogo_estado"); } catch (e) {}
   refrescarTodo();
   setEstado("Tus marcas se borraron de Drive y de este navegador.");
