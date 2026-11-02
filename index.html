@@ -105,6 +105,7 @@
   .portada { width:100%; border-radius:12px; }
   .sinportada { font-size:40px; }
   .meta { color:var(--gris); font-size:14px; margin-bottom:6px; }
+  .meta b { color:var(--texto); }
   .sinopsis { font-size:14px; line-height:1.45; }
   .nota-bloque { margin:16px 0 8px; }
   .nota-bloque label { display:block; font-size:13px; color:var(--gris); margin-bottom:6px; }
@@ -132,6 +133,8 @@
   .grupo h3 { margin:10px 0 12px; font-size:18px; }
   .grupo-items { display:grid; grid-template-columns:repeat(auto-fill,minmax(270px,1fr)); gap:18px; }
   body.lista .grupo-items { grid-template-columns:1fr; }
+  .bloque-pend { grid-column:1/-1; margin-bottom:8px; }
+  .bloque-pend h3 { margin:0 0 12px; font-size:18px; }
 
   .controles { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:10px; }
   .chipc { border:1px solid var(--borde); background:var(--tarjeta); color:var(--texto); border-radius:999px; padding:6px 12px; font-size:13px; cursor:pointer; transition:transform .15s var(--ease), background .25s, color .25s; }
@@ -190,7 +193,6 @@
   .grafica-caja canvas { max-height:240px; }
   .graficas-dos { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
   @media (max-width: 640px) { .graficas-dos { grid-template-columns:1fr; } }
-  .meta b { color:var(--texto); }
 
   .pie { text-align:center; font-size:12px; color:var(--gris); padding:24px 20px 32px; line-height:1.6; }
   .pie a { color:var(--azul); text-decoration:none; }
@@ -242,6 +244,7 @@
       <option value="vista">Vistas</option>
       <option value="sin_ver">Sin ver</option>
       <option value="pendiente">Pendientes</option>
+      <option value="conAlguien">Para ver con alguien</option>
       <option value="estancados">Pendientes estancados (más de 30 días)</option>
       <option value="favoritas">Favoritas (4 o 5★)</option>
       <option value="descartadas">Descartadas</option>
@@ -551,6 +554,14 @@ const REGLAS = [
   }
 ];
 
+// Fin de semana por la tarde: prioriza las que se planean con alguien
+function esFinDeSemanaTarde() {
+  const ahora = new Date();
+  const dia = ahora.getDay();
+  const hora = ahora.getHours();
+  return (dia === 0 || dia === 6) && hora >= 12 && hora < 22;
+}
+
 function elegirParaAhora(excluir) {
   let pend = peliculas.filter(p => estadoDe(p).pendiente);
   if (excluir && pend.length > 1) pend = pend.filter(p => p.titulo !== excluir.titulo);
@@ -560,6 +571,14 @@ function elegirParaAhora(excluir) {
   const regla = REGLAS.find(r => r.aplica(ahora.getDay(), ahora.getHours()));
   let candidatas = pend.filter(regla.filtro);
   let texto = regla.texto;
+
+  if (esFinDeSemanaTarde()) {
+    const conAlguien = pend.filter(p => estadoDe(p).conAlguien);
+    if (conAlguien.length) {
+      candidatas = conAlguien;
+      texto = "Fin de semana: una que puedes ver acompañado.";
+    }
+  }
 
   if (!candidatas.length) {
     candidatas = pend;
@@ -610,8 +629,6 @@ function actualizarAhora() {
 }
 
 /* ---------- Recomendaciones según calificaciones ---------- */
-// Cada género de una película de 4 o 5★ suma 1; cada director suma 2.
-// Solo se recomiendan películas sin marcar (ni vista, pendiente, descartada ni calificada).
 function calcularRecomendaciones() {
   const pesoGenero = {}, pesoDirector = {};
   peliculas.forEach(p => {
@@ -916,7 +933,12 @@ function programarGuardado() {
 
 function estadoDe(p) {
   const o = marcas[p.titulo] || {};
-  return { vista: !!o.vista, pendiente: !!o.pendiente, estrellas: o.estrellas || 0 };
+  return {
+    vista: !!o.vista,
+    pendiente: !!o.pendiente,
+    estrellas: o.estrellas || 0,
+    conAlguien: !!o.conAlguien
+  };
 }
 
 function cambiarEstado(titulo, cambios) {
@@ -928,8 +950,44 @@ function cambiarEstado(titulo, cambios) {
   if (cambios.pendiente === false || (cambios.pendiente === undefined && !nuevo.pendiente)) {
     delete nuevo.pendienteDesde;
   }
+  // Vista o descartar quitan la marca "con alguien"
+  if (cambios.vista === true || cambios.descartada === true) {
+    delete nuevo.conAlguien;
+    delete nuevo.conQuien;
+    delete nuevo.conAlguienDesde;
+  }
   marcas[titulo] = nuevo;
   programarGuardado();
+}
+
+// Activa o quita "Para ver con alguien"; el nombre de la persona es opcional
+function alternarConAlguien(titulo) {
+  const previo = marcas[titulo] || {};
+  if (previo.conAlguien) {
+    const nuevo = Object.assign({}, previo);
+    delete nuevo.conAlguien;
+    delete nuevo.conQuien;
+    delete nuevo.conAlguienDesde;
+    marcas[titulo] = nuevo;
+    programarGuardado();
+    setEstado("Quitada de «Para ver con alguien».");
+    return;
+  }
+  const quien = prompt("¿Con quién la quieres ver? (opcional, puedes dejarlo vacío)", "");
+  if (quien === null) return;
+  const nuevo = Object.assign({}, previo, {
+    conAlguien: true,
+    conAlguienDesde: new Date().toISOString().slice(0, 10)
+  });
+  const q = String(quien).trim();
+  if (q) nuevo.conQuien = q; else delete nuevo.conQuien;
+  marcas[titulo] = nuevo;
+  programarGuardado();
+  if (!nuevo.pendiente) {
+    setEstado("Marcada. Si quieres verla pronto, también puedes ponerla en pendientes.");
+  } else {
+    setEstado("Marcada para ver con alguien.");
+  }
 }
 
 function guardarNota(titulo, texto) {
@@ -969,6 +1027,13 @@ function diasPendiente(p) {
   return Math.max(0, Math.floor(ms / 86400000));
 }
 
+function diasConAlguien(p) {
+  const f = (marcas[p.titulo] || {}).conAlguienDesde;
+  if (!f) return null;
+  const ms = Date.now() - new Date(f + "T00:00:00").getTime();
+  return Math.max(0, Math.floor(ms / 86400000));
+}
+
 function controlesHtml(p) {
   const s = estadoDe(p);
   const k = esc(p.titulo);
@@ -987,9 +1052,14 @@ function controlesHtml(p) {
   const botonRestaurar = descartada
     ? ' <button class="chipc" data-accion="restaurar" data-clave="' + k + '">↩ Restaurar</button>'
     : '';
+  const quien = (marcas[p.titulo] || {}).conQuien;
+  const etiquetaAlguien = s.conAlguien
+    ? '👥 Con alguien' + (quien ? ' · ' + esc(quien) : '')
+    : '👥 Con alguien';
   return '<div class="controles">' +
     '<button class="chipc' + (s.vista ? ' activo' : '') + '" data-accion="vista" data-clave="' + k + '">' + (s.vista ? '✓ Vista' : 'Marcar vista') + '</button>' +
     '<button class="chipc' + (s.pendiente ? ' activo' : '') + '" data-accion="pendiente" data-clave="' + k + '">' + (s.pendiente ? '⏳ En pendientes' : 'Pendiente') + '</button>' +
+    '<button class="chipc' + (s.conAlguien ? ' activo' : '') + '" data-accion="conAlguien" data-clave="' + k + '">' + etiquetaAlguien + '</button>' +
     textoDias +
     botonRestaurar +
     '<span class="estrellas">' + estrellas + '</span></div>';
@@ -1364,6 +1434,7 @@ function coincideEstado(p, valor) {
   if (valor === "vista") return s.vista;
   if (valor === "sin_ver") return !s.vista;
   if (valor === "pendiente") return s.pendiente;
+  if (valor === "conAlguien") return s.conAlguien;
   if (valor === "estancados") {
     const d = diasPendiente(p);
     return s.pendiente && d !== null && d > 30;
@@ -1447,12 +1518,19 @@ function actualizarAvisoEstancados() {
     const d = diasPendiente(p);
     return estadoDe(p).pendiente && d !== null && d > 30;
   }).length;
-  if (!n || hayFiltros() || pestana !== "catalogo") {
+  const planeadas = peliculas.filter(p => {
+    const d = diasConAlguien(p);
+    return estadoDe(p).conAlguien && d !== null && d > 30;
+  }).length;
+
+  if (hayFiltros() || pestana !== "catalogo" || (!n && !planeadas)) {
     aviso.style.display = "none";
     return;
   }
-  $("avisoEstancadosTexto").textContent =
-    n + (n === 1 ? " pendiente lleva" : " pendientes llevan") + " más de 30 días sin ver.";
+  const partes = [];
+  if (n) partes.push(n + (n === 1 ? " pendiente lleva" : " pendientes llevan") + " más de 30 días sin ver");
+  if (planeadas) partes.push(planeadas + (planeadas === 1 ? " planeada con alguien lleva" : " planeadas con alguien llevan") + " más de 30 días: ¿elegimos fecha o la quitamos?");
+  $("avisoEstancadosTexto").textContent = partes.join(". ") + ".";
   aviso.style.display = "flex";
 }
 
@@ -1462,7 +1540,8 @@ function pintar() {
 
   const f = buscar.value.trim().toLowerCase();
   visibles = peliculas.filter(p => {
-    const texto = [p.titulo, p.director, p.reparto, (marcas[p.titulo] || {}).nota || ""].join(" ").toLowerCase();
+    const m = marcas[p.titulo] || {};
+    const texto = [p.titulo, p.director, p.reparto, m.nota || "", m.conQuien || ""].join(" ").toLowerCase();
     return texto.includes(f) &&
       (!sel.tipo.value || p.tipo === sel.tipo.value) &&
       (!sel.genero.value || generosDe(p).includes(sel.genero.value)) &&
@@ -1516,9 +1595,42 @@ function pintarPestana() {
     };
   } else if (pestana === "pendientes") {
     titulo = "Pendientes";
-    items = peliculas.filter(p => estadoDe(p).pendiente)
+    const todas = peliculas.filter(p => estadoDe(p).pendiente);
+    const planeadas = todas.filter(p => estadoDe(p).conAlguien)
       .sort((a, b) => String((marcas[a.titulo] || {}).pendienteDesde || "9999").localeCompare(String((marcas[b.titulo] || {}).pendienteDesde || "9999")));
+    const resto = todas.filter(p => !estadoDe(p).conAlguien)
+      .sort((a, b) => String((marcas[a.titulo] || {}).pendienteDesde || "9999").localeCompare(String((marcas[b.titulo] || {}).pendienteDesde || "9999")));
+    items = [...planeadas, ...resto];
     extra = p => '<div class="meta" style="margin-top:6px">' + esc(diasPendiente(p) === null ? "fecha desconocida" : "hace " + diasPendiente(p) + " días") + '</div>';
+
+    visibles = items;
+    contador.textContent = "Pendientes: " + items.length + " · con alguien: " + planeadas.length;
+    chips.innerHTML = "";
+    $("ahora").style.display = "none";
+    $("recomendaciones").style.display = "none";
+    $("avisoEstancados").style.display = "none";
+    $("destacados").style.display = "none";
+    $("salud").classList.add("oculto");
+
+    if (!items.length) {
+      lista.innerHTML = '<p class="vacio">No tienes pendientes.</p>';
+      return;
+    }
+    let html = "";
+    if (planeadas.length) {
+      html += '<div class="bloque-pend"><h3>Para ver con alguien (' + planeadas.length + ')</h3>' +
+        '<div class="grupo-items">' +
+        planeadas.map((p, i) => filaPestana(p, i, extra(p) + (marcas[p.titulo] && marcas[p.titulo].conQuien ? '<div class="meta">con ' + esc(marcas[p.titulo].conQuien) + '</div>' : ''))).join("") +
+        '</div></div>';
+    }
+    if (resto.length) {
+      html += '<div class="bloque-pend"><h3>Otras pendientes (' + resto.length + ')</h3>' +
+        '<div class="grupo-items">' +
+        resto.map((p, i) => filaPestana(p, i, extra(p))).join("") +
+        '</div></div>';
+    }
+    lista.innerHTML = html;
+    return;
   } else if (pestana === "vistas") {
     titulo = "Vistas";
     items = peliculas.filter(p => estadoDe(p).vista)
@@ -1541,7 +1653,6 @@ function pintarPestana() {
 
   if (!items.length) {
     const msg = pestana === "notas" ? "Aún no tienes notas. Abre una película y escribe en «Mi nota»."
-      : pestana === "pendientes" ? "No tienes pendientes."
       : "Aún no has marcado películas como vistas.";
     lista.innerHTML = '<p class="vacio">' + msg + '</p>';
     return;
@@ -1979,6 +2090,8 @@ window.addEventListener("load", () => {
       cambiarEstado(titulo, { vista: !s.vista, pendiente: false, vistaDesde: !s.vista ? new Date().toISOString().slice(0, 10) : undefined });
     } else if (b.dataset.accion === "pendiente") {
       cambiarEstado(titulo, { pendiente: !s.pendiente, vista: false });
+    } else if (b.dataset.accion === "conAlguien") {
+      alternarConAlguien(titulo);
     } else if (b.dataset.accion === "restaurar") {
       cambiarEstado(titulo, { descartada: false });
     } else if (b.dataset.accion === "estrella") {
@@ -2036,7 +2149,7 @@ window.addEventListener("load", () => {
 });
 
 async function borrarMisMarcas() {
-  const ok = confirm("¿Borrar todas tus marcas (vistas, pendientes, estrellas y notas)? Esta acción no se puede deshacer.");
+  const ok = confirm("¿Borrar todas tus marcas (vistas, pendientes, estrellas, notas y «con alguien»)? Esta acción no se puede deshacer.");
   if (!ok) return;
   clearTimeout(guardadoTimer);
   if (idMarcas) {
@@ -2057,7 +2170,7 @@ async function borrarMisMarcas() {
 $("borrarMarcas").addEventListener("click", borrarMisMarcas);
 
 function exportarCSV() {
-  const columnas = ["titulo", "tipo", "año", "duracion", "pais", "director", "genero", "reparto", "temas", "link", "vista", "pendiente", "estrellas", "nota"];
+  const columnas = ["titulo", "tipo", "año", "duracion", "pais", "director", "genero", "reparto", "temas", "link", "vista", "pendiente", "estrellas", "nota", "conAlguien", "conQuien"];
 
   const esc = v => {
     const s = String(v == null ? "" : v);
@@ -2067,11 +2180,14 @@ function exportarCSV() {
   const filas = [columnas.join(",")];
   peliculas.forEach(p => {
     const s = estadoDe(p);
+    const m = marcas[p.titulo] || {};
     const valores = columnas.map(c => {
       if (c === "vista") return s.vista ? "sí" : "no";
       if (c === "pendiente") return s.pendiente ? "sí" : "no";
       if (c === "estrellas") return s.estrellas || "";
-      if (c === "nota") return (marcas[p.titulo] || {}).nota || "";
+      if (c === "nota") return m.nota || "";
+      if (c === "conAlguien") return s.conAlguien ? "sí" : "no";
+      if (c === "conQuien") return m.conQuien || "";
       return p[c] ?? "";
     });
     filas.push(valores.map(esc).join(","));
