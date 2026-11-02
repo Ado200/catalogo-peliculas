@@ -82,7 +82,9 @@
   .ahora-card h4 { margin:0 0 4px; font-size:17px; }
   .ahora-card .acciones { margin-top:10px; }
 
-  .salud { max-width:900px; margin:20px auto 0; padding:16px 20px; background:var(--tarjeta); border-radius:18px; box-shadow:var(--sombra); }
+  .salud-toggle { display:block; margin:20px auto 0; }
+  .salud { max-width:900px; margin:12px auto 0; padding:16px 20px; background:var(--tarjeta); border-radius:18px; box-shadow:var(--sombra); }
+  .salud.oculto { display:none; }
   .salud h3 { margin:0 0 10px; font-size:16px; }
   .salud ul { margin:0; padding-left:20px; font-size:14px; line-height:1.7; color:var(--gris); }
   .salud .ok { color:#1f9d55; }
@@ -291,7 +293,8 @@
 
 <main id="lista"></main>
 
-<section id="salud" class="salud" style="display:none"></section>
+<div style="text-align:center"><button id="toggleSalud" class="pildora salud-toggle">🩺 Mostrar salud de la hoja</button></div>
+<section id="salud" class="salud oculto" style="display:none"></section>
 
 <footer class="pie">
   <a href="https://github.com/Ado200/catalogo-peliculas/blob/main/PRIVACIDAD.md" target="_blank" rel="noopener">Aviso de privacidad</a>
@@ -1134,9 +1137,19 @@ function renderAgrupado() {
 }
 
 // Revisa la hoja y muestra qué filas necesitan atención
+function actualizarBotonSalud() {
+  const oculto = modoGuardado("salud_oculta", "1") === "1";
+  const sec = $("salud");
+  const boton = $("toggleSalud");
+  if (!sec || !boton) return;
+  sec.classList.toggle("oculto", oculto);
+  boton.textContent = oculto ? "🩺 Mostrar salud de la hoja" : "🩺 Ocultar salud de la hoja";
+}
+
 function revisarSalud() {
   const sec = $("salud");
   if (!peliculas.length) { sec.style.display = "none"; return; }
+  actualizarBotonSalud();
 
   const sinEs = [], sinPortada = [], sinPaleta = [], sinTrailer = [], linkRevisar = [];
   const titulosVistos = new Map();
@@ -1622,6 +1635,12 @@ window.addEventListener("load", () => {
   $("clasIzq").addEventListener("click", () => clasAccion("izq"));
   $("clasDer").addEventListener("click", () => clasAccion("der"));
   $("clasDeshacer").addEventListener("click", clasDeshacer);
+
+  $("toggleSalud").addEventListener("click", () => {
+    const oculta = modoGuardado("salud_oculta", "1") === "1";
+    try { localStorage.setItem("salud_oculta", oculta ? "0" : "1"); } catch (e) {}
+    actualizarBotonSalud();
+  });
 });
 
 async function borrarMisMarcas() {
