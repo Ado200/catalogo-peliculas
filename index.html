@@ -136,6 +136,14 @@
   .vacio { text-align:center; color:var(--gris); grid-column:1/-1; }
   .nota-corta { font-size:14px; line-height:1.45; color:var(--texto); margin:8px 0 0; white-space:pre-wrap; }
 
+  /* CAMBIO: etiquetas con # */
+  .etiquetas-fila { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+  .etiqueta { display:inline-block; font-size:12px; padding:4px 10px; border-radius:999px; background:var(--tema-bg); color:var(--tema-texto); border:none; cursor:pointer; transition:transform .15s var(--ease), background .2s; }
+  .etiqueta:active { transform:scale(.94); }
+  .etiqueta.activa { background:var(--azul); color:#fff; }
+  .tags-bar { display:none; max-width:1100px; margin:14px auto 0; padding:0 20px; flex-wrap:wrap; gap:8px; }
+  .ayuda-etiquetas { font-size:12px; color:var(--gris); }
+
   .animar { animation:aparecer .5s var(--ease) both; animation-delay:var(--retraso, 0ms); }
   @keyframes aparecer { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:translateY(0); } }
 
@@ -345,6 +353,9 @@
   <p id="ahoraTexto" class="meta"></p>
   <div id="ahoraCaja"></div>
 </section>
+
+<!-- CAMBIO: barra de etiquetas, visible solo en la pestaña Notas -->
+<div id="tagsNotas" class="tags-bar"></div>
 
 <main id="lista"></main>
 
@@ -640,14 +651,12 @@ function actualizarAhora() {
 }
 
 /* ---------- Resumen semanal (lunes; prueba con ?resumen=1) ---------- */
-// Fecha local en formato AAAA-MM-DD (evita el desfase de UTC en Cancún)
 function hoyLocalISO() {
   const d = new Date();
   d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
   return d.toISOString().slice(0, 10);
 }
 
-// Fecha local de hace N días, en formato AAAA-MM-DD
 function diaISODesde(dias) {
   const d = new Date();
   d.setDate(d.getDate() - dias);
@@ -666,12 +675,10 @@ function guardarJSON(clave, valor) {
   try { localStorage.setItem(clave, JSON.stringify(valor)); } catch (e) {}
 }
 
-// Modo de prueba: ?resumen=1 en la dirección muestra el resumen cualquier día
 function resumenDePrueba() {
   return new URLSearchParams(location.search).get("resumen") === "1";
 }
 
-// Elige una pendiente para el día. Se mantiene el mismo día y no repite las últimas 8 sugeridas.
 function sugerenciaSemanal() {
   const pend = peliculas.filter(p => estadoDe(p).pendiente);
   if (!pend.length) return null;
@@ -1124,12 +1131,75 @@ function borrarNota() {
   abrirDetalle(detalleActual);
 }
 
+/* ---------- CAMBIO: etiquetas con # dentro de las notas ---------- */
+const TAG_RE = /#[\p{L}\p{N}_-]+/gu;
+
+// Extrae las etiquetas de un texto: "#Terror y #cita" -> ["terror", "cita"]
+function etiquetasDeNota(texto) {
+  const encontradas = String(texto || "").match(TAG_RE) || [];
+  const vistos = new Set();
+  const salida = [];
+  encontradas.forEach(t => {
+    const limpia = t.slice(1).toLowerCase();
+    const clave = norm(limpia);
+    if (!clave || vistos.has(clave)) return;
+    vistos.add(clave);
+    salida.push(limpia);
+  });
+  return salida;
+}
+
+// ¿La película tiene esta etiqueta en su nota? (sin importar acentos ni mayúsculas)
+function coincideEtiqueta(p, etiqueta) {
+  const m = marcas[p.titulo] || {};
+  const buscada = norm(etiqueta);
+  return etiquetasDeNota(m.nota).some(t => norm(t) === buscada);
+}
+
+// Botones de etiquetas dentro de la ficha; si no hay, muestra una pista
+function etiquetasFichaHtml(texto) {
+  const tags = etiquetasDeNota(texto);
+  if (!tags.length) {
+    return '<span class="ayuda-etiquetas">Escribe #palabra en tu nota para crear etiquetas.</span>';
+  }
+  return tags.map(t => '<button class="etiqueta" data-tag="' + esc(t) + '">#' + esc(t) + '</button>').join("");
+}
+
+// Barra de etiquetas de la pestaña Notas, con cuántas notas tiene cada una
+function renderBarraEtiquetas() {
+  const bar = $("tagsNotas");
+  const conteo = new Map();
+  peliculas.forEach(p => {
+    etiquetasDeNota((marcas[p.titulo] || {}).nota).forEach(t => {
+      const clave = norm(t);
+      const previo = conteo.get(clave) || { t, n: 0 };
+      previo.n++;
+      conteo.set(clave, previo);
+    });
+  });
+  if (!conteo.size) {
+    bar.style.display = "none";
+    bar.innerHTML = "";
+    return;
+  }
+  const actual = norm(buscar.value.trim());
+  const orden = [...conteo.values()].sort((a, b) => b.n - a.n || a.t.localeCompare(b.t, "es"));
+  bar.style.display = "flex";
+  bar.innerHTML = orden.map(x =>
+    '<button class="etiqueta' + (actual === "#" + norm(x.t) ? ' activa' : '') + '" data-tag="' + esc(x.t) + '">#' +
+    esc(x.t) + ' (' + x.n + ')</button>'
+  ).join("");
+}
+
 document.addEventListener("change", e => {
   if (e.target.id === "notaTexto" && detalleActual) {
     guardarNota(detalleActual.titulo, e.target.value);
+    const zona = $("etiquetasFicha");
+    if (zona) zona.innerHTML = etiquetasFichaHtml(e.target.value); // CAMBIO
     setEstado("Nota guardada");
   }
 });
+/* ---------- FIN CAMBIO: etiquetas ---------- */
 
 function diasPendiente(p) {
   const f = (marcas[p.titulo] || {}).pendienteDesde;
@@ -1648,6 +1718,7 @@ function actualizarAvisoEstancados() {
 /* ---------- Pintado principal ---------- */
 function pintar() {
   if (pestana !== "catalogo") { pintarPestana(); return; }
+  $("tagsNotas").style.display = "none"; // CAMBIO
 
   const f = buscar.value.trim().toLowerCase();
   visibles = peliculas.filter(p => {
@@ -1690,22 +1761,27 @@ function pintar() {
 
 function pintarPestana() {
   $("resumenSemana").style.display = "none";
+  $("tagsNotas").style.display = "none"; // CAMBIO: se vuelve a mostrar solo en Notas
   let items = [], extra = null, titulo = "";
 
   if (pestana === "notas") {
     const f = buscar.value.trim().toLowerCase();
+    const etiquetaBuscada = f.startsWith("#") ? f.slice(1) : "";
     titulo = "Mis notas";
     items = peliculas.filter(p => (marcas[p.titulo] || {}).nota)
-      .filter(p => {
-        const texto = [p.titulo, (marcas[p.titulo] || {}).nota].join(" ").toLowerCase();
-        return texto.includes(f);
-      })
+      .filter(p => etiquetaBuscada
+        ? coincideEtiqueta(p, etiquetaBuscada) // CAMBIO: #etiqueta filtra por etiqueta exacta
+        : [p.titulo, (marcas[p.titulo] || {}).nota].join(" ").toLowerCase().includes(f))
       .sort((a, b) => String((marcas[b.titulo] || {}).notaFecha || "").localeCompare(String((marcas[a.titulo] || {}).notaFecha || "")));
     extra = p => {
       const m = marcas[p.titulo] || {};
       const txt = String(m.nota || "").slice(0, 160) + (String(m.nota || "").length > 160 ? "…" : "");
-      return '<p class="nota-corta">' + esc(txt) + '</p><div class="meta" style="margin-top:6px">Editada: ' + esc(m.notaFecha || "") + '</div>';
+      const tags = etiquetasDeNota(m.nota).map(t => '<button class="etiqueta" data-tag="' + esc(t) + '">#' + esc(t) + '</button>').join("");
+      return '<p class="nota-corta">' + esc(txt) + '</p>' +
+        (tags ? '<div class="etiquetas-fila">' + tags + '</div>' : '') +
+        '<div class="meta" style="margin-top:6px">Editada: ' + esc(m.notaFecha || "") + '</div>';
     };
+    renderBarraEtiquetas(); // CAMBIO
   } else if (pestana === "pendientes") {
     titulo = "Pendientes";
     const todas = peliculas.filter(p => estadoDe(p).pendiente);
@@ -1765,7 +1841,8 @@ function pintarPestana() {
   $("salud").classList.add("oculto");
 
   if (!items.length) {
-    const msg = pestana === "notas" ? "Aún no tienes notas. Abre una película y escribe en «Mi nota»."
+    const msg = pestana === "notas"
+      ? "Aún no tienes notas. Abre una película y escribe en «Mi nota». Usa #palabras para etiquetarlas."
       : "Aún no has marcado películas como vistas.";
     lista.innerHTML = '<p class="vacio">' + msg + '</p>';
     return;
@@ -1854,7 +1931,8 @@ function abrirDetalle(p) {
     controlesHtml(p) +
     '<p class="sinopsis">' + esc(p.sinopsis) + '</p>' +
     '<div class="nota-bloque"><label for="notaTexto">Mi nota</label>' +
-      '<textarea id="notaTexto" placeholder="Escribe lo que te pareció, para recordarlo después...">' + esc(notaActual) + '</textarea>' +
+      '<textarea id="notaTexto" placeholder="Escribe lo que te pareció. Usa #etiquetas para encontrarla después.">' + esc(notaActual) + '</textarea>' +
+      '<div id="etiquetasFicha" class="etiquetas-fila">' + etiquetasFichaHtml(notaActual) + '</div>' + // CAMBIO
       (notaActual ? '<div class="nota-acciones"><button id="btnBorrarNota">Borrar nota</button></div>' : '') +
     '</div>' +
     bloqueTrailer(p) +
@@ -1913,7 +1991,7 @@ function cambiarPestana(nombre) {
     $("panelAvanzados").classList.remove("abierto");
   }
   $("buscar").placeholder = nombre === "notas"
-    ? "Busca en tus notas..."
+    ? "Busca en tus notas o escribe #etiqueta..."
     : "Busca por título, director o actor";
   pintar();
   window.scrollTo({ top: 0, behavior: "smooth" });
@@ -2120,7 +2198,9 @@ window.addEventListener("load", () => {
     pestana = guardada;
     document.querySelectorAll("#tabbar button").forEach(b => b.classList.toggle("activa", b.dataset.tab === guardada));
     document.body.classList.add("solo-lista");
-    $("buscar").placeholder = guardada === "notas" ? "Busca en tus notas..." : "Busca por título, director o actor";
+    $("buscar").placeholder = guardada === "notas"
+      ? "Busca en tus notas o escribe #etiqueta..."
+      : "Busca por título, director o actor";
   }
 
   chips.addEventListener("click", e => {
@@ -2133,7 +2213,7 @@ window.addEventListener("load", () => {
   });
 
   lista.addEventListener("click", e => {
-    if (e.target.closest("a, [data-accion]")) return;
+    if (e.target.closest("a, [data-accion], [data-tag]")) return; // CAMBIO: las etiquetas no abren la ficha
     const card = e.target.closest("[data-i]");
     if (card) {
       desdeAleatorio = false;
@@ -2158,6 +2238,17 @@ window.addEventListener("load", () => {
   });
 
   document.addEventListener("click", e => {
+    // CAMBIO: tocar una etiqueta filtra la pestaña Notas por esa etiqueta
+    const etiqueta = e.target.closest("[data-tag]");
+    if (etiqueta) {
+      const tag = etiqueta.dataset.tag;
+      if ($("modal").classList.contains("abierto")) cerrarDetalle();
+      if (pestana !== "notas") cambiarPestana("notas");
+      buscar.value = "#" + tag;
+      pintar();
+      return;
+    }
+
     if (e.target.id === "cerrarResumen") { cerrarResumenSemana(); return; }
     if (e.target.id === "resumenVer") {
       const p = peliculas.find(x => x.titulo === e.target.dataset.titulo);
