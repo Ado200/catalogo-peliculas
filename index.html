@@ -10,6 +10,8 @@
 <meta name="apple-mobile-web-app-title" content="Catálogo">
 <link rel="apple-touch-icon" href="icon.svg">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
+<!-- CAMBIO: Chart.js desde cdnjs para las gráficas de estadísticas -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
   :root {
     --fondo:#f5f5f7; --tarjeta:#ffffff; --texto:#1d1d1f; --gris:#6e6e73;
@@ -82,9 +84,10 @@
   .ahora-card h4 { margin:0 0 4px; font-size:17px; }
   .ahora-card .acciones { margin-top:10px; }
 
+  /* CAMBIO: la visibilidad de la salud la controla solo la clase "oculto" */
   .salud-toggle { display:block; margin:20px auto 0; }
   .salud { max-width:900px; margin:12px auto 0; padding:16px 20px; background:var(--tarjeta); border-radius:18px; box-shadow:var(--sombra); }
-  .salud.oculto { display:none; }
+  .salud.oculto { display:none !important; }
   .salud h3 { margin:0 0 10px; font-size:16px; }
   .salud ul { margin:0; padding-left:20px; font-size:14px; line-height:1.7; color:var(--gris); }
   .salud .ok { color:#1f9d55; }
@@ -167,6 +170,14 @@
   .barra-valor.estrella { background:var(--estrella); }
   .barra-num { text-align:right; color:var(--gris); }
   .stats-vacio { color:var(--gris); font-size:14px; }
+
+  /* CAMBIO: gráficas de estadísticas */
+  .graficas { display:grid; gap:18px; margin-top:18px; }
+  .grafica-caja { background:var(--boton-suave); border-radius:14px; padding:12px; }
+  .grafica-caja h3 { margin:0 0 8px; font-size:15px; color:var(--gris); font-weight:600; }
+  .grafica-caja canvas { max-height:240px; }
+  .graficas-dos { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+  @media (max-width: 640px) { .graficas-dos { grid-template-columns:1fr; } }
 
   .pie { text-align:center; font-size:12px; color:var(--gris); padding:24px 20px 32px; line-height:1.6; }
   .pie a { color:var(--azul); text-decoration:none; }
@@ -294,7 +305,8 @@
 <main id="lista"></main>
 
 <div style="text-align:center"><button id="toggleSalud" class="pildora salud-toggle">🩺 Mostrar salud de la hoja</button></div>
-<section id="salud" class="salud oculto" style="display:none"></section>
+<!-- CAMBIO: sin style inline; solo la clase "oculto" controla la visibilidad -->
+<section id="salud" class="salud oculto"></section>
 
 <footer class="pie">
   <a href="https://github.com/Ado200/catalogo-peliculas/blob/main/PRIVACIDAD.md" target="_blank" rel="noopener">Aviso de privacidad</a>
@@ -353,6 +365,7 @@ let agrupado = false;
 let desdeAleatorio = false;
 let detalleActual = null;
 let sugeridaActual = null;
+let chartsStats = []; // CAMBIO: gráficas activas, para destruirlas al reabrir
 const paletaCache = new Map();
 
 let ubicacion = { lat: 21.16, lon: -86.85 };
@@ -778,7 +791,6 @@ function cambiarEstado(titulo, cambios) {
   programarGuardado();
 }
 
-// Cuántos días lleva una película como pendiente (null si no tiene fecha)
 function diasPendiente(p) {
   const f = (marcas[p.titulo] || {}).pendienteDesde;
   if (!f) return null;
@@ -826,18 +838,116 @@ function barraHtml(etiqueta, valor, maximo, clase) {
     '<span class="barra-num">' + valor + '</span></div>';
 }
 
+/* ---------- CAMBIO: estadísticas con gráficas (Chart.js) ---------- */
+// Meses en español para las etiquetas
+const MESES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
+
+// Colores que respetan el tema claro/oscuro
+function coloresGrafica() {
+  const oscuro = document.body.classList.contains("oscuro");
+  return {
+    texto: oscuro ? "#f5f5f7" : "#1d1d1f",
+    rejilla: oscuro ? "rgba(255,255,255,.12)" : "rgba(0,0,0,.08)",
+    paleta: ["#0a84ff", "#30d158", "#ffd60a", "#ff9f0a", "#ff453a", "#bf5af2", "#64d2ff", "#ac8e68", "#ff375f", "#8e8e93"]
+  };
+}
+
+// Vistas por mes del año actual, según la fecha en que se marcaron como vistas
+function vistasPorMes() {
+  const anio = new Date().getFullYear();
+  const conteo = new Array(12).fill(0);
+  Object.entries(marcas).forEach(([titulo, m]) => {
+    if (!m || !m.vista || !m.vistaDesde) return;
+    const f = new Date(m.vistaDesde + "T00:00:00");
+    if (f.getFullYear() === anio) conteo[f.getMonth()]++;
+  });
+  return conteo;
+}
+
+// Destruye las gráficas anteriores para no duplicarlas al reabrir el panel
+function destruirGraficas() {
+  chartsStats.forEach(c => c.destroy());
+  chartsStats = [];
+}
+
+function renderGraficas() {
+  if (typeof Chart === "undefined") {
+    $("graficas").innerHTML = '<p class="stats-vacio">No pude cargar las gráficas. Revisa tu conexión.</p>';
+    return;
+  }
+  destruirGraficas();
+  const c = coloresGrafica();
+  Chart.defaults.color = c.texto;
+  Chart.defaults.borderColor = c.rejilla;
+
+  // Géneros que más has visto (dona)
+  const generos = {};
+  peliculas.forEach(p => {
+    if (estadoDe(p).vista) generosDe(p).forEach(g => generos[g] = (generos[g] || 0) + 1);
+  });
+  const topG = Object.entries(generos).sort((a, b) => b[1] - a[1]).slice(0, 8);
+
+  // Calificaciones de 1 a 5 estrellas (barras)
+  const estrellas = [0, 0, 0, 0, 0];
+  peliculas.forEach(p => {
+    const n = estadoDe(p).estrellas;
+    if (n >= 1 && n <= 5) estrellas[n - 1]++;
+  });
+
+  const vMes = vistasPorMes();
+
+  $("graficas").innerHTML =
+    '<div class="grafica-caja"><h3>Vistas por mes (año actual)</h3><canvas id="gMes"></canvas></div>' +
+    '<div class="graficas-dos">' +
+      '<div class="grafica-caja"><h3>Géneros que más has visto</h3>' +
+        (topG.length ? '<canvas id="gGen"></canvas>' : '<p class="stats-vacio">Marca películas como vistas para ver tus géneros.</p>') +
+      '</div>' +
+      '<div class="grafica-caja"><h3>Tus calificaciones</h3>' +
+        (estrellas.some(x => x) ? '<canvas id="gEst"></canvas>' : '<p class="stats-vacio">Aún no calificas películas.</p>') +
+      '</div>' +
+    '</div>';
+
+  chartsStats.push(new Chart($("gMes"), {
+    type: "bar",
+    data: {
+      labels: MESES,
+      datasets: [{ label: "Vistas", data: vMes, backgroundColor: c.paleta[0], borderRadius: 6 }]
+    },
+    options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } }
+  }));
+
+  if (topG.length) {
+    chartsStats.push(new Chart($("gGen"), {
+      type: "doughnut",
+      data: {
+        labels: topG.map(x => x[0]),
+        datasets: [{ data: topG.map(x => x[1]), backgroundColor: c.paleta }]
+      },
+      options: { plugins: { legend: { position: "bottom" } } }
+    }));
+  }
+
+  if (estrellas.some(x => x)) {
+    chartsStats.push(new Chart($("gEst"), {
+      type: "bar",
+      data: {
+        labels: ["1 ★", "2 ★", "3 ★", "4 ★", "5 ★"],
+        datasets: [{ label: "Películas", data: estrellas, backgroundColor: "#ffb800", borderRadius: 6 }]
+      },
+      options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } }
+    }));
+  }
+}
+
 function renderEstadisticas() {
   let vistas = 0, pendientes = 0, sinVer = 0, favoritas = 0;
   let minutosVistos = 0, sumaEst = 0, conEst = 0;
-  const estrellas = [0, 0, 0, 0, 0, 0];
-  const generos = {};
 
   peliculas.forEach(p => {
     const s = estadoDe(p);
     if (s.vista) {
       vistas++;
       minutosVistos += minutos(p);
-      generosDe(p).forEach(g => generos[g] = (generos[g] || 0) + 1);
     } else {
       sinVer++;
     }
@@ -846,7 +956,6 @@ function renderEstadisticas() {
     if (s.estrellas) {
       sumaEst += s.estrellas;
       conEst++;
-      estrellas[s.estrellas]++;
     }
   });
 
@@ -855,41 +964,18 @@ function renderEstadisticas() {
   const horas = Math.floor(minutosVistos / 60);
   const mins = minutosVistos % 60;
 
-  const topGeneros = Object.entries(generos).sort((a, b) => b[1] - a[1]).slice(0, 6);
-  const maxGen = topGeneros.length ? topGeneros[0][1] : 0;
-  const maxEst = Math.max(1, ...estrellas.slice(1));
-
-  let html = '<div class="stats-resumen">' +
-    '<div class="stat"><b>' + total + '</b><span>títulos</span></div>' +
-    '<div class="stat"><b>' + vistas + '</b><span>vistas</span></div>' +
-    '<div class="stat"><b>' + pendientes + '</b><span>pendientes</span></div>' +
-    '<div class="stat"><b>' + sinVer + '</b><span>sin ver</span></div>' +
-    '<div class="stat"><b>' + favoritas + '</b><span>favoritas</span></div>' +
-    '<div class="stat"><b>' + promedio + '</b><span>promedio ★</span></div>' +
-    '</div>';
-
-  html += '<p class="meta">Tiempo visto: <b>' + horas + ' h ' + mins + ' min</b> · ' +
-    conEst + ' películas calificadas</p>';
-
-  html += '<div class="stats-sec"><h3>Calificaciones</h3>';
-  if (conEst === 0) {
-    html += '<p class="stats-vacio">Aún no calificas películas. Usa las estrellas para empezar.</p>';
-  } else {
-    for (let n = 5; n >= 1; n--) {
-      html += barraHtml(n + " ★", estrellas[n], maxEst, "estrella");
-    }
-  }
-  html += '</div>';
-
-  html += '<div class="stats-sec"><h3>Géneros que más has visto</h3>';
-  if (!topGeneros.length) {
-    html += '<p class="stats-vacio">Marca películas como vistas para ver tus géneros.</p>';
-  } else {
-    topGeneros.forEach(([g, n]) => { html += barraHtml(g, n, maxGen); });
-  }
-  html += '</div>';
-
-  $("statsBody").innerHTML = html;
+  $("statsBody").innerHTML =
+    '<div class="stats-resumen">' +
+      '<div class="stat"><b>' + total + '</b><span>títulos</span></div>' +
+      '<div class="stat"><b>' + vistas + '</b><span>vistas</span></div>' +
+      '<div class="stat"><b>' + pendientes + '</b><span>pendientes</span></div>' +
+      '<div class="stat"><b>' + sinVer + '</b><span>sin ver</span></div>' +
+      '<div class="stat"><b>' + favoritas + '</b><span>favoritas</span></div>' +
+      '<div class="stat"><b>' + promedio + '</b><span>promedio ★</span></div>' +
+    '</div>' +
+    '<p class="meta">Tiempo visto: <b>' + horas + ' h ' + mins + ' min</b> · ' + conEst + ' películas calificadas</p>' +
+    '<div id="graficas" class="graficas"></div>';
+  renderGraficas();
 }
 
 function abrirEstadisticas() {
@@ -899,6 +985,7 @@ function abrirEstadisticas() {
 
 function cerrarEstadisticas() {
   $("statsModal").classList.remove("abierto");
+  destruirGraficas();
 }
 
 const RAD = Math.PI / 180;
@@ -1099,7 +1186,6 @@ function renderChips() {
   ).join("");
 }
 
-// Filtros de estado. "descartadas" muestra solo las descartadas; las demás opciones ocultan las descartadas.
 function coincideEstado(p, valor) {
   const descartada = !!(marcas[p.titulo] || {}).descartada;
   if (valor === "descartadas") return descartada;
@@ -1136,20 +1222,16 @@ function renderAgrupado() {
   }).join("");
 }
 
-// Revisa la hoja y muestra qué filas necesitan atención
+// CAMBIO: la salud solo cambia la clase; ya no se toca style.display
 function actualizarBotonSalud() {
   const oculto = modoGuardado("salud_oculta", "1") === "1";
-  const sec = $("salud");
-  const boton = $("toggleSalud");
-  if (!sec || !boton) return;
-  sec.classList.toggle("oculto", oculto);
-  boton.textContent = oculto ? "🩺 Mostrar salud de la hoja" : "🩺 Ocultar salud de la hoja";
+  $("salud").classList.toggle("oculto", oculto);
+  $("toggleSalud").textContent = oculto ? "🩺 Mostrar salud de la hoja" : "🩺 Ocultar salud de la hoja";
 }
 
 function revisarSalud() {
   const sec = $("salud");
-  if (!peliculas.length) { sec.style.display = "none"; return; }
-  actualizarBotonSalud();
+  if (!peliculas.length) return;
 
   const sinEs = [], sinPortada = [], sinPaleta = [], sinTrailer = [], linkRevisar = [];
   const titulosVistos = new Map();
@@ -1189,7 +1271,6 @@ function revisarSalud() {
         ? '<li class="alerta">Posibles duplicados: ' + duplicados.map(esc).join(', ') + '</li>'
         : '<li class="ok">✓ No hay títulos duplicados</li>') +
     '</ul></details>';
-  sec.style.display = "block";
 }
 
 function pintar() {
@@ -1211,6 +1292,7 @@ function pintar() {
   $("destacados").style.display = hayFiltros() ? "none" : "block";
   actualizarAhora();
   revisarSalud();
+  actualizarBotonSalud();
   actualizarBotonAvanzados();
   renderChips();
   contador.textContent = visibles.length + " de " + peliculas.length + " títulos · " +
@@ -1589,7 +1671,7 @@ window.addEventListener("load", () => {
     const s = estadoDe(p);
 
     if (b.dataset.accion === "vista") {
-      cambiarEstado(titulo, { vista: !s.vista, pendiente: false });
+      cambiarEstado(titulo, { vista: !s.vista, pendiente: false, vistaDesde: !s.vista ? new Date().toISOString().slice(0, 10) : undefined });
     } else if (b.dataset.accion === "pendiente") {
       cambiarEstado(titulo, { pendiente: !s.pendiente, vista: false });
     } else if (b.dataset.accion === "restaurar") {
