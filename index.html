@@ -167,7 +167,6 @@
   .bloque-pend { grid-column:1/-1; margin-bottom:8px; }
   .bloque-pend h3 { margin:0 0 12px; font-size:18px; }
 
-  /* CAMBIO: panel de descartadas */
   .desc-bloque { max-width:900px; margin:0 auto 16px; background:var(--tarjeta); border-radius:18px; box-shadow:var(--sombra); padding:16px 18px; }
   .desc-bloque h3 { margin:0 0 6px; font-size:16px; }
   .desc-bloque .meta { margin-bottom:10px; }
@@ -195,7 +194,6 @@
   .estrella:active { transform:scale(.85); }
   .estrella.on { color:var(--estrella); }
 
-  /* CAMBIO: barra inferior con cinco pestañas */
   #tabbar { position:fixed; left:0; right:0; bottom:0; z-index:8; display:flex; justify-content:space-around; background:var(--tarjeta); border-top:1px solid var(--borde); padding:8px 4px calc(8px + env(safe-area-inset-bottom, 0px)); }
   #tabbar button { flex:1; max-width:160px; background:none; border:none; color:var(--gris); font-size:11px; padding:6px 2px; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:2px; border-radius:12px; transition:color .2s; }
   #tabbar button .ico { font-size:20px; line-height:1; }
@@ -483,7 +481,7 @@ let decidiendo = null;
 let deshacerDescarte = null;
 let avisoCerrado = false;
 let firmaAvisoCerrado = "";
-let seleccionDesc = new Set(); // CAMBIO: títulos marcados en la pestaña Descartadas
+let seleccionDesc = new Set();
 const paletaCache = new Map();
 
 let ubicacion = { lat: 21.16, lon: -86.85 };
@@ -1115,7 +1113,6 @@ function estadoDe(p) {
   };
 }
 
-// CAMBIO: al descartar se guarda la fecha; al restaurar se quita junto con la revisión
 function cambiarEstado(titulo, cambios) {
   const previo = marcas[titulo] || {};
   const nuevo = Object.assign({}, previo, cambios);
@@ -1408,7 +1405,6 @@ function diasConAlguien(p) {
   return Math.max(0, Math.floor(ms / 86400000));
 }
 
-// CAMBIO: días desde que se descartó (null si no tiene fecha)
 function diasDescartada(p) {
   const f = (marcas[p.titulo] || {}).descartadaDesde;
   if (!f) return null;
@@ -1812,7 +1808,6 @@ function renderChips() {
   ).join("");
 }
 
-// CAMBIO: las descartadas ya no se muestran en Catálogo; tienen su propia pestaña
 function coincideEstado(p, valor) {
   if (marcas[p.titulo] && marcas[p.titulo].descartada) return false;
   if (!valor) return true;
@@ -2017,12 +2012,11 @@ function accionDecidir(accion, titulo) {
   }
 }
 
-/* ---------- CAMBIO: pestaña Descartadas ---------- */
+/* ---------- Pestaña Descartadas ---------- */
 function listaDescartadas() {
   return peliculas.filter(p => (marcas[p.titulo] || {}).descartada);
 }
 
-// Descartadas con más de 90 días y sin revisión hecha
 function revisionesPendientes() {
   return listaDescartadas().filter(p => {
     const m = marcas[p.titulo] || {};
@@ -2032,12 +2026,21 @@ function revisionesPendientes() {
   });
 }
 
+// Filtra solo las filas (sin repintar la barra) para no perder el foco del buscador
+function filtrarFilasDescartadas() {
+  const texto = ($("buscarDesc") ? $("buscarDesc").value : "").trim().toLowerCase();
+  document.querySelectorAll("[data-fila-desc]").forEach(fila => {
+    const titulo = fila.dataset.filaDesc.toLowerCase();
+    const nota = (marcas[fila.dataset.filaDesc] || {}).nota || "";
+    fila.style.display = (titulo + " " + nota.toLowerCase()).includes(texto) ? "" : "none";
+  });
+}
+
 function renderPestanaDescartadas() {
   const todas = listaDescartadas();
-  const texto = buscar.value.trim().toLowerCase();
+  const texto = ($("buscarDesc") ? $("buscarDesc").value : buscar.value).trim().toLowerCase();
   const revisiones = revisionesPendientes();
 
-  // Quita de la selección las que ya no están descartadas
   seleccionDesc = new Set([...seleccionDesc].filter(t => todas.some(p => p.titulo === t)));
 
   const visiblesDesc = todas
@@ -2072,16 +2075,18 @@ function renderPestanaDescartadas() {
     '<input type="search" id="buscarDesc" placeholder="Buscar en descartadas" value="' + esc(buscar.value) + '">' +
     '<button class="pildora" id="selTodasDesc">Seleccionar todas las visibles</button>' +
     '<button class="pildora destacado" id="restaurarSelDesc"' + (seleccionDesc.size ? '' : ' disabled') + '>Restaurar seleccionadas (' + seleccionDesc.size + ')</button>' +
+    '<button class="pildora" id="descartarBtnDesc">🗑 Descartar…</button>' +
     '</div>';
 
-  if (!visiblesDesc.length) {
-    html += '<p class="vacio">' + (todas.length ? "No encontré descartadas con ese texto." : "No tienes películas descartadas.") + '</p>';
+  if (!todas.length) {
+    html += '<p class="vacio">No tienes películas descartadas.</p>';
   } else {
-    html += visiblesDesc.map(p => {
+    html += todas.map(p => {
       const k = esc(p.titulo);
       const d = diasDescartada(p);
       const cuando = d === null ? "fecha desconocida" : "descartada hace " + d + (d === 1 ? " día" : " días");
-      return '<div class="desc-fila">' +
+      return '<div class="desc-fila" data-fila-desc="' + k + '"' +
+        (visiblesDesc.includes(p) ? '' : ' style="display:none"') + '>' +
         '<input type="checkbox" data-sel="' + k + '"' + (seleccionDesc.has(p.titulo) ? ' checked' : '') + '>' +
         '<div class="info-fila"><h2>' + esc(p.titulo) + '</h2>' +
         '<div class="meta">' + esc(p["año"]) + ' · ' + cuando + '</div></div>' +
@@ -2093,13 +2098,11 @@ function renderPestanaDescartadas() {
   lista.innerHTML = html;
 }
 
-// Pone la revisión como hecha ("Dejar así") o restaura la película
 function accionRevision(accion, titulo) {
   if (accion === "restaurar") {
     cambiarEstado(titulo, { descartada: false });
   } else {
-    const m = Object.assign({}, marcas[titulo] || {}, { revisionHecha: true });
-    marcas[titulo] = m;
+    marcas[titulo] = Object.assign({}, marcas[titulo] || {}, { revisionHecha: true });
     programarGuardado();
   }
   refrescarTodo();
@@ -2113,9 +2116,18 @@ function restaurarTitulos(titulos) {
   refrescarTodo();
 }
 
+// Descarta las seleccionadas desde la propia pestaña
+function descartarSeleccionadas() {
+  const titulos = [...seleccionDesc];
+  if (!titulos.length) { setEstado("Marca al menos una película para descartarla."); return; }
+  titulos.forEach(t => cambiarEstado(t, { descartada: true, pendiente: false, vista: false }));
+  seleccionDesc.clear();
+  setEstado(titulos.length + (titulos.length === 1 ? " película descartada." : " películas descartadas."));
+  refrescarTodo();
+}
+
 /* ---------- Pintado principal ---------- */
 function pintar() {
-  if (pestana === "descartadas") { pintarPestana(); return; }
   if (pestana !== "catalogo") { pintarPestana(); return; }
   $("tagsNotas").style.display = "none";
 
@@ -2621,6 +2633,7 @@ window.addEventListener("load", () => {
     pintar();
   });
 
+  // Clic en tarjetas: no interfiere con botones, casillas ni enlaces de la pestaña Descartadas
   lista.addEventListener("click", e => {
     if (e.target.closest("a, [data-accion], [data-tag], [data-sel], [data-restaurar-una], [data-revision], button, input")) return;
     const card = e.target.closest("[data-i]");
@@ -2630,14 +2643,11 @@ window.addEventListener("load", () => {
     }
   });
 
-  // CAMBIO: eventos de la pestaña Descartadas (usan delegación porque la lista se repinta)
+  // Buscador de Descartadas: solo filtra las filas, así conserva el foco
   lista.addEventListener("input", e => {
     if (e.target.id === "buscarDesc") {
       buscar.value = e.target.value;
-      seleccionDesc.clear();
-      pintar();
-      const campo = $("buscarDesc");
-      if (campo) { campo.focus(); campo.setSelectionRange(campo.value.length, campo.value.length); }
+      filtrarFilasDescartadas();
     }
   });
 
@@ -2645,20 +2655,32 @@ window.addEventListener("load", () => {
     if (e.target.dataset && e.target.dataset.sel) {
       const t = e.target.dataset.sel;
       if (e.target.checked) seleccionDesc.add(t); else seleccionDesc.delete(t);
-      pintar();
+      const btn = $("restaurarSelDesc");
+      if (btn) {
+        btn.textContent = "Restaurar seleccionadas (" + seleccionDesc.size + ")";
+        btn.disabled = seleccionDesc.size === 0;
+      }
     }
   });
 
   lista.addEventListener("click", e => {
     if (e.target.id === "selTodasDesc") {
-      visibles.forEach(p => seleccionDesc.add(p.titulo));
-      pintar();
+      document.querySelectorAll("[data-fila-desc]").forEach(fila => {
+        if (fila.style.display === "none") return;
+        const t = fila.dataset.filaDesc;
+        seleccionDesc.add(t);
+        const cb = fila.querySelector("[data-sel]");
+        if (cb) cb.checked = true;
+      });
+      const btn = $("restaurarSelDesc");
+      if (btn) {
+        btn.textContent = "Restaurar seleccionadas (" + seleccionDesc.size + ")";
+        btn.disabled = seleccionDesc.size === 0;
+      }
       return;
     }
-    if (e.target.id === "restaurarSelDesc") {
-      restaurarTitulos([...seleccionDesc]);
-      return;
-    }
+    if (e.target.id === "restaurarSelDesc") { restaurarTitulos([...seleccionDesc]); return; }
+    if (e.target.id === "descartarBtnDesc") { descartarSeleccionadas(); return; }
     const una = e.target.closest("[data-restaurar-una]");
     if (una) { restaurarTitulos([una.dataset.restaurarUna]); return; }
     const rev = e.target.closest("[data-revision]");
@@ -2771,7 +2793,6 @@ window.addEventListener("load", () => {
 
   $("aleatorio").addEventListener("click", sugerirAleatoria);
   $("estadisticas").addEventListener("click", abrirEstadisticas);
-  $("avisoEstancadosVer").addEventListener && $("avisoEstancadosVer").addEventListener("click", () => {});
   $("guardarPaletas").addEventListener("click", guardarPaletasEnHoja);
   $("cerrarStats").addEventListener("click", cerrarEstadisticas);
   $("statsModal").addEventListener("click", e => { if (e.target.id === "statsModal") cerrarEstadisticas(); });
