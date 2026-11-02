@@ -91,6 +91,13 @@
   .resumen-sug { border-top:1px solid var(--borde); padding-top:12px; display:flex; flex-direction:column; align-items:flex-start; gap:4px; }
   .resumen-titulo { font-size:18px; font-weight:600; }
   .resumen-sug .pildora { margin-top:6px; }
+  .actor-fila { display:flex; justify-content:space-between; align-items:center; gap:10px; padding:10px 0; border-top:1px solid var(--borde); cursor:pointer; }
+  .actor-fila:first-of-type { border-top:none; }
+  .actor-chips { display:flex; flex-wrap:wrap; gap:8px; }
+  .saga-fila { padding:10px 0; border-top:1px solid var(--borde); }
+  .saga-fila:first-of-type { border-top:none; }
+  .saga-barra { height:8px; border-radius:999px; background:var(--boton-suave); overflow:hidden; margin:6px 0; }
+  .saga-barra > div { height:100%; background:var(--texto); border-radius:999px; }
   .cal-card { max-width:900px; margin:0 auto 14px; background:var(--tarjeta); border-radius:18px; box-shadow:var(--sombra); padding:14px; }
   .cal-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
   .cal-semana, .cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:4px; }
@@ -224,9 +231,9 @@
   }
   body.solo-lista .solo-catalogo { display:none !important; }
 
-  #modal, #statsModal { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); align-items:center; justify-content:center; padding:20px; z-index:10; }
-  #modal.abierto, #statsModal.abierto { display:flex; animation:fundo .25s ease both; }
-  #modal.abierto .ventana, #statsModal.abierto .ventana { animation:crecer .35s var(--ease) both; }
+  #modal, #statsModal, #actorModal { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); align-items:center; justify-content:center; padding:20px; z-index:10; }
+  #modal.abierto, #statsModal.abierto, #actorModal.abierto { display:flex; animation:fundo .25s ease both; }
+  #modal.abierto .ventana, #statsModal.abierto .ventana, #actorModal.abierto .ventana { animation:crecer .35s var(--ease) both; }
   @keyframes fundo { from { opacity:0; } to { opacity:1; } }
   @keyframes crecer { from { opacity:0; transform:scale(.92) translateY(10px); } to { opacity:1; transform:scale(1) translateY(0); } }
   .ventana { background:var(--tarjeta); color:var(--texto); border-radius:18px; padding:24px; max-width:560px; width:100%; max-height:90vh; overflow:auto; position:relative; transition:background .5s ease; }
@@ -407,6 +414,8 @@
 </section>
 
 <section id="cena" class="destacados solo-catalogo" style="display:none"></section>
+<section id="sagas" class="destacados solo-catalogo" style="display:none"></section>
+<section id="actores" class="destacados solo-catalogo" style="display:none"></section>
 <section id="ahora" class="destacados solo-catalogo" style="display:none">
   <h3>Para esta hora</h3>
   <p id="ahoraTexto" class="meta"></p>
@@ -476,6 +485,14 @@
   </div>
 </div>
 
+<div id="actorModal">
+  <div class="ventana">
+    <button class="cerrar" id="cerrarActor">×</button>
+    <h2 id="actorTitulo">Actor</h2>
+    <div id="actorBody"></div>
+  </div>
+</div>
+
 <div id="clasificador">
   <div class="clas-top">
     <span id="clasContador"></span>
@@ -510,6 +527,7 @@ let agrupado = false;
 let desdeAleatorio = false;
 let cenaElegida = null;
 let mesCalendario = null;
+let cenaMensaje = "";
 let detalleActual = null;
 let sugeridaActual = null;
 let textoSugerida = "";
@@ -887,7 +905,13 @@ function candidatasCena() {
 
 function elegirCena(otra) {
   const c = candidatasCena();
-  if (!c.length) { cenaElegida = null; renderCena(); return; }
+  if (!c.length) {
+    cenaElegida = null;
+    cenaMensaje = "No tienes pendientes de menos de 2 horas. Revisa que la duración de tus pendientes esté escrita, por ejemplo 1 h 45 min.";
+    renderCena();
+    return;
+  }
+  cenaMensaje = "";
   const preferidas = c.filter(p => estadoDe(p).conAlguien);
   let pool = preferidas.length ? preferidas : c;
   if (otra && pool.length > 1) pool = pool.filter(p => p !== cenaElegida);
@@ -903,7 +927,7 @@ function renderCena() {
   }
   let cuerpo;
   if (!cenaElegida || !candidatasCena().includes(cenaElegida)) {
-    cuerpo = '<p class="meta">Pulsa el botón y te doy una película pendiente de menos de 2 horas.</p>' +
+    cuerpo = '<p class="meta">' + esc(cenaMensaje || "Pulsa el botón y te doy una película pendiente de menos de 2 horas.") + '</p>' +
       '<button class="pildora destacado" id="btnCena">Elegir para esta noche</button>';
   } else {
     const m = (marcas[cenaElegida.titulo] || {});
@@ -968,6 +992,128 @@ function htmlCalendario() {
     '<div class="cal-grid">' + celdas + '</div>' +
     '<p class="meta">📌 pendiente desde · 👥 con alguien desde · 📅 fecha planeada</p>' +
   '</section>';
+}
+
+/* ---------- Sagas (requiere columna "saga" en la hoja) ---------- */
+function sagasAgrupadas() {
+  const mapa = {};
+  peliculas.forEach(p => {
+    const nombre = String(p.saga || "").trim();
+    if (!nombre || nombre === "-") return; // "-" = sin saga o serie
+    (mapa[nombre] = mapa[nombre] || []).push(p);
+  });
+  return Object.entries(mapa)
+    .filter(([, lista]) => lista.length >= 2)
+    .map(([nombre, lista]) => {
+      const vistas = lista.filter(p => estadoDe(p).vista).length;
+      const pendientesPosibles = lista.filter(p => {
+        const s = estadoDe(p);
+        return !s.vista && !s.pendiente && !(marcas[p.titulo] || {}).descartada;
+      }).length;
+      return { nombre, total: lista.length, vistas, pendientesPosibles, lista };
+    })
+    .sort((a, b) => (b.vistas / b.total) - (a.vistas / a.total) || a.nombre.localeCompare(b.nombre, "es"));
+}
+
+function marcarSagaPendiente(nombre) {
+  const grupo = sagasAgrupadas().find(g => g.nombre === nombre);
+  if (!grupo) return;
+  let n = 0;
+  grupo.lista.forEach(p => {
+    const s = estadoDe(p);
+    if (!s.vista && !s.pendiente && !(marcas[p.titulo] || {}).descartada) {
+      cambiarEstado(p.titulo, { pendiente: true, vista: false });
+      n++;
+    }
+  });
+  setEstado(n ? n + " de «" + nombre + "» marcadas como pendientes." : "No había películas de esa saga para marcar.");
+  pintar();
+}
+
+function renderSagas() {
+  const sec = $("sagas");
+  if (!peliculas.length || hayFiltros() || pestana !== "catalogo") {
+    sec.style.display = "none";
+    return;
+  }
+  const grupos = sagasAgrupadas();
+  if (!grupos.length) {
+    sec.style.display = "none";
+    return;
+  }
+  sec.innerHTML = '<div class="actividad-card"><h3>Sagas</h3>' +
+    grupos.map(g => {
+      const pct = Math.round(g.vistas / g.total * 100);
+      return '<div class="saga-fila">' +
+        '<div class="resumen-top"><b>' + esc(g.nombre) + '</b><span class="meta">' + g.vistas + ' de ' + g.total + ' vistas</span></div>' +
+        '<div class="saga-barra"><div style="width:' + pct + '%"></div></div>' +
+        (g.pendientesPosibles ? '<button class="pildora" data-saga-pend="' + esc(g.nombre) + '">Marcar las que faltan como pendientes</button>' : '') +
+      '</div>';
+    }).join("") +
+    '</div>';
+  sec.style.display = "block";
+}
+
+/* ---------- Actores (desde la columna reparto; sin llamadas nuevas) ---------- */
+function nombresReparto(p) {
+  return String(p.reparto || "").split(",").map(x => x.trim()).filter(Boolean);
+}
+
+function actoresAgrupados() {
+  const mapa = {};
+  peliculas.forEach(p => {
+    nombresReparto(p).forEach(n => { (mapa[n] = mapa[n] || []).push(p); });
+  });
+  return Object.entries(mapa)
+    .filter(([, lista]) => lista.length >= 2)
+    .sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0], "es"))
+    .slice(0, 30);
+}
+
+function renderActores() {
+  const sec = $("actores");
+  if (!peliculas.length || hayFiltros() || pestana !== "catalogo") {
+    sec.style.display = "none";
+    return;
+  }
+  const lista = actoresAgrupados();
+  if (!lista.length) { sec.style.display = "none"; return; }
+  sec.innerHTML = '<div class="actividad-card"><h3>Actores</h3><div class="actor-chips">' +
+    lista.map(([n, films]) =>
+      '<button class="etiqueta" data-actor="' + esc(n) + '">' + esc(n) + ' · ' + films.length + '</button>'
+    ).join("") +
+    '</div></div>';
+  sec.style.display = "block";
+}
+
+function abrirActor(nombre) {
+  const films = peliculas.filter(p => nombresReparto(p).includes(nombre));
+  const vistas = films.filter(p => estadoDe(p).vista).length;
+  const pendientes = films.filter(p => estadoDe(p).pendiente).length;
+  const calificadas = films.filter(p => estadoDe(p).estrellas);
+  const promedio = calificadas.length
+    ? (calificadas.reduce((a, p) => a + estadoDe(p).estrellas, 0) / calificadas.length).toFixed(1)
+    : "—";
+  $("actorTitulo").textContent = nombre;
+  $("actorBody").innerHTML =
+    '<div class="stats-resumen">' +
+      '<div class="stat"><b>' + films.length + '</b><span>títulos</span></div>' +
+      '<div class="stat"><b>' + vistas + '</b><span>vistas</span></div>' +
+      '<div class="stat"><b>' + pendientes + '</b><span>pendientes</span></div>' +
+      '<div class="stat"><b>' + promedio + '</b><span>promedio ★</span></div>' +
+    '</div>' +
+    films.map(p => {
+      const s = estadoDe(p);
+      const estado = (marcas[p.titulo] || {}).descartada ? "descartada" : s.vista ? "vista" : s.pendiente ? "pendiente" : "sin ver";
+      return '<div class="actor-fila" data-actor-titulo="' + esc(p.titulo) + '">' +
+        '<div><b>' + esc(p.titulo) + '</b><div class="meta">' + esc(p["año"]) + ' · ' + estado +
+        (s.estrellas ? ' · ' + s.estrellas + '★' : '') + '</div></div></div>';
+    }).join("");
+  $("actorModal").classList.add("abierto");
+}
+
+function cerrarActor() {
+  $("actorModal").classList.remove("abierto");
 }
 
 /* ---------- Orden de notas ---------- */
@@ -2507,6 +2653,8 @@ function pintar() {
   actualizarResumenSemana();
   renderActividad();
   renderCena();
+  renderSagas();
+  renderActores();
   revisarSalud();
   actualizarBotonSalud();
   actualizarBotonAvanzados();
@@ -2712,7 +2860,7 @@ function abrirDetalle(p) {
     '<div class="meta">' + esc(p.tipo) + ' · ' + esc(p["año"]) + ' · ' + esc(p.duracion) + ' · ' + esc(p.pais) + '</div>' +
     '<div class="meta">Género: ' + esc(p.genero) + '</div>' +
     '<div class="meta">Dirección: ' + esc(p.director) + '</div>' +
-    '<div class="meta">Reparto: ' + esc(p.reparto) + '</div>' +
+    '<div class="meta">Reparto: ' + nombresReparto(p).map(n => '<button class="etiqueta" data-actor="' + esc(n) + '">' + esc(n) + '</button>').join(" ") + '</div>' +
     '<div class="pastillas">' + pastillasHtml(p) + '</div>' +
     controlesHtml(p) +
     '<p class="sinopsis">' + esc(p.sinopsis) + '</p>' +
@@ -3120,6 +3268,17 @@ window.addEventListener("load", () => {
       pintar();
       return;
     }
+    const botonActor = e.target.closest("[data-actor]");
+    if (botonActor) { cerrarDetalle(); abrirActor(botonActor.dataset.actor); return; }
+    const filaActor = e.target.closest("[data-actor-titulo]");
+    if (filaActor) {
+      const p = peliculas.find(x => x.titulo === filaActor.dataset.actorTitulo);
+      cerrarActor();
+      if (p) { desdeAleatorio = false; abrirDetalle(p); }
+      return;
+    }
+    const botonSaga = e.target.closest("[data-saga-pend]");
+    if (botonSaga) { marcarSagaPendiente(botonSaga.dataset.sagaPend); return; }
     if (e.target.id === "cenaVer") {
       const p = peliculas.find(x => x.titulo === e.target.dataset.titulo);
       if (p) { desdeAleatorio = false; abrirDetalle(p); }
@@ -3203,6 +3362,8 @@ window.addEventListener("load", () => {
   $("agruparNotas").addEventListener("click", alternarAgrupado);
   $("ordenNotas").addEventListener("change", () => pintar());
   $("personaVistas").addEventListener("change", () => pintar());
+  $("cerrarActor").addEventListener("click", cerrarActor);
+  $("actorModal").addEventListener("click", e => { if (e.target.id === "actorModal") cerrarActor(); });
 
   $("limpiar").addEventListener("click", () => {
     buscar.value = "";
