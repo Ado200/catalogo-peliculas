@@ -751,7 +751,7 @@ function estadoDe(p) {
   return { vista: !!o.vista, pendiente: !!o.pendiente, estrellas: o.estrellas || 0 };
 }
 
-// CAMBIO: guarda la fecha en que la película pasó a pendiente y la quita al salir de pendientes
+// Guarda la fecha en que la película pasó a pendiente y la quita al salir de pendientes
 function cambiarEstado(titulo, cambios) {
   const previo = marcas[titulo] || {};
   const nuevo = Object.assign({}, previo, cambios);
@@ -765,7 +765,7 @@ function cambiarEstado(titulo, cambios) {
   programarGuardado();
 }
 
-// CAMBIO: cuántos días lleva una película como pendiente (null si no tiene fecha)
+// Cuántos días lleva una película como pendiente (null si no tiene fecha)
 function diasPendiente(p) {
   const f = (marcas[p.titulo] || {}).pendienteDesde;
   if (!f) return null;
@@ -780,7 +780,6 @@ function controlesHtml(p) {
   for (let n = 1; n <= 5; n++) {
     estrellas += '<button class="estrella' + (n <= s.estrellas ? ' on' : '') + '" data-accion="estrella" data-clave="' + k + '" data-n="' + n + '">★</button>';
   }
-  // CAMBIO: texto con los días que lleva pendiente
   const dias = s.pendiente ? diasPendiente(p) : null;
   const textoDias = dias === null ? "" :
     '<span class="meta" style="margin:0">' + (dias === 0 ? 'desde hoy' : 'hace ' + dias + (dias === 1 ? ' día' : ' días')) + '</span>';
@@ -1082,7 +1081,6 @@ function renderChips() {
   ).join("");
 }
 
-// CAMBIO: incluye el filtro de pendientes estancados
 function coincideEstado(p, valor) {
   if (!valor) return true;
   const s = estadoDe(p);
@@ -1739,7 +1737,8 @@ zonaClas.addEventListener("touchcancel", () => {
     for (let i = e.resultIndex; i < e.results.length; i++) {
       texto += e.results[i][0].transcript;
     }
-    buscarEl.value = texto.trim();
+    // Quita signos de puntuación que el reconocimiento agrega al final
+    buscarEl.value = texto.replace(/[.,;:!?¿¡]+/g, " ").replace(/\s+/g, " ").trim();
     buscarEl.dispatchEvent(new Event("input"));
   };
 
