@@ -320,8 +320,9 @@ function paletaDePoster(url) {
         for (let i = 0; i < datos.length; i += 4) {
           const r = datos[i], g = datos[i + 1], b = datos[i + 2];
           const max = Math.max(r, g, b), min = Math.min(r, g, b);
-          if (max < 40 || min > 215) continue;
-          if (max - min < 25) continue;
+          // LÍMITES RELAJADOS
+          if (max < 15 || min > 240) continue; 
+          if (max - min < 10) continue; 
           total++;
           const clave = (r >> 4) + "," + (g >> 4) + "," + (b >> 4);
           const cubo = cubos[clave] || (cubos[clave] = { n: 0, r: 0, g: 0, b: 0 });
@@ -329,15 +330,19 @@ function paletaDePoster(url) {
         }
 
         const grupos = Object.values(cubos)
-          .filter(c => total && c.n / total >= 0.02)
+          .filter(c => total && c.n / total >= 0.01)
           .map(c => ({ n: c.n, rgb: [Math.round(c.r / c.n), Math.round(c.g / c.n), Math.round(c.b / c.n)] }))
           .sort((a, b) => b.n - a.n);
 
         const elegidos = [];
         for (const g of grupos) {
           if (elegidos.length >= 3) break;
-          if (elegidos.every(e => distancia(e, g.rgb) > 70)) elegidos.push(g.rgb);
+          // Distancia reducida para aceptar tonos más similares
+          if (elegidos.every(e => distancia(e, g.rgb) > 40)) elegidos.push(g.rgb);
         }
+        
+        // Respaldo para pósters en blanco y negro
+        if (elegidos.length === 0) elegidos.push([100, 100, 100], [60, 60, 60], [30, 30, 30]);
 
         paletaCache.set(url, elegidos);
         resolve(elegidos);
