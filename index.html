@@ -856,8 +856,12 @@ function controlesHtml(p) {
     estrellas += '<button class="estrella' + (n <= s.estrellas ? ' on' : '') + '" data-accion="estrella" data-clave="' + k + '" data-n="' + n + '">★</button>';
   }
   const dias = s.pendiente ? diasPendiente(p) : null;
-  const textoDias = dias === null ? "" :
-    '<span class="meta" style="margin:0">' + (dias === 0 ? 'desde hoy' : 'hace ' + dias + (dias === 1 ? ' día' : ' días')) + '</span>';
+  let textoDias = "";
+  if (dias !== null) {
+    textoDias = '<span class="meta" style="margin:0">' + (dias === 0 ? 'desde hoy' : 'hace ' + dias + (dias === 1 ? ' día' : ' días')) + '</span>';
+  } else if (s.pendiente) {
+    textoDias = '<span class="meta" style="margin:0">fecha desconocida</span>';
+  }
   const descartada = !!(marcas[p.titulo] || {}).descartada;
   const botonRestaurar = descartada
     ? ' <button class="chipc" data-accion="restaurar" data-clave="' + k + '">↩ Restaurar</button>'
