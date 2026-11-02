@@ -70,7 +70,6 @@
   .carrusel .dest-titulo { font-size:13px; margin-top:8px; line-height:1.3; }
   .carrusel .dest-anio { font-size:12px; color:var(--gris); }
 
-  /* CAMBIO: tarjeta de sugerencia por hora */
   .ahora-card { display:flex; gap:14px; align-items:center; background:var(--tarjeta); border-radius:18px; padding:14px; box-shadow:var(--sombra); max-width:560px; }
   .ahora-card img { width:90px; border-radius:10px; flex-shrink:0; }
   .ahora-card .sinportada { font-size:36px; width:90px; text-align:center; flex-shrink:0; }
@@ -203,6 +202,8 @@
       <option value="vista">Vistas</option>
       <option value="sin_ver">Sin ver</option>
       <option value="pendiente">Pendientes</option>
+      <!-- CAMBIO: opción de pendientes estancados -->
+      <option value="estancados">Pendientes estancados (más de 30 días)</option>
       <option value="favoritas">Favoritas (4 o 5★)</option>
     </select>
     <button id="toggleAvanzados" class="pildora">⚙ Filtros avanzados</button>
@@ -268,7 +269,6 @@
   <div id="carrusel" class="carrusel"></div>
 </section>
 
-<!-- CAMBIO: sección de sugerencia según la hora y el día -->
 <section id="ahora" class="destacados" style="display:none">
   <h3>Para esta hora</h3>
   <p id="ahoraTexto" class="meta"></p>
@@ -333,7 +333,7 @@ let vistaLista = false;
 let agrupado = false;
 let desdeAleatorio = false;
 let detalleActual = null;
-let sugeridaActual = null; // CAMBIO
+let sugeridaActual = null;
 const paletaCache = new Map();
 
 let ubicacion = { lat: 21.16, lon: -86.85 };
@@ -420,19 +420,15 @@ function copiarEnlace() {
     .catch(() => setEstado("Este navegador no permite copiar el enlace."));
 }
 
-/* ---------- CAMBIO: sugerencias por hora y día ---------- */
-// Quita acentos y pasa a minúsculas para comparar géneros
+/* ---------- Sugerencias por hora y día ---------- */
 function norm(s) {
   return String(s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 }
 
-// ¿La película tiene alguno de estos géneros?
 function tieneGenero(p, terminos) {
   return generosDe(p).map(norm).some(g => terminos.some(t => g.includes(t)));
 }
 
-// Reglas por momento. Se revisan en orden; la última siempre aplica.
-// Puedes cambiar los géneros o los horarios aquí.
 const REGLAS = [
   {
     texto: "Domingo por la mañana: una comedia o un clásico.",
@@ -456,7 +452,6 @@ const REGLAS = [
   }
 ];
 
-// Elige una película de pendientes según la hora y el día
 function elegirParaAhora(excluir) {
   let pend = peliculas.filter(p => estadoDe(p).pendiente);
   if (excluir && pend.length > 1) pend = pend.filter(p => p.titulo !== excluir.titulo);
@@ -497,7 +492,6 @@ function nuevaSugerencia(excluir) {
     '</div>';
 }
 
-// Muestra la sección solo sin filtros activos y si hay pendientes
 function actualizarAhora() {
   const sec = $("ahora");
   const hayPendientes = peliculas.some(p => estadoDe(p).pendiente);
@@ -681,6 +675,7 @@ async function guardarPaletasEnHoja() {
   }
 }
 
+/* ---------- Marcas personales en la carpeta privada de Drive ---------- */
 function marcasLocales() {
   try { return JSON.parse(localStorage.getItem("catalogo_estado") || "{}"); } catch (e) { return {}; }
 }
@@ -749,9 +744,27 @@ function estadoDe(p) {
   const o = marcas[p.titulo] || {};
   return { vista: !!o.vista, pendiente: !!o.pendiente, estrellas: o.estrellas || 0 };
 }
+
+// CAMBIO: guarda la fecha en que la película pasó a pendiente y la quita al salir de pendientes
 function cambiarEstado(titulo, cambios) {
-  marcas[titulo] = Object.assign({}, marcas[titulo] || {}, cambios);
+  const previo = marcas[titulo] || {};
+  const nuevo = Object.assign({}, previo, cambios);
+  if (cambios.pendiente === true && !previo.pendiente) {
+    nuevo.pendienteDesde = new Date().toISOString().slice(0, 10);
+  }
+  if (cambios.pendiente === false || (cambios.pendiente === undefined && !nuevo.pendiente)) {
+    delete nuevo.pendienteDesde;
+  }
+  marcas[titulo] = nuevo;
   programarGuardado();
+}
+
+// CAMBIO: cuántos días lleva una película como pendiente (null si no tiene fecha)
+function diasPendiente(p) {
+  const f = (marcas[p.titulo] || {}).pendienteDesde;
+  if (!f) return null;
+  const ms = Date.now() - new Date(f + "T00:00:00").getTime();
+  return Math.max(0, Math.floor(ms / 86400000));
 }
 
 function controlesHtml(p) {
@@ -761,9 +774,14 @@ function controlesHtml(p) {
   for (let n = 1; n <= 5; n++) {
     estrellas += '<button class="estrella' + (n <= s.estrellas ? ' on' : '') + '" data-accion="estrella" data-clave="' + k + '" data-n="' + n + '">★</button>';
   }
+  // CAMBIO: texto con los días que lleva pendiente
+  const dias = s.pendiente ? diasPendiente(p) : null;
+  const textoDias = dias === null ? "" :
+    '<span class="meta" style="margin:0">' + (dias === 0 ? 'desde hoy' : 'hace ' + dias + (dias === 1 ? ' día' : ' días')) + '</span>';
   return '<div class="controles">' +
     '<button class="chipc' + (s.vista ? ' activo' : '') + '" data-accion="vista" data-clave="' + k + '">' + (s.vista ? '✓ Vista' : 'Marcar vista') + '</button>' +
     '<button class="chipc' + (s.pendiente ? ' activo' : '') + '" data-accion="pendiente" data-clave="' + k + '">' + (s.pendiente ? '⏳ En pendientes' : 'Pendiente') + '</button>' +
+    textoDias +
     '<span class="estrellas">' + estrellas + '</span></div>';
 }
 
@@ -1058,12 +1076,17 @@ function renderChips() {
   ).join("");
 }
 
+// CAMBIO: incluye el filtro de pendientes estancados
 function coincideEstado(p, valor) {
   if (!valor) return true;
   const s = estadoDe(p);
   if (valor === "vista") return s.vista;
   if (valor === "sin_ver") return !s.vista;
   if (valor === "pendiente") return s.pendiente;
+  if (valor === "estancados") {
+    const d = diasPendiente(p);
+    return s.pendiente && d !== null && d > 30;
+  }
   if (valor === "favoritas") return s.estrellas >= 4;
   return true;
 }
@@ -1104,7 +1127,7 @@ function pintar() {
 
   const { vistas, pendientes } = contarEstados();
   $("destacados").style.display = hayFiltros() ? "none" : "block";
-  actualizarAhora(); // CAMBIO
+  actualizarAhora();
   actualizarBotonAvanzados();
   renderChips();
   contador.textContent = visibles.length + " de " + peliculas.length + " títulos · " +
@@ -1457,7 +1480,6 @@ window.addEventListener("load", () => {
     }
     if (e.target.id === "btnEnlace") { copiarEnlace(); return; }
 
-    // CAMBIO: botones de la sugerencia por hora
     if (e.target.id === "ahoraVer") {
       if (sugeridaActual) { desdeAleatorio = false; abrirDetalle(sugeridaActual); }
       return;
