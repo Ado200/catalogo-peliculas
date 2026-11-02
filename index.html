@@ -380,26 +380,37 @@ function fondoDesde(paleta) {
          `var(--tarjeta)`;
 }
 
+// CAMBIO: paleta de respaldo para películas sin paleta guardada (tonos grises azulados)
+const PALETA_RESPALDO = [[140, 150, 170], [100, 110, 130], [60, 66, 84]];
+
+// CAMBIO: aplica el fondo y el resplandor del póster al modal
+function aplicarFondoModal(caja, posterModal, paleta) {
+  caja.style.background = fondoDesde(paleta);
+  if (posterModal) {
+    posterModal.style.boxShadow = `0 12px 32px rgba(${paleta[0].join(",")}, 0.5)`;
+  }
+}
+
+// CAMBIO: ahora todas las fichas usan un fondo elegante
 function aplicarPaleta(p) {
   const caja = document.querySelector("#modal .ventana");
-  const posterModal = caja.querySelector(".portada");
   if (!caja) return;
-  const paleta = paletaDeTexto(p[NOMBRE_PALETA]);
-  
-  if (paleta.length) {
-    caja.style.background = fondoDesde(paleta);
-    if(posterModal) posterModal.style.boxShadow = `0 12px 32px rgba(${paleta[0].join(",")}, 0.5)`;
+
+  // 1. Si la hoja tiene paleta, se usa esa
+  const paletaHoja = paletaDeTexto(p[NOMBRE_PALETA]);
+  if (paletaHoja.length) {
+    aplicarFondoModal(caja, caja.querySelector(".portada"), paletaHoja);
     return;
   }
-  
-  caja.style.background = "";
-  if(posterModal) posterModal.style.boxShadow = "";
+
+  // 2. Si no, se muestra de inmediato la paleta de respaldo
+  aplicarFondoModal(caja, caja.querySelector(".portada"), PALETA_RESPALDO);
   if (!p.portada) return;
-  
+
+  // 3. Si el navegador puede leer la portada, se cambia por su paleta real
   paletaDePoster(p.portada).then(calc => {
     if (calc.length && detalleActual === p) {
-      caja.style.background = fondoDesde(calc);
-      if(posterModal) posterModal.style.boxShadow = `0 12px 32px rgba(${calc[0].join(",")}, 0.5)`;
+      aplicarFondoModal(caja, caja.querySelector(".portada"), calc);
     }
   });
 }
@@ -1200,7 +1211,7 @@ window.addEventListener("load", () => {
   });
 });
 
-/* ---------- CAMBIO: deslizar a la derecha para marcar pendiente (celular) ---------- */
+/* ---------- Deslizar a la derecha para marcar pendiente (celular) ---------- */
 let swipe = null;
 
 function reiniciarTarjeta(el) {
