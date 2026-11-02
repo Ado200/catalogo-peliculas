@@ -17,7 +17,6 @@
     --tema-bg:rgba(0,113,227,.1); --tema-texto:#0071e3;
     --sombra:0 2px 10px rgba(0,0,0,.06); --error:#c00; --estrella:#ffb800;
     --ease:cubic-bezier(.2,.8,.2,1);
-    --acento-rgb:0,113,227;
   }
   body.oscuro {
     --fondo:#000000; --tarjeta:#1c1c1e; --texto:#f5f5f7; --gris:#a1a1a6;
@@ -110,8 +109,7 @@
   #modal.abierto .ventana, #statsModal.abierto .ventana { animation:crecer .35s var(--ease) both; }
   @keyframes fundo { from { opacity:0; } to { opacity:1; } }
   @keyframes crecer { from { opacity:0; transform:scale(.92) translateY(10px); } to { opacity:1; transform:scale(1) translateY(0); } }
-  .ventana { background:var(--tarjeta); color:var(--texto); border-radius:18px; padding:24px; max-width:560px; width:100%; max-height:90vh; overflow:auto; position:relative; }
-  #modal .ventana { background:linear-gradient(180deg, rgba(var(--acento-rgb), .32), var(--tarjeta) 45%); transition:background .4s ease; }
+  .ventana { background:var(--tarjeta); color:var(--texto); border-radius:18px; padding:24px; max-width:560px; width:100%; max-height:90vh; overflow:auto; position:relative; transition:background .4s ease; }
   .ventana h2 { margin:0 0 6px; font-size:22px; }
   .cerrar { position:absolute; top:12px; right:14px; background:none; border:none; font-size:26px; cursor:pointer; color:var(--gris); transition:transform .2s var(--ease); }
   .cerrar:hover { transform:rotate(90deg); }
@@ -201,7 +199,7 @@
     </select>
     <button id="aleatorio" class="pildora destacado">🎲 Aleatorio</button>
     <button id="estadisticas" class="pildora">📊 Estadísticas</button>
-    <button id="guardarColores" class="pildora">🎨 Guardar colores</button>
+    <button id="guardarPaletas" class="pildora">🎨 Guardar paletas</button>
     <button id="vista" class="pildora">Ver como lista</button>
     <button id="agrupar" class="pildora">Agrupar por tema</button>
     <button id="limpiar" class="pildora">Limpiar</button>
@@ -239,11 +237,12 @@
 const CLIENT_ID = "45846987194-cm8mnhijljms8k8u8j44n8aeq674vuis.apps.googleusercontent.com";
 const HOJA_ID = "1W5oSA5yy4TpbVYxjya6S9T6NkeE6irwSHABXFAijO2k";
 const SCOPES = "https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.appdata";
+const NOMBRE_PALETA = "paleta_poster";
 
 let peliculas = [];
 let visibles = [];
 let encabezados = [];
-let COL_COLOR = -1;
+let COL_PALETA = -1;
 let tokenClient;
 let accessToken = null;
 let marcas = {};
@@ -253,7 +252,7 @@ let vistaLista = false;
 let agrupado = false;
 let desdeAleatorio = false;
 let detalleActual = null;
-const colorCache = new Map();
+const paletaCache = new Map();
 
 let ubicacion = { lat: 21.16, lon: -86.85 };
 
@@ -296,16 +295,21 @@ const ordenes = {
   duracion: (a, b) => minutos(b) - minutos(a)
 };
 
-/* ---------- Color dominante del póster ---------- */
-// Devuelve "r, g, b" o "" si la imagen no se puede leer o no tiene color útil
-function colorDePoster(url) {
-  if (colorCache.has(url)) return Promise.resolve(colorCache.get(url));
+/* ---------- Paleta de 3 colores del póster ---------- */
+function distancia(a, b) {
+  return Math.sqrt((a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2 + (a[2] - b[2]) ** 2);
+}
+
+// Toma los colores más frecuentes, descarta los que son casi iguales entre sí
+// y los que aparecen en muy pocos píxeles. Devuelve hasta 3 colores [r, g, b].
+function paletaDePoster(url) {
+  if (paletaCache.has(url)) return Promise.resolve(paletaCache.get(url));
   return new Promise(resolve => {
     const img = new Image();
     img.crossOrigin = "anonymous";
     img.onload = () => {
       try {
-        const w = 48;
+        const w = 64;
         const h = Math.max(1, Math.round(w * img.height / img.width));
         const c = document.createElement("canvas");
         c.width = w; c.height = h;
@@ -314,42 +318,76 @@ function colorDePoster(url) {
         const datos = ctx.getImageData(0, 0, w, h).data;
 
         const cubos = {};
+        let total = 0;
         for (let i = 0; i < datos.length; i += 4) {
           const r = datos[i], g = datos[i + 1], b = datos[i + 2];
           const max = Math.max(r, g, b), min = Math.min(r, g, b);
           if (max < 40 || min > 215) continue;
           if (max - min < 25) continue;
+          total++;
           const clave = (r >> 4) + "," + (g >> 4) + "," + (b >> 4);
           const cubo = cubos[clave] || (cubos[clave] = { n: 0, r: 0, g: 0, b: 0 });
           cubo.n++; cubo.r += r; cubo.g += g; cubo.b += b;
         }
-        const mejor = Object.values(cubos).sort((x, y) => y.n - x.n)[0];
-        const rgb = mejor
-          ? [Math.round(mejor.r / mejor.n), Math.round(mejor.g / mejor.n), Math.round(mejor.b / mejor.n)].join(", ")
-          : "";
-        colorCache.set(url, rgb);
-        resolve(rgb);
+
+        const grupos = Object.values(cubos)
+          .filter(c => total && c.n / total >= 0.02)
+          .map(c => ({ n: c.n, rgb: [Math.round(c.r / c.n), Math.round(c.g / c.n), Math.round(c.b / c.n)] }))
+          .sort((a, b) => b.n - a.n);
+
+        const elegidos = [];
+        for (const g of grupos) {
+          if (elegidos.length >= 3) break;
+          if (elegidos.every(e => distancia(e, g.rgb) > 70)) elegidos.push(g.rgb);
+        }
+
+        paletaCache.set(url, elegidos);
+        resolve(elegidos);
       } catch (e) {
-        colorCache.set(url, "");
-        resolve("");
+        paletaCache.set(url, []);
+        resolve([]);
       }
     };
-    img.onerror = () => resolve("");
+    img.onerror = () => resolve([]);
     img.src = url;
   });
 }
 
-function aplicarColorPoster(p) {
+function rgbAHex(rgb) {
+  return "#" + rgb.map(v => v.toString(16).padStart(2, "0")).join("");
+}
+
+function hexARgb(hex) {
+  const m = String(hex).trim().match(/^#([0-9a-f]{6})$/i);
+  if (!m) return null;
+  const v = m[1];
+  return [parseInt(v.slice(0, 2), 16), parseInt(v.slice(2, 4), 16), parseInt(v.slice(4, 6), 16)];
+}
+
+// Convierte el texto de la hoja ("#aabbcc,#ddeeff") en una lista de colores
+function paletaDeTexto(texto) {
+  return String(texto || "").split(",").map(hexARgb).filter(Boolean).slice(0, 3);
+}
+
+// Fondo de la ficha: el color principal arriba y los demás se van apagando hacia abajo
+function fondoDesde(paleta) {
+  const a = paleta[0], b = paleta[1] || paleta[0], c = paleta[2] || b;
+  return "linear-gradient(180deg, rgba(" + a.join(",") + ",.45) 0%, rgba(" + b.join(",") +
+    ",.25) 55%, rgba(" + c.join(",") + ",.12) 80%, var(--tarjeta) 100%)";
+}
+
+function aplicarPaleta(p) {
   const caja = document.querySelector("#modal .ventana");
   if (!caja) return;
-  caja.style.removeProperty("--acento-rgb");
-  if (p.color_poster) {
-    caja.style.setProperty("--acento-rgb", p.color_poster);
+  const paleta = paletaDeTexto(p[NOMBRE_PALETA]);
+  if (paleta.length) {
+    caja.style.background = fondoDesde(paleta);
     return;
   }
+  caja.style.background = "";
   if (!p.portada) return;
-  colorDePoster(p.portada).then(rgb => {
-    if (rgb && detalleActual === p) caja.style.setProperty("--acento-rgb", rgb);
+  paletaDePoster(p.portada).then(calc => {
+    if (calc.length && detalleActual === p) caja.style.background = fondoDesde(calc);
   });
 }
 
@@ -375,44 +413,44 @@ async function sheetsFetch(path, metodo, cuerpo) {
   return r.json();
 }
 
-// Crea la columna color_poster en la hoja si todavía no existe
-async function asegurarColumnaColor() {
-  if (COL_COLOR !== -1) return;
-  COL_COLOR = encabezados.length;
-  encabezados.push("color_poster");
-  await sheetsFetch("values/" + letraColumna(COL_COLOR) + "1?valueInputOption=RAW", "PUT", {
-    values: [["color_poster"]]
+// Crea la columna paleta_poster en la hoja si todavía no existe
+async function asegurarColumnaPaleta() {
+  if (COL_PALETA !== -1) return;
+  COL_PALETA = encabezados.length;
+  encabezados.push(NOMBRE_PALETA);
+  await sheetsFetch("values/" + letraColumna(COL_PALETA) + "1?valueInputOption=RAW", "PUT", {
+    values: [[NOMBRE_PALETA]]
   });
 }
 
-// Calcula y guarda en la hoja los colores de las películas que no lo tienen
-async function guardarColoresEnHoja() {
-  const pendientes = peliculas.filter(p => !p.color_poster && p.portada);
+// Calcula y guarda en la hoja la paleta de las películas que no la tienen
+async function guardarPaletasEnHoja() {
+  const pendientes = peliculas.filter(p => !paletaDeTexto(p[NOMBRE_PALETA]).length && p.portada);
   if (!pendientes.length) {
-    setEstado("Todas las portadas ya tienen color guardado.");
+    setEstado("Todas las portadas ya tienen paleta guardada.");
     return;
   }
-  setEstado("Calculando colores de " + pendientes.length + " películas...");
+  setEstado("Calculando paletas de " + pendientes.length + " películas...");
   const cambios = [];
   for (const p of pendientes) {
-    const rgb = await colorDePoster(p.portada);
-    if (rgb) {
-      p.color_poster = rgb;
+    const calc = await paletaDePoster(p.portada);
+    if (calc.length) {
+      p[NOMBRE_PALETA] = calc.map(rgbAHex).join(",");
       cambios.push(p);
     }
   }
   if (!cambios.length) {
-    setEstado("No pude leer el color de las portadas en este navegador.");
+    setEstado("No pude leer las portadas en este navegador.");
     return;
   }
   try {
-    await asegurarColumnaColor();
+    await asegurarColumnaPaleta();
     const data = cambios.map(p => ({
-      range: letraColumna(COL_COLOR) + p._fila,
-      values: [[p.color_poster]]
+      range: letraColumna(COL_PALETA) + p._fila,
+      values: [[p[NOMBRE_PALETA]]]
     }));
     await sheetsFetch("values:batchUpdate", "POST", { valueInputOption: "RAW", data: data });
-    setEstado("Colores guardados en la hoja: " + cambios.length);
+    setEstado("Paletas guardadas en la hoja: " + cambios.length);
   } catch (e) {
     setEstado("No pude guardar en la hoja. Esta opción solo funciona con la cuenta dueña de la hoja.");
   }
@@ -943,7 +981,7 @@ function abrirDetalle(p) {
     ? '<button class="pildora destacado" id="otraSugerencia">🎲 Otra sugerencia</button>'
     : '';
   $("modal").classList.add("abierto");
-  aplicarColorPoster(p);
+  aplicarPaleta(p);
 }
 
 function cerrarDetalle() {
@@ -992,7 +1030,7 @@ async function cargarHoja() {
 
     const filas = json.values || [];
     encabezados = (filas[0] || []).slice();
-    COL_COLOR = encabezados.indexOf("color_poster");
+    COL_PALETA = encabezados.indexOf(NOMBRE_PALETA);
 
     peliculas = [];
     filas.slice(1).forEach((f, i) => {
@@ -1129,7 +1167,7 @@ window.addEventListener("load", () => {
 
   $("aleatorio").addEventListener("click", sugerirAleatoria);
   $("estadisticas").addEventListener("click", abrirEstadisticas);
-  $("guardarColores").addEventListener("click", guardarColoresEnHoja);
+  $("guardarPaletas").addEventListener("click", guardarPaletasEnHoja);
   $("cerrarStats").addEventListener("click", cerrarEstadisticas);
   $("statsModal").addEventListener("click", e => { if (e.target.id === "statsModal") cerrarEstadisticas(); });
 
