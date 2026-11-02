@@ -203,6 +203,7 @@
     <button id="vista" class="pildora">Ver como lista</button>
     <button id="agrupar" class="pildora">Agrupar por tema</button>
     <button id="limpiar" class="pildora">Limpiar</button>
+    <button id="borrarMarcas" class="pildora">🗑 Borrar mis marcas</button> <!-- CAMBIO -->
   </div>
   <div id="chips"></div>
   <div id="contador"></div>
@@ -380,10 +381,10 @@ function fondoDesde(paleta) {
          `var(--tarjeta)`;
 }
 
-// CAMBIO: paleta de respaldo para películas sin paleta guardada (tonos grises azulados)
+// Paleta de respaldo para películas sin paleta guardada (tonos grises azulados)
 const PALETA_RESPALDO = [[140, 150, 170], [100, 110, 130], [60, 66, 84]];
 
-// CAMBIO: aplica el fondo y el resplandor del póster al modal
+// Aplica el fondo y el resplandor del póster al modal
 function aplicarFondoModal(caja, posterModal, paleta) {
   caja.style.background = fondoDesde(paleta);
   if (posterModal) {
@@ -391,7 +392,7 @@ function aplicarFondoModal(caja, posterModal, paleta) {
   }
 }
 
-// CAMBIO: ahora todas las fichas usan un fondo elegante
+// Ahora todas las fichas usan un fondo elegante
 function aplicarPaleta(p) {
   const caja = document.querySelector("#modal .ventana");
   if (!caja) return;
@@ -867,7 +868,7 @@ function renderAgrupado() {
   if (sinTema.length) bloques.push({ nombre: "Sin tema", items: sinTema });
 
   return bloques.map(b => {
-    // CAMBIO: el índice debe ser la posición en "visibles", no en el grupo
+    // El índice debe ser la posición en "visibles", no en el grupo
     const cuerpo = b.items.map(p => {
       const i = visibles.indexOf(p);
       return vistaLista ? filaHtml(p, i) : tarjeta(p, i);
@@ -1210,6 +1211,28 @@ window.addEventListener("load", () => {
     pintar();
   });
 });
+
+// CAMBIO: borra las marcas personales de Drive y del navegador
+async function borrarMisMarcas() {
+  const ok = confirm("¿Borrar todas tus marcas (vistas, pendientes y estrellas)? Esta acción no se puede deshacer.");
+  if (!ok) return;
+  clearTimeout(guardadoTimer);
+  if (idMarcas) {
+    try {
+      await driveFetch("https://www.googleapis.com/drive/v3/files/" + idMarcas, { method: "DELETE" });
+    } catch (e) {
+      setEstado("No pude borrar tus marcas de Drive. Intenta de nuevo.");
+      return;
+    }
+  }
+  idMarcas = null;
+  marcas = {};
+  try { localStorage.removeItem("catalogo_estado"); } catch (e) {}
+  refrescarTodo();
+  setEstado("Tus marcas se borraron de Drive y de este navegador.");
+}
+
+$("borrarMarcas").addEventListener("click", borrarMisMarcas); // CAMBIO
 
 /* ---------- Deslizar a la derecha para marcar pendiente (celular) ---------- */
 let swipe = null;
