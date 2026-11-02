@@ -26,7 +26,7 @@
   }
 
   * { box-sizing:border-box; }
-  body { margin:0; font-family:-apple-system,"Segoe UI",Roboto,sans-serif; background:var(--fondo); color:var(--texto); transition:background .25s, color .25s; }
+  body { margin:0; font-family:-apple-system,"Segoe UI",Roboto,sans-serif; background:var(--fondo); color:var(--texto); transition:background 15s linear, color 15s linear; }
   header { padding:28px 20px 10px; text-align:center; }
   h1 { margin:0 0 16px; font-size:26px; }
   #buscar { width:min(560px,100%); padding:14px 18px; font-size:16px; border:1px solid var(--borde); border-radius:999px; outline:none; background:var(--tarjeta); color:var(--texto); transition:box-shadow .2s, border-color .2s; }
@@ -39,6 +39,9 @@
   .pildora.destacado { background:var(--azul); color:#fff; }
   .boton-login { background:var(--azul); color:#fff; border:none; padding:14px 28px; font-size:16px; cursor:pointer; border-radius:999px; transition:transform .15s var(--ease); }
   .boton-login:active { transform:scale(.96); }
+
+  /* Capa cálida de protección de la vista */
+  #calido { position:fixed; inset:0; pointer-events:none; z-index:9; background:#ff9a3c; mix-blend-mode:multiply; opacity:0; transition:opacity 60s linear; }
 
   #chips { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-top:12px; min-height:4px; }
   .chip { background:var(--azul); color:#fff; font-size:13px; padding:6px 10px 6px 14px; border-radius:999px; cursor:pointer; animation:entrarChip .3s var(--ease) both; }
@@ -121,6 +124,8 @@
 </head>
 <body>
 
+<div id="calido"></div>
+
 <div id="login">
   <h1>Mi catálogo de películas</h1>
   <button id="btnLogin" class="boton-login">Iniciar sesión con Google</button>
@@ -163,6 +168,11 @@
       <option value="claro">Tema: siempre claro</option>
       <option value="oscuro">Tema: siempre oscuro</option>
     </select>
+    <select id="vista-modo" title="Protección de la vista">
+      <option value="auto">Protección: automática y gradual</option>
+      <option value="siempre">Protección: siempre activa</option>
+      <option value="apagada">Protección: apagada</option>
+    </select>
     <button id="aleatorio" class="pildora destacado">🎲 Aleatorio</button>
     <button id="vista" class="pildora">Ver como lista</button>
     <button id="agrupar" class="pildora">Agrupar por tema</button>
@@ -199,7 +209,7 @@ let vistaLista = false;
 let agrupado = false;
 let desdeAleatorio = false;
 
-// Ubicación para calcular amanecer y atardecer. Por defecto Cancún.
+// Ubicación para calcular el sol. Por defecto Cancún.
 let ubicacion = { lat: 21.16, lon: -86.85 };
 
 const $ = id => document.getElementById(id);
@@ -240,30 +250,48 @@ const ordenes = {
   duracion: (a, b) => minutos(b) - minutos(a)
 };
 
-/* ---------- Tema: amanecer, atardecer u hora fija ---------- */
-// Cálculo aproximado de amanecer y atardecer (algoritmo solar estándar)
-function horasSolares(fecha, lat, lon) {
-  const rad = Math.PI / 180;
+/* ---------- Posición del sol ---------- */
+const RAD = Math.PI / 180;
+
+// Ecuación del tiempo y declinación solar para una fecha
+function datosSolares(fecha) {
   const diaAnio = Math.floor((fecha - new Date(fecha.getFullYear(), 0, 0)) / 86400000);
   const g = 2 * Math.PI / 365 * (diaAnio - 1);
-  const eqTiempo = 229.18 * (0.000075 + 0.001868 * Math.cos(g) - 0.032077 * Math.sin(g)
+  const eq = 229.18 * (0.000075 + 0.001868 * Math.cos(g) - 0.032077 * Math.sin(g)
     - 0.014615 * Math.cos(2 * g) - 0.040849 * Math.sin(2 * g));
-  const declinacion = 0.006918 - 0.399912 * Math.cos(g) + 0.070257 * Math.sin(g)
+  const dec = 0.006918 - 0.399912 * Math.cos(g) + 0.070257 * Math.sin(g)
     - 0.006758 * Math.cos(2 * g) + 0.000907 * Math.sin(2 * g)
     - 0.002697 * Math.cos(3 * g) + 0.00148 * Math.sin(3 * g);
-  const cenit = 90.833 * rad;
-  const coseno = Math.cos(cenit) / (Math.cos(lat * rad) * Math.cos(declinacion))
-    - Math.tan(lat * rad) * Math.tan(declinacion);
-  if (coseno < -1 || coseno > 1) return null; // sin amanecer o atardecer ese día
-  const mitadDia = Math.acos(coseno) / rad;
-  const medioDiaUTC = 720 - 4 * lon - eqTiempo;
+  return { eq, dec };
+}
+
+// Altura del sol sobre el horizonte en grados (negativa = bajo el horizonte)
+function alturaSol(fecha, lat, lon) {
+  const { eq, dec } = datosSolares(fecha);
+  const minUTC = fecha.getUTCHours() * 60 + fecha.getUTCMinutes() + fecha.getUTCSeconds() / 60;
+  const minSolar = minUTC + 4 * lon + eq;
+  const H = (minSolar - 720) / 4 * RAD;
+  const latR = lat * RAD;
+  const seno = Math.sin(latR) * Math.sin(dec) + Math.cos(latR) * Math.cos(dec) * Math.cos(H);
+  return Math.asin(Math.max(-1, Math.min(1, seno))) / RAD;
+}
+
+// Horas de amanecer y atardecer del día actual, para el modo "sol"
+function horasSolares(fecha, lat, lon) {
+  const { eq, dec } = datosSolares(fecha);
+  const latR = lat * RAD;
+  const coseno = Math.cos(90.833 * RAD) / (Math.cos(latR) * Math.cos(dec)) - Math.tan(latR) * Math.tan(dec);
+  if (coseno < -1 || coseno > 1) return null;
+  const mitad = Math.acos(coseno) / RAD;
+  const medioDiaUTC = 720 - 4 * lon - eq;
   const base = Date.UTC(fecha.getFullYear(), fecha.getMonth(), fecha.getDate());
   return {
-    amanecer: new Date(base + (medioDiaUTC - 4 * mitadDia) * 60000),
-    atardecer: new Date(base + (medioDiaUTC + 4 * mitadDia) * 60000)
+    amanecer: new Date(base + (medioDiaUTC - 4 * mitad) * 60000),
+    atardecer: new Date(base + (medioDiaUTC + 4 * mitad) * 60000)
   };
 }
 
+/* ---------- Tema claro u oscuro ---------- */
 function esOscuroPorSol() {
   const ahora = new Date();
   const h = horasSolares(ahora, ubicacion.lat, ubicacion.lon);
@@ -280,37 +308,50 @@ function decidirOscuro(modo) {
   if (modo === "claro") return false;
   if (modo === "oscuro") return true;
   if (modo === "hora") return esOscuroPorHora();
-  return esOscuroPorSol(); // "sol" es el valor por defecto
-}
-
-function aplicarTema(oscuro) {
-  document.body.classList.toggle("oscuro", oscuro);
-}
-
-function modoGuardado() {
-  try { return localStorage.getItem("tema_modo") || "sol"; } catch (e) { return "sol"; }
+  return esOscuroPorSol();
 }
 
 function actualizarTema() {
-  aplicarTema(decidirOscuro($("tema-modo").value));
+  document.body.classList.toggle("oscuro", decidirOscuro($("tema-modo").value));
 }
 
-function iniciarTema() {
-  $("tema-modo").value = modoGuardado();
+function modoGuardado(clave, defecto) {
+  try { return localStorage.getItem(clave) || defecto; } catch (e) { return defecto; }
+}
+
+/* ---------- Protección de la vista (capa cálida gradual) ---------- */
+// Devuelve 0 de día, 1 de noche. Entre +4° y -6° de altura solar la capa sube o baja poco a poco.
+function intensidadPorSol() {
+  const alt = alturaSol(new Date(), ubicacion.lat, ubicacion.lon);
+  const t = (4 - alt) / 10;
+  return Math.max(0, Math.min(1, t));
+}
+
+const INTENSIDAD_MAXIMA = 0.28;
+
+function actualizarCalido() {
+  const modo = $("vista-modo").value;
+  let opacidad = 0;
+  if (modo === "siempre") opacidad = INTENSIDAD_MAXIMA;
+  else if (modo === "auto") opacidad = intensidadPorSol() * INTENSIDAD_MAXIMA;
+  $("calido").style.opacity = opacidad.toFixed(3);
+}
+
+// Revisa todo cada minuto: la capa cambia suave y el tema se ajusta
+function actualizarTodo() {
   actualizarTema();
-  // Revisa cada minuto por si cambió el amanecer, el atardecer o la hora
-  setInterval(actualizarTema, 60000);
+  actualizarCalido();
 }
 
-// Si el usuario acepta, usa su ubicación exacta para amanecer y atardecer
+// Si aceptas el permiso de ubicación, usa tu lugar exacto para el sol
 function pedirUbicacion() {
   if (!navigator.geolocation) return;
   navigator.geolocation.getCurrentPosition(
     pos => {
       ubicacion = { lat: pos.coords.latitude, lon: pos.coords.longitude };
-      actualizarTema();
+      actualizarTodo();
     },
-    () => {}, // si no acepta, se queda Cancún
+    () => {},
     { timeout: 8000, maximumAge: 86400000 }
   );
 }
@@ -586,8 +627,11 @@ async function cargarHoja(token) {
 }
 
 window.addEventListener("load", () => {
-  iniciarTema();
+  $("tema-modo").value = modoGuardado("tema_modo", "sol");
+  $("vista-modo").value = modoGuardado("vista_modo", "auto");
+  actualizarTodo();
   pedirUbicacion();
+  setInterval(actualizarTodo, 60000);
 
   tokenClient = google.accounts.oauth2.initTokenClient({
     client_id: CLIENT_ID,
@@ -607,6 +651,11 @@ window.addEventListener("load", () => {
   $("tema-modo").addEventListener("change", () => {
     try { localStorage.setItem("tema_modo", $("tema-modo").value); } catch (e) {}
     actualizarTema();
+  });
+
+  $("vista-modo").addEventListener("change", () => {
+    try { localStorage.setItem("vista_modo", $("vista-modo").value); } catch (e) {}
+    actualizarCalido();
   });
 
   [buscar, sel.tipo, sel.genero, sel.tema, sel.anio, sel.pais, sel.duracion, sel.estado, $("orden")]
