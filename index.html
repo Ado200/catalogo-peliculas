@@ -109,6 +109,9 @@
   .nota-bloque label { display:block; font-size:13px; color:var(--gris); margin-bottom:6px; }
   .nota-bloque textarea { width:100%; min-height:90px; padding:12px 14px; font:inherit; font-size:15px; line-height:1.45; border:1px solid var(--borde); border-radius:14px; background:var(--tarjeta); color:var(--texto); resize:vertical; outline:none; }
   .nota-bloque textarea:focus { border-color:var(--azul); box-shadow:0 0 0 4px rgba(0,113,227,.15); }
+  .nota-acciones { display:flex; justify-content:flex-end; margin-top:6px; }
+  .nota-acciones button { background:none; border:none; color:var(--gris); font-size:13px; cursor:pointer; padding:4px 8px; border-radius:8px; }
+  .nota-acciones button:hover { color:var(--error); }
   .pastillas { display:flex; flex-wrap:wrap; gap:6px; margin:10px 0; }
   .pastilla { font-size:12px; padding:4px 10px; border-radius:999px; }
   .pastilla.tema { background:var(--tema-bg); color:var(--tema-texto); }
@@ -140,7 +143,6 @@
   .estrella:active { transform:scale(.85); }
   .estrella.on { color:var(--estrella); }
 
-  /* Barra inferior de navegación */
   #tabbar { position:fixed; left:0; right:0; bottom:0; z-index:8; display:flex; justify-content:space-around; background:var(--tarjeta); border-top:1px solid var(--borde); padding:8px 8px calc(8px + env(safe-area-inset-bottom, 0px)); }
   #tabbar button { flex:1; max-width:160px; background:none; border:none; color:var(--gris); font-size:12px; padding:6px 4px; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:2px; border-radius:12px; transition:color .2s; }
   #tabbar button .ico { font-size:20px; line-height:1; }
@@ -869,6 +871,15 @@ function guardarNota(titulo, texto) {
   programarGuardado();
 }
 
+function borrarNota() {
+  if (!detalleActual) return;
+  const ok = confirm("¿Borrar tu nota de esta película? No se puede deshacer.");
+  if (!ok) return;
+  guardarNota(detalleActual.titulo, "");
+  setEstado("Nota borrada");
+  abrirDetalle(detalleActual);
+}
+
 document.addEventListener("change", e => {
   if (e.target.id === "notaTexto" && detalleActual) {
     guardarNota(detalleActual.titulo, e.target.value);
@@ -1212,7 +1223,6 @@ function filaHtml(p, i) {
     '<a class="boton" href="' + esc(p.link) + '" target="_blank" rel="noopener">Ver</a></article>';
 }
 
-// Tarjeta compacta para Notas, Pendientes y Vistas (sin controles de búsqueda)
 function filaPestana(p, i, extra) {
   const m = marcas[p.titulo] || {};
   const portada = (p.portada && !datosLimitados())
@@ -1411,7 +1421,6 @@ function pintar() {
   lista.innerHTML = visibles.map((p, i) => vistaLista ? filaHtml(p, i) : tarjeta(p, i)).join("");
 }
 
-// Pestañas Notas, Pendientes y Vistas
 function pintarPestana() {
   let items = [], extra = null, titulo = "";
 
@@ -1460,11 +1469,7 @@ function pintarPestana() {
     lista.innerHTML = '<p class="vacio">' + msg + '</p>';
     return;
   }
-  lista.innerHTML = items.map((p, i) => {
-    const idx = i;
-    visibles[idx] = p;
-    return filaPestana(p, idx, extra ? extra(p) : "");
-  }).join("");
+  lista.innerHTML = items.map((p, i) => filaPestana(p, i, extra ? extra(p) : "")).join("");
 }
 
 function iframeTrailer(codigo, titulo) {
@@ -1536,6 +1541,7 @@ async function compartirPelicula(p) {
 function abrirDetalle(p) {
   detalleActual = p;
   ponerIdEnUrl(slugDe(p));
+  const notaActual = (marcas[p.titulo] || {}).nota || "";
   $("detalle").innerHTML =
     (p.portada && !datosLimitados() ? '<img class="portada" src="' + esc(p.portada) + '" alt="">' : '') +
     '<h2>' + esc(p.titulo) + '</h2>' +
@@ -1547,7 +1553,9 @@ function abrirDetalle(p) {
     controlesHtml(p) +
     '<p class="sinopsis">' + esc(p.sinopsis) + '</p>' +
     '<div class="nota-bloque"><label for="notaTexto">Mi nota</label>' +
-      '<textarea id="notaTexto" placeholder="Escribe lo que te pareció, para recordarlo después...">' + esc((marcas[p.titulo] || {}).nota || "") + '</textarea></div>' +
+      '<textarea id="notaTexto" placeholder="Escribe lo que te pareció, para recordarlo después...">' + esc(notaActual) + '</textarea>' +
+      (notaActual ? '<div class="nota-acciones"><button id="btnBorrarNota">Borrar nota</button></div>' : '') +
+    '</div>' +
     bloqueTrailer(p) +
     '<div class="acciones">' +
       '<a class="boton" href="' + esc(p.link) + '" target="_blank" rel="noopener">Ver película</a>' +
@@ -1593,7 +1601,6 @@ function refrescarTodo() {
   }
 }
 
-/* ---------- Pestañas ---------- */
 function cambiarPestana(nombre) {
   pestana = nombre;
   try { localStorage.setItem("pestana_activa", nombre); } catch (e) {}
@@ -1842,6 +1849,7 @@ window.addEventListener("load", () => {
   });
 
   document.addEventListener("click", e => {
+    if (e.target.id === "btnBorrarNota") { borrarNota(); return; }
     if (e.target.id === "otraSugerencia") { sugerirAleatoria(); return; }
     if (e.target.id === "btnCompartir") {
       if (detalleActual) compartirPelicula(detalleActual);
