@@ -72,7 +72,6 @@
   .aviso-estancados { max-width:900px; margin:16px auto 0; padding:12px 16px; background:var(--tema-bg); color:var(--tema-texto); border-radius:14px; font-size:14px; display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; }
   .aviso-estancados button { background:none; border:none; color:inherit; font-size:18px; cursor:pointer; padding:0 4px; }
 
-  /* CAMBIO: tarjeta del resumen semanal (solo lunes) */
   .resumen-card { max-width:900px; margin:0 auto; background:var(--tarjeta); border-radius:18px; box-shadow:var(--sombra); padding:18px 20px; }
   .resumen-top { display:flex; justify-content:space-between; align-items:center; }
   .resumen-top h3 { margin:0; font-size:17px; }
@@ -329,7 +328,6 @@
   <button id="avisoEstancadosVer" class="pildora" title="Ver estancadas">Verlas</button>
 </div>
 
-<!-- CAMBIO: tarjeta del resumen semanal, visible solo los lunes -->
 <section id="resumenSemana" class="destacados solo-catalogo" style="display:none"></section>
 
 <section id="destacados" class="destacados solo-catalogo">
@@ -641,7 +639,7 @@ function actualizarAhora() {
   if (!sugeridaActual || !estadoDe(sugeridaActual).pendiente) nuevaSugerencia(null);
 }
 
-/* ---------- CAMBIO: resumen semanal (solo lunes) ---------- */
+/* ---------- Resumen semanal (lunes; prueba con ?resumen=1) ---------- */
 // Fecha local en formato AAAA-MM-DD (evita el desfase de UTC en Cancún)
 function hoyLocalISO() {
   const d = new Date();
@@ -668,7 +666,12 @@ function guardarJSON(clave, valor) {
   try { localStorage.setItem(clave, JSON.stringify(valor)); } catch (e) {}
 }
 
-// Elige una pendiente para la semana. Se mantiene el mismo día y no repite las últimas 8 sugeridas.
+// Modo de prueba: ?resumen=1 en la dirección muestra el resumen cualquier día
+function resumenDePrueba() {
+  return new URLSearchParams(location.search).get("resumen") === "1";
+}
+
+// Elige una pendiente para el día. Se mantiene el mismo día y no repite las últimas 8 sugeridas.
 function sugerenciaSemanal() {
   const pend = peliculas.filter(p => estadoDe(p).pendiente);
   if (!pend.length) return null;
@@ -699,8 +702,9 @@ function actualizarResumenSemana() {
   const sec = $("resumenSemana");
   const hoy = hoyLocalISO();
   const esLunes = new Date().getDay() === 1;
+  const mostrarHoy = esLunes || resumenDePrueba();
 
-  if (!peliculas.length || !esLunes || modoGuardado("resumen_cerrado", "") === hoy || hayFiltros() || pestana !== "catalogo") {
+  if (!peliculas.length || !mostrarHoy || modoGuardado("resumen_cerrado", "") === hoy || hayFiltros() || pestana !== "catalogo") {
     sec.style.display = "none";
     return;
   }
@@ -736,7 +740,6 @@ function actualizarResumenSemana() {
     '</div>';
   sec.style.display = "block";
 }
-/* ---------- FIN CAMBIO: resumen semanal ---------- */
 
 /* ---------- Recomendaciones según calificaciones ---------- */
 function calcularRecomendaciones() {
@@ -1666,7 +1669,7 @@ function pintar() {
   renderRecomendaciones();
   actualizarAhora();
   actualizarAvisoEstancados();
-  actualizarResumenSemana(); // CAMBIO
+  actualizarResumenSemana();
   revisarSalud();
   actualizarBotonSalud();
   actualizarBotonAvanzados();
@@ -1686,7 +1689,7 @@ function pintar() {
 }
 
 function pintarPestana() {
-  $("resumenSemana").style.display = "none"; // CAMBIO: el resumen solo vive en Catálogo
+  $("resumenSemana").style.display = "none";
   let items = [], extra = null, titulo = "";
 
   if (pestana === "notas") {
@@ -2155,8 +2158,8 @@ window.addEventListener("load", () => {
   });
 
   document.addEventListener("click", e => {
-    if (e.target.id === "cerrarResumen") { cerrarResumenSemana(); return; } // CAMBIO
-    if (e.target.id === "resumenVer") { // CAMBIO
+    if (e.target.id === "cerrarResumen") { cerrarResumenSemana(); return; }
+    if (e.target.id === "resumenVer") {
       const p = peliculas.find(x => x.titulo === e.target.dataset.titulo);
       if (p) { desdeAleatorio = false; abrirDetalle(p); }
       return;
