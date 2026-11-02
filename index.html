@@ -203,7 +203,8 @@
     <button id="vista" class="pildora">Ver como lista</button>
     <button id="agrupar" class="pildora">Agrupar por tema</button>
     <button id="limpiar" class="pildora">Limpiar</button>
-    <button id="borrarMarcas" class="pildora">🗑 Borrar mis marcas</button> <!-- CAMBIO -->
+    <button id="borrarMarcas" class="pildora">🗑 Borrar mis marcas</button>
+    <button id="exportar" class="pildora">⬇ Exportar CSV</button> <!-- CAMBIO -->
   </div>
   <div id="chips"></div>
   <div id="contador"></div>
@@ -1212,7 +1213,7 @@ window.addEventListener("load", () => {
   });
 });
 
-// CAMBIO: borra las marcas personales de Drive y del navegador
+// Borra las marcas personales de Drive y del navegador
 async function borrarMisMarcas() {
   const ok = confirm("¿Borrar todas tus marcas (vistas, pendientes y estrellas)? Esta acción no se puede deshacer.");
   if (!ok) return;
@@ -1232,7 +1233,43 @@ async function borrarMisMarcas() {
   setEstado("Tus marcas se borraron de Drive y de este navegador.");
 }
 
-$("borrarMarcas").addEventListener("click", borrarMisMarcas); // CAMBIO
+$("borrarMarcas").addEventListener("click", borrarMisMarcas);
+
+// CAMBIO: exporta el catálogo y tus marcas personales a un archivo CSV
+function exportarCSV() {
+  const columnas = ["titulo", "tipo", "año", "duracion", "pais", "director", "genero", "reparto", "temas", "link", "vista", "pendiente", "estrellas"];
+
+  const esc = v => {
+    const s = String(v == null ? "" : v);
+    return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  };
+
+  const filas = [columnas.join(",")];
+  peliculas.forEach(p => {
+    const s = estadoDe(p);
+    const valores = columnas.map(c => {
+      if (c === "vista") return s.vista ? "sí" : "no";
+      if (c === "pendiente") return s.pendiente ? "sí" : "no";
+      if (c === "estrellas") return s.estrellas || "";
+      return p[c] ?? "";
+    });
+    filas.push(valores.map(esc).join(","));
+  });
+
+  // El BOM (\uFEFF) hace que Excel abra bien los acentos
+  const blob = new Blob(["\uFEFF" + filas.join("\r\n")], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "mi_catalogo_" + new Date().toISOString().slice(0, 10) + ".csv";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  setEstado("CSV exportado: " + peliculas.length + " títulos.");
+}
+
+$("exportar").addEventListener("click", exportarCSV); // CAMBIO
 
 /* ---------- Deslizar a la derecha para marcar pendiente (celular) ---------- */
 let swipe = null;
