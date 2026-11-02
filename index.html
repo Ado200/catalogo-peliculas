@@ -82,6 +82,13 @@
   .ahora-card h4 { margin:0 0 4px; font-size:17px; }
   .ahora-card .acciones { margin-top:10px; }
 
+  .salud { max-width:900px; margin:20px auto 0; padding:16px 20px; background:var(--tarjeta); border-radius:18px; box-shadow:var(--sombra); }
+  .salud h3 { margin:0 0 10px; font-size:16px; }
+  .salud ul { margin:0; padding-left:20px; font-size:14px; line-height:1.7; color:var(--gris); }
+  .salud .ok { color:#1f9d55; }
+  .salud .alerta { color:#d93025; }
+  .salud summary { cursor:pointer; font-size:14px; color:var(--texto); }
+
   main { display:grid; grid-template-columns:repeat(auto-fill,minmax(270px,1fr)); gap:18px; padding:20px; max-width:1100px; margin:auto; }
   body.lista main { grid-template-columns:1fr; max-width:900px; }
   .tarjeta, .fila { background:var(--tarjeta); border-radius:18px; cursor:pointer; box-shadow:var(--sombra); transition:transform .25s var(--ease), box-shadow .25s; }
@@ -211,6 +218,7 @@
       <option value="pendiente">Pendientes</option>
       <option value="estancados">Pendientes estancados (más de 30 días)</option>
       <option value="favoritas">Favoritas (4 o 5★)</option>
+      <option value="descartadas">Descartadas</option>
     </select>
     <button id="toggleAvanzados" class="pildora">⚙ Filtros avanzados</button>
   </div>
@@ -282,6 +290,8 @@
 </section>
 
 <main id="lista"></main>
+
+<section id="salud" class="salud" style="display:none"></section>
 
 <footer class="pie">
   <a href="https://github.com/Ado200/catalogo-peliculas/blob/main/PRIVACIDAD.md" target="_blank" rel="noopener">Aviso de privacidad</a>
@@ -783,10 +793,15 @@ function controlesHtml(p) {
   const dias = s.pendiente ? diasPendiente(p) : null;
   const textoDias = dias === null ? "" :
     '<span class="meta" style="margin:0">' + (dias === 0 ? 'desde hoy' : 'hace ' + dias + (dias === 1 ? ' día' : ' días')) + '</span>';
+  const descartada = !!(marcas[p.titulo] || {}).descartada;
+  const botonRestaurar = descartada
+    ? ' <button class="chipc" data-accion="restaurar" data-clave="' + k + '">↩ Restaurar</button>'
+    : '';
   return '<div class="controles">' +
     '<button class="chipc' + (s.vista ? ' activo' : '') + '" data-accion="vista" data-clave="' + k + '">' + (s.vista ? '✓ Vista' : 'Marcar vista') + '</button>' +
     '<button class="chipc' + (s.pendiente ? ' activo' : '') + '" data-accion="pendiente" data-clave="' + k + '">' + (s.pendiente ? '⏳ En pendientes' : 'Pendiente') + '</button>' +
     textoDias +
+    botonRestaurar +
     '<span class="estrellas">' + estrellas + '</span></div>';
 }
 
@@ -1081,7 +1096,11 @@ function renderChips() {
   ).join("");
 }
 
+// Filtros de estado. "descartadas" muestra solo las descartadas; las demás opciones ocultan las descartadas.
 function coincideEstado(p, valor) {
+  const descartada = !!(marcas[p.titulo] || {}).descartada;
+  if (valor === "descartadas") return descartada;
+  if (descartada) return false;
   if (!valor) return true;
   const s = estadoDe(p);
   if (valor === "vista") return s.vista;
@@ -1114,6 +1133,52 @@ function renderAgrupado() {
   }).join("");
 }
 
+// Revisa la hoja y muestra qué filas necesitan atención
+function revisarSalud() {
+  const sec = $("salud");
+  if (!peliculas.length) { sec.style.display = "none"; return; }
+
+  const sinEs = [], sinPortada = [], sinPaleta = [], sinTrailer = [], linkRevisar = [];
+  const titulosVistos = new Map();
+  const duplicados = [];
+
+  peliculas.forEach(p => {
+    const t = String(p.titulo || "").trim();
+    const clave = slugDe(p);
+    if (titulosVistos.has(clave)) duplicados.push(t);
+    else titulosVistos.set(clave, t);
+
+    const es = String(p.trailer_es || "").trim();
+    const en = String(p.trailer_en || "").trim();
+    if (!es || es === "sin tráiler") sinEs.push(t);
+    if ((!es && !en) || (es === "sin tráiler" && en === "sin tráiler")) sinTrailer.push(t);
+    if (!String(p.portada || "").trim()) sinPortada.push(t);
+    if (!paletaDeTexto(p[NOMBRE_PALETA]).length) sinPaleta.push(t);
+    const estadoLink = String(p.estado_link || "").trim();
+    if (estadoLink && estadoLink.indexOf("activo") === -1) linkRevisar.push(t);
+  });
+
+  const bloque = (titulo, lista, mensajeOk) => {
+    if (!lista.length) return '<li class="ok">✓ ' + mensajeOk + '</li>';
+    return '<li class="alerta">' + titulo + ': ' + lista.length +
+      (lista.length <= 8 ? ' (' + lista.map(esc).join(', ') + ')' : '') + '</li>';
+  };
+
+  sec.innerHTML =
+    '<details open><summary><b>Salud de la hoja</b> · ' + peliculas.length + ' títulos</summary>' +
+    '<ul>' +
+      bloque("Sin tráiler en español", sinEs, "Todas tienen tráiler en español") +
+      bloque("Sin ningún tráiler", sinTrailer, "Todas tienen algún tráiler") +
+      bloque("Sin portada", sinPortada, "Todas tienen portada") +
+      bloque("Sin paleta de color", sinPaleta, "Todas tienen paleta guardada") +
+      bloque("Link que no responde", linkRevisar, "Todos los links responden") +
+      (duplicados.length
+        ? '<li class="alerta">Posibles duplicados: ' + duplicados.map(esc).join(', ') + '</li>'
+        : '<li class="ok">✓ No hay títulos duplicados</li>') +
+    '</ul></details>';
+  sec.style.display = "block";
+}
+
 function pintar() {
   const f = buscar.value.trim().toLowerCase();
   visibles = peliculas.filter(p => {
@@ -1132,6 +1197,7 @@ function pintar() {
   const { vistas, pendientes } = contarEstados();
   $("destacados").style.display = hayFiltros() ? "none" : "block";
   actualizarAhora();
+  revisarSalud();
   actualizarBotonAvanzados();
   renderChips();
   contador.textContent = visibles.length + " de " + peliculas.length + " títulos · " +
@@ -1513,6 +1579,8 @@ window.addEventListener("load", () => {
       cambiarEstado(titulo, { vista: !s.vista, pendiente: false });
     } else if (b.dataset.accion === "pendiente") {
       cambiarEstado(titulo, { pendiente: !s.pendiente, vista: false });
+    } else if (b.dataset.accion === "restaurar") {
+      cambiarEstado(titulo, { descartada: false });
     } else if (b.dataset.accion === "estrella") {
       const n = Number(b.dataset.n);
       cambiarEstado(titulo, { estrellas: s.estrellas === n ? 0 : n });
@@ -1713,7 +1781,7 @@ zonaClas.addEventListener("touchcancel", () => {
   const Rec = window.SpeechRecognition || window.webkitSpeechRecognition;
   const btn = document.getElementById("voz");
   const buscarEl = document.getElementById("buscar");
-  if (!Rec || !btn) return; // Safari de iPhone no soporta esta función: el botón queda oculto
+  if (!Rec || !btn) return;
 
   btn.hidden = false;
   const rec = new Rec();
@@ -1737,7 +1805,6 @@ zonaClas.addEventListener("touchcancel", () => {
     for (let i = e.resultIndex; i < e.results.length; i++) {
       texto += e.results[i][0].transcript;
     }
-    // Quita signos de puntuación que el reconocimiento agrega al final
     buscarEl.value = texto.replace(/[.,;:!?¿¡]+/g, " ").replace(/\s+/g, " ").trim();
     buscarEl.dispatchEvent(new Event("input"));
   };
