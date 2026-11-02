@@ -94,6 +94,11 @@
   .actor-fila { display:flex; justify-content:space-between; align-items:center; gap:10px; padding:10px 0; border-top:1px solid var(--borde); cursor:pointer; }
   .actor-fila:first-of-type { border-top:none; }
   .actor-chips { display:flex; flex-wrap:wrap; gap:8px; }
+  .cena-portada { width:120px; height:180px; object-fit:cover; border-radius:14px; box-shadow:var(--sombra); display:block; margin:8px 0; }
+  .cena-sinportada { font-size:48px; margin:8px 0; }
+  .actor-foto-grande { width:96px; height:144px; object-fit:cover; border-radius:14px; display:block; margin:0 auto 10px; box-shadow:var(--sombra); }
+  .actor-chip-foto { width:22px; height:22px; border-radius:50%; object-fit:cover; vertical-align:middle; margin-right:4px; }
+  .actor-thumb { width:46px; height:69px; object-fit:cover; border-radius:8px; flex-shrink:0; }
   .saga-fila { padding:10px 0; border-top:1px solid var(--borde); }
   .saga-fila:first-of-type { border-top:none; }
   .saga-barra { height:8px; border-radius:999px; background:var(--boton-suave); overflow:hidden; margin:6px 0; }
@@ -528,6 +533,7 @@ let desdeAleatorio = false;
 let cenaElegida = null;
 let mesCalendario = null;
 let cenaMensaje = "";
+let fotosActores = {};
 let detalleActual = null;
 let sugeridaActual = null;
 let textoSugerida = "";
@@ -932,7 +938,10 @@ function renderCena() {
   } else {
     const m = (marcas[cenaElegida.titulo] || {});
     const conAlguien = estadoDe(cenaElegida).conAlguien;
-    cuerpo = '<div class="resumen-titulo">' + esc(cenaElegida.titulo) + '</div>' +
+    cuerpo = (cenaElegida.portada && !datosLimitados()
+        ? '<img class="cena-portada" src="' + esc(cenaElegida.portada) + '" alt="">'
+        : '<div class="cena-sinportada">🎬</div>') +
+      '<div class="resumen-titulo">' + esc(cenaElegida.titulo) + '</div>' +
       '<div class="meta">' + esc(cenaElegida["año"]) + ' · ' + esc(cenaElegida.duracion) +
       (conAlguien ? ' · para ver con ' + esc(m.conQuien || "alguien") : '') + '</div>' +
       '<div class="insignias" style="margin-top:8px">' +
@@ -1080,7 +1089,9 @@ function renderActores() {
   if (!lista.length) { sec.style.display = "none"; return; }
   sec.innerHTML = '<div class="actividad-card"><h3>Actores</h3><div class="actor-chips">' +
     lista.map(([n, films]) =>
-      '<button class="etiqueta" data-actor="' + esc(n) + '">' + esc(n) + ' · ' + films.length + '</button>'
+      '<button class="etiqueta" data-actor="' + esc(n) + '">' +
+        (fotosActores[n] ? '<img class="actor-chip-foto" src="' + esc(fotosActores[n]) + '" alt="">' : '') +
+        esc(n) + ' · ' + films.length + '</button>'
     ).join("") +
     '</div></div>';
   sec.style.display = "block";
@@ -1096,6 +1107,7 @@ function abrirActor(nombre) {
     : "—";
   $("actorTitulo").textContent = nombre;
   $("actorBody").innerHTML =
+    (fotosActores[nombre] ? '<img class="actor-foto-grande" src="' + esc(fotosActores[nombre]) + '" alt="">' : '') +
     '<div class="stats-resumen">' +
       '<div class="stat"><b>' + films.length + '</b><span>títulos</span></div>' +
       '<div class="stat"><b>' + vistas + '</b><span>vistas</span></div>' +
@@ -1105,9 +1117,12 @@ function abrirActor(nombre) {
     films.map(p => {
       const s = estadoDe(p);
       const estado = (marcas[p.titulo] || {}).descartada ? "descartada" : s.vista ? "vista" : s.pendiente ? "pendiente" : "sin ver";
+      const miniatura = p.portada && !datosLimitados()
+        ? '<img class="actor-thumb" src="' + esc(p.portada) + '" alt="">'
+        : '<div class="actor-thumb sinportada-mini">🎬</div>';
       return '<div class="actor-fila" data-actor-titulo="' + esc(p.titulo) + '">' +
-        '<div><b>' + esc(p.titulo) + '</b><div class="meta">' + esc(p["año"]) + ' · ' + estado +
-        (s.estrellas ? ' · ' + s.estrellas + '★' : '') + '</div></div></div>';
+        '<div style="display:flex;gap:10px;align-items:center">' + miniatura + '<div><b>' + esc(p.titulo) + '</b><div class="meta">' + esc(p["año"]) + ' · ' + estado +
+        (s.estrellas ? ' · ' + s.estrellas + '★' : '') + '</div></div></div></div>';
     }).join("");
   $("actorModal").classList.add("abierto");
 }
@@ -3040,6 +3055,14 @@ async function cargarHoja() {
       const o = { _fila: i + 2 };
       encabezados.forEach((n, j) => o[n] = f[j] ?? "");
       peliculas.push(o);
+    });
+
+    fotosActores = {};
+    peliculas.forEach(p => {
+      try {
+        const m = JSON.parse(p.fotos_reparto || "{}");
+        Object.entries(m).forEach(([n, u]) => { if (!fotosActores[n]) fotosActores[n] = u; });
+      } catch (e) {}
     });
 
     $("login").style.display = "none";
