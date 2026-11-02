@@ -136,7 +136,6 @@
   .vacio { text-align:center; color:var(--gris); grid-column:1/-1; }
   .nota-corta { font-size:14px; line-height:1.45; color:var(--texto); margin:8px 0 0; white-space:pre-wrap; }
 
-  /* CAMBIO: etiquetas con # */
   .etiquetas-fila { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
   .etiqueta { display:inline-block; font-size:12px; padding:4px 10px; border-radius:999px; background:var(--tema-bg); color:var(--tema-texto); border:none; cursor:pointer; transition:transform .15s var(--ease), background .2s; }
   .etiqueta:active { transform:scale(.94); }
@@ -336,6 +335,11 @@
   <button id="avisoEstancadosVer" class="pildora" title="Ver estancadas">Verlas</button>
 </div>
 
+<!-- CAMBIO: aviso de planeaciones con fecha cercana (hoy o mañana) -->
+<div id="avisoFecha" class="aviso-estancados solo-catalogo" style="display:none">
+  <span id="avisoFechaTexto"></span>
+</div>
+
 <section id="resumenSemana" class="destacados solo-catalogo" style="display:none"></section>
 
 <section id="destacados" class="destacados solo-catalogo">
@@ -354,7 +358,6 @@
   <div id="ahoraCaja"></div>
 </section>
 
-<!-- CAMBIO: barra de etiquetas, visible solo en la pestaña Notas -->
 <div id="tagsNotas" class="tags-bar"></div>
 
 <main id="lista"></main>
@@ -1061,6 +1064,7 @@ function estadoDe(p) {
   };
 }
 
+// CAMBIO: vista o descartar también quitan la fecha planeada
 function cambiarEstado(titulo, cambios) {
   const previo = marcas[titulo] || {};
   const nuevo = Object.assign({}, previo, cambios);
@@ -1074,11 +1078,13 @@ function cambiarEstado(titulo, cambios) {
     delete nuevo.conAlguien;
     delete nuevo.conQuien;
     delete nuevo.conAlguienDesde;
+    delete nuevo.conFecha;
   }
   marcas[titulo] = nuevo;
   programarGuardado();
 }
 
+// CAMBIO: al marcar "con alguien" se pregunta también la fecha (opcional)
 function alternarConAlguien(titulo) {
   const previo = marcas[titulo] || {};
   if (previo.conAlguien) {
@@ -1086,6 +1092,7 @@ function alternarConAlguien(titulo) {
     delete nuevo.conAlguien;
     delete nuevo.conQuien;
     delete nuevo.conAlguienDesde;
+    delete nuevo.conFecha;
     marcas[titulo] = nuevo;
     programarGuardado();
     setEstado("Quitada de «Para ver con alguien».");
@@ -1093,19 +1100,57 @@ function alternarConAlguien(titulo) {
   }
   const quien = prompt("¿Con quién la quieres ver? (opcional, puedes dejarlo vacío)", "");
   if (quien === null) return;
+  const fecha = prompt("¿Qué día la quieren ver? (opcional, formato AAAA-MM-DD, por ejemplo 2026-11-15)", "");
+  if (fecha === null) return;
+
   const nuevo = Object.assign({}, previo, {
     conAlguien: true,
     conAlguienDesde: new Date().toISOString().slice(0, 10)
   });
   const q = String(quien).trim();
   if (q) nuevo.conQuien = q; else delete nuevo.conQuien;
+
+  const f = String(fecha).trim();
+  let aviso = "";
+  if (f) {
+    if (fechaValida(f)) nuevo.conFecha = f;
+    else aviso = " La fecha no era válida, así que se guardó sin fecha.";
+  } else {
+    delete nuevo.conFecha;
+  }
+
   marcas[titulo] = nuevo;
   programarGuardado();
   if (!nuevo.pendiente) {
-    setEstado("Marcada. Si quieres verla pronto, también puedes ponerla en pendientes.");
+    setEstado("Marcada para ver con alguien." + aviso + " Si la quieres ver pronto, también puedes ponerla en pendientes.");
   } else {
-    setEstado("Marcada para ver con alguien.");
+    setEstado("Marcada para ver con alguien." + aviso);
   }
+}
+
+// CAMBIO: cambia o quita la fecha de una película ya marcada "con alguien"
+function cambiarFechaConAlguien(titulo) {
+  const previo = marcas[titulo] || {};
+  if (!previo.conAlguien) {
+    setEstado("Primero marca la película como «Para ver con alguien».");
+    return;
+  }
+  const txt = prompt("Fecha para verla (AAAA-MM-DD). Déjalo vacío para quitar la fecha.", previo.conFecha || "");
+  if (txt === null) return;
+  const f = String(txt).trim();
+  const nuevo = Object.assign({}, previo);
+  if (!f) {
+    delete nuevo.conFecha;
+    setEstado("Fecha quitada.");
+  } else if (!fechaValida(f)) {
+    setEstado("Fecha no válida. Usa el formato AAAA-MM-DD, por ejemplo 2026-11-15.");
+    return;
+  } else {
+    nuevo.conFecha = f;
+    setEstado("Fecha guardada: " + f + ".");
+  }
+  marcas[titulo] = nuevo;
+  programarGuardado();
 }
 
 function guardarNota(titulo, texto) {
@@ -1131,10 +1176,9 @@ function borrarNota() {
   abrirDetalle(detalleActual);
 }
 
-/* ---------- CAMBIO: etiquetas con # dentro de las notas ---------- */
+/* ---------- Etiquetas con # dentro de las notas ---------- */
 const TAG_RE = /#[\p{L}\p{N}_-]+/gu;
 
-// Extrae las etiquetas de un texto: "#Terror y #cita" -> ["terror", "cita"]
 function etiquetasDeNota(texto) {
   const encontradas = String(texto || "").match(TAG_RE) || [];
   const vistos = new Set();
@@ -1149,14 +1193,12 @@ function etiquetasDeNota(texto) {
   return salida;
 }
 
-// ¿La película tiene esta etiqueta en su nota? (sin importar acentos ni mayúsculas)
 function coincideEtiqueta(p, etiqueta) {
   const m = marcas[p.titulo] || {};
   const buscada = norm(etiqueta);
   return etiquetasDeNota(m.nota).some(t => norm(t) === buscada);
 }
 
-// Botones de etiquetas dentro de la ficha; si no hay, muestra una pista
 function etiquetasFichaHtml(texto) {
   const tags = etiquetasDeNota(texto);
   if (!tags.length) {
@@ -1165,7 +1207,6 @@ function etiquetasFichaHtml(texto) {
   return tags.map(t => '<button class="etiqueta" data-tag="' + esc(t) + '">#' + esc(t) + '</button>').join("");
 }
 
-// Barra de etiquetas de la pestaña Notas, con cuántas notas tiene cada una
 function renderBarraEtiquetas() {
   const bar = $("tagsNotas");
   const conteo = new Map();
@@ -1195,11 +1236,64 @@ document.addEventListener("change", e => {
   if (e.target.id === "notaTexto" && detalleActual) {
     guardarNota(detalleActual.titulo, e.target.value);
     const zona = $("etiquetasFicha");
-    if (zona) zona.innerHTML = etiquetasFichaHtml(e.target.value); // CAMBIO
+    if (zona) zona.innerHTML = etiquetasFichaHtml(e.target.value);
     setEstado("Nota guardada");
   }
 });
-/* ---------- FIN CAMBIO: etiquetas ---------- */
+
+/* ---------- Fechas ---------- */
+// Revisa que el texto sea una fecha real en formato AAAA-MM-DD
+function fechaValida(s) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return false;
+  const [y, m, d] = s.split("-").map(Number);
+  const dt = new Date(y, m - 1, d);
+  return dt.getFullYear() === y && dt.getMonth() === m - 1 && dt.getDate() === d;
+}
+
+// Días desde hoy hasta la fecha (0 = hoy, 1 = mañana, negativo = ya pasó)
+function diasHasta(s) {
+  const [y, m, d] = s.split("-").map(Number);
+  const obj = Date.UTC(y, m - 1, d);
+  const hoy = new Date();
+  const hoyUTC = Date.UTC(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
+  return Math.round((obj - hoyUTC) / 86400000);
+}
+
+// Texto de la fecha planeada para la ficha y las listas
+function lineaFechaConAlguien(p) {
+  const m = marcas[p.titulo] || {};
+  if (!m.conFecha) return '<div class="meta" style="margin-top:6px">📅 Sin fecha</div>';
+  const d = diasHasta(m.conFecha);
+  const cuando = d === 0 ? "hoy" : d === 1 ? "mañana" : d < 0 ? "pasó hace " + (-d) + " días" : "en " + d + " días";
+  return '<div class="meta" style="margin-top:6px">📅 ' + esc(m.conFecha) + ' · ' + cuando + '</div>';
+}
+
+// CAMBIO: aviso de planeaciones que son hoy o mañana
+function actualizarAvisoFecha() {
+  const aviso = $("avisoFecha");
+  if (hayFiltros() || pestana !== "catalogo") {
+    aviso.style.display = "none";
+    return;
+  }
+  const cercanas = peliculas.map(p => {
+    const m = marcas[p.titulo] || {};
+    if (!m.conAlguien || !m.conFecha) return null;
+    const d = diasHasta(m.conFecha);
+    if (d !== 0 && d !== 1) return null;
+    return { p, d, quien: m.conQuien };
+  }).filter(Boolean);
+
+  if (!cercanas.length) {
+    aviso.style.display = "none";
+    return;
+  }
+  const partes = cercanas.map(x =>
+    x.p.titulo + (x.quien ? " con " + x.quien : "") + (x.d === 0 ? " (hoy)" : " (mañana)")
+  );
+  $("avisoFechaTexto").textContent = "📅 Planeado para pronto: " + partes.join(", ") + ".";
+  aviso.style.display = "flex";
+}
+/* ---------- FIN CAMBIO: fechas ---------- */
 
 function diasPendiente(p) {
   const f = (marcas[p.titulo] || {}).pendienteDesde;
@@ -1237,10 +1331,16 @@ function controlesHtml(p) {
   const etiquetaAlguien = s.conAlguien
     ? '👥 Con alguien' + (quien ? ' · ' + esc(quien) : '')
     : '👥 Con alguien';
+  // CAMBIO: botón de fecha, solo cuando la película está marcada "con alguien"
+  const fechaPlan = (marcas[p.titulo] || {}).conFecha;
+  const botonFecha = s.conAlguien
+    ? '<button class="chipc' + (fechaPlan ? ' activo' : '') + '" data-accion="conFecha" data-clave="' + k + '">📅 ' + (fechaPlan ? esc(fechaPlan) : 'Fecha') + '</button>'
+    : '';
   return '<div class="controles">' +
     '<button class="chipc' + (s.vista ? ' activo' : '') + '" data-accion="vista" data-clave="' + k + '">' + (s.vista ? '✓ Vista' : 'Marcar vista') + '</button>' +
     '<button class="chipc' + (s.pendiente ? ' activo' : '') + '" data-accion="pendiente" data-clave="' + k + '">' + (s.pendiente ? '⏳ En pendientes' : 'Pendiente') + '</button>' +
     '<button class="chipc' + (s.conAlguien ? ' activo' : '') + '" data-accion="conAlguien" data-clave="' + k + '">' + etiquetaAlguien + '</button>' +
+    botonFecha +
     textoDias +
     botonRestaurar +
     '<span class="estrellas">' + estrellas + '</span></div>';
@@ -1718,7 +1818,7 @@ function actualizarAvisoEstancados() {
 /* ---------- Pintado principal ---------- */
 function pintar() {
   if (pestana !== "catalogo") { pintarPestana(); return; }
-  $("tagsNotas").style.display = "none"; // CAMBIO
+  $("tagsNotas").style.display = "none";
 
   const f = buscar.value.trim().toLowerCase();
   visibles = peliculas.filter(p => {
@@ -1740,6 +1840,7 @@ function pintar() {
   renderRecomendaciones();
   actualizarAhora();
   actualizarAvisoEstancados();
+  actualizarAvisoFecha();
   actualizarResumenSemana();
   revisarSalud();
   actualizarBotonSalud();
@@ -1761,7 +1862,8 @@ function pintar() {
 
 function pintarPestana() {
   $("resumenSemana").style.display = "none";
-  $("tagsNotas").style.display = "none"; // CAMBIO: se vuelve a mostrar solo en Notas
+  $("avisoFecha").style.display = "none";
+  $("tagsNotas").style.display = "none";
   let items = [], extra = null, titulo = "";
 
   if (pestana === "notas") {
@@ -1770,7 +1872,7 @@ function pintarPestana() {
     titulo = "Mis notas";
     items = peliculas.filter(p => (marcas[p.titulo] || {}).nota)
       .filter(p => etiquetaBuscada
-        ? coincideEtiqueta(p, etiquetaBuscada) // CAMBIO: #etiqueta filtra por etiqueta exacta
+        ? coincideEtiqueta(p, etiquetaBuscada)
         : [p.titulo, (marcas[p.titulo] || {}).nota].join(" ").toLowerCase().includes(f))
       .sort((a, b) => String((marcas[b.titulo] || {}).notaFecha || "").localeCompare(String((marcas[a.titulo] || {}).notaFecha || "")));
     extra = p => {
@@ -1781,12 +1883,17 @@ function pintarPestana() {
         (tags ? '<div class="etiquetas-fila">' + tags + '</div>' : '') +
         '<div class="meta" style="margin-top:6px">Editada: ' + esc(m.notaFecha || "") + '</div>';
     };
-    renderBarraEtiquetas(); // CAMBIO
+    renderBarraEtiquetas();
   } else if (pestana === "pendientes") {
     titulo = "Pendientes";
     const todas = peliculas.filter(p => estadoDe(p).pendiente);
+    // CAMBIO: las planeadas se ordenan por fecha más cercana; sin fecha, al final
     const planeadas = todas.filter(p => estadoDe(p).conAlguien)
-      .sort((a, b) => String((marcas[a.titulo] || {}).pendienteDesde || "9999").localeCompare(String((marcas[b.titulo] || {}).pendienteDesde || "9999")));
+      .sort((a, b) => {
+        const fa = (marcas[a.titulo] || {}).conFecha || "9999-12-31";
+        const fb = (marcas[b.titulo] || {}).conFecha || "9999-12-31";
+        return fa.localeCompare(fb) || String((marcas[a.titulo] || {}).conAlguienDesde || "").localeCompare(String((marcas[b.titulo] || {}).conAlguienDesde || ""));
+      });
     const resto = todas.filter(p => !estadoDe(p).conAlguien)
       .sort((a, b) => String((marcas[a.titulo] || {}).pendienteDesde || "9999").localeCompare(String((marcas[b.titulo] || {}).pendienteDesde || "9999")));
     items = [...planeadas, ...resto];
@@ -1809,7 +1916,11 @@ function pintarPestana() {
     if (planeadas.length) {
       html += '<div class="bloque-pend"><h3>Para ver con alguien (' + planeadas.length + ')</h3>' +
         '<div class="grupo-items">' +
-        planeadas.map((p, i) => filaPestana(p, i, extra(p) + (marcas[p.titulo] && marcas[p.titulo].conQuien ? '<div class="meta">con ' + esc(marcas[p.titulo].conQuien) + '</div>' : ''))).join("") +
+        planeadas.map((p, i) => filaPestana(p, i,
+          extra(p) +
+          (marcas[p.titulo] && marcas[p.titulo].conQuien ? '<div class="meta">con ' + esc(marcas[p.titulo].conQuien) + '</div>' : '') +
+          lineaFechaConAlguien(p) // CAMBIO
+        )).join("") +
         '</div></div>';
     }
     if (resto.length) {
@@ -1932,7 +2043,7 @@ function abrirDetalle(p) {
     '<p class="sinopsis">' + esc(p.sinopsis) + '</p>' +
     '<div class="nota-bloque"><label for="notaTexto">Mi nota</label>' +
       '<textarea id="notaTexto" placeholder="Escribe lo que te pareció. Usa #etiquetas para encontrarla después.">' + esc(notaActual) + '</textarea>' +
-      '<div id="etiquetasFicha" class="etiquetas-fila">' + etiquetasFichaHtml(notaActual) + '</div>' + // CAMBIO
+      '<div id="etiquetasFicha" class="etiquetas-fila">' + etiquetasFichaHtml(notaActual) + '</div>' +
       (notaActual ? '<div class="nota-acciones"><button id="btnBorrarNota">Borrar nota</button></div>' : '') +
     '</div>' +
     bloqueTrailer(p) +
@@ -2213,7 +2324,7 @@ window.addEventListener("load", () => {
   });
 
   lista.addEventListener("click", e => {
-    if (e.target.closest("a, [data-accion], [data-tag]")) return; // CAMBIO: las etiquetas no abren la ficha
+    if (e.target.closest("a, [data-accion], [data-tag]")) return;
     const card = e.target.closest("[data-i]");
     if (card) {
       desdeAleatorio = false;
@@ -2238,7 +2349,6 @@ window.addEventListener("load", () => {
   });
 
   document.addEventListener("click", e => {
-    // CAMBIO: tocar una etiqueta filtra la pestaña Notas por esa etiqueta
     const etiqueta = e.target.closest("[data-tag]");
     if (etiqueta) {
       const tag = etiqueta.dataset.tag;
@@ -2302,6 +2412,8 @@ window.addEventListener("load", () => {
       cambiarEstado(titulo, { pendiente: !s.pendiente, vista: false });
     } else if (b.dataset.accion === "conAlguien") {
       alternarConAlguien(titulo);
+    } else if (b.dataset.accion === "conFecha") {
+      cambiarFechaConAlguien(titulo);
     } else if (b.dataset.accion === "restaurar") {
       cambiarEstado(titulo, { descartada: false });
     } else if (b.dataset.accion === "estrella") {
@@ -2380,7 +2492,8 @@ async function borrarMisMarcas() {
 $("borrarMarcas").addEventListener("click", borrarMisMarcas);
 
 function exportarCSV() {
-  const columnas = ["titulo", "tipo", "año", "duracion", "pais", "director", "genero", "reparto", "temas", "link", "vista", "pendiente", "estrellas", "nota", "conAlguien", "conQuien"];
+  // CAMBIO: se agrega la columna conFecha
+  const columnas = ["titulo", "tipo", "año", "duracion", "pais", "director", "genero", "reparto", "temas", "link", "vista", "pendiente", "estrellas", "nota", "conAlguien", "conQuien", "conFecha"];
 
   const esc = v => {
     const s = String(v == null ? "" : v);
@@ -2398,6 +2511,7 @@ function exportarCSV() {
       if (c === "nota") return m.nota || "";
       if (c === "conAlguien") return s.conAlguien ? "sí" : "no";
       if (c === "conQuien") return m.conQuien || "";
+      if (c === "conFecha") return m.conFecha || "";
       return p[c] ?? "";
     });
     filas.push(valores.map(esc).join(","));
