@@ -91,6 +91,13 @@
   .resumen-sug { border-top:1px solid var(--borde); padding-top:12px; display:flex; flex-direction:column; align-items:flex-start; gap:4px; }
   .resumen-titulo { font-size:18px; font-weight:600; }
   .resumen-sug .pildora { margin-top:6px; }
+  .actividad-card { max-width:900px; margin:12px auto 0; background:var(--tarjeta); border-radius:18px; box-shadow:var(--sombra); padding:16px 20px; }
+  .actividad-card h3 { margin:0 0 10px; font-size:16px; }
+  .racha { font-size:15px; margin:0 0 12px; }
+  .racha b { font-size:22px; color:var(--acento, var(--texto)); }
+  .insignias { display:flex; flex-wrap:wrap; gap:8px; }
+  .insignia { padding:6px 12px; border-radius:999px; background:var(--boton-suave); font-size:13px; }
+  .insignia.bloq { opacity:.4; filter:grayscale(1); }
 
   .carrusel { display:flex; gap:14px; overflow-x:auto; padding-bottom:10px; scroll-snap-type:x mandatory; }
   .carrusel .dest { flex:0 0 150px; scroll-snap-align:start; cursor:pointer; transition:transform .25s var(--ease); }
@@ -375,6 +382,7 @@
 </div>
 
 <section id="resumenSemana" class="destacados solo-catalogo" style="display:none"></section>
+<section id="actividad" class="destacados solo-catalogo" style="display:none"></section>
 
 <section id="destacados" class="destacados solo-catalogo">
   <h3>Estrenos recientes</h3>
@@ -782,6 +790,7 @@ function actualizarResumenSemana() {
     return estadoDe(p).pendiente && d !== null && d > 30;
   }).length;
   const sug = sugerenciaSemanal();
+  const rec0 = calcularRecomendaciones()[0];
 
   sec.innerHTML =
     '<div class="resumen-card">' +
@@ -792,6 +801,7 @@ function actualizarResumenSemana() {
         '<div class="stat"><b>' + pendLargas + '</b><span>pendientes con más de 30 días</span></div>' +
       '</div>' +
       (vistasSemana.length === 0 ? '<p class="meta">Esta semana no marcaste películas como vistas.</p>' : '') +
+      (rec0 ? '<button class="pildora" id="btnCompartirRec">Compartir recomendación</button>' : '') +
       (sug
         ? '<div class="resumen-sug">' +
             '<span class="meta">Hoy te sugiero</span>' +
@@ -802,6 +812,111 @@ function actualizarResumenSemana() {
         : '<p class="meta">No tienes pendientes para sugerir hoy.</p>') +
     '</div>';
   sec.style.display = "block";
+}
+
+/* ---------- Actividad: racha, insignias y compartir recomendación ---------- */
+function sumarDiasISO(iso, n) {
+  const [y, m, d] = iso.split("-").map(Number);
+  const x = new Date(y, m - 1, d + n);
+  x.setMinutes(x.getMinutes() - x.getTimezoneOffset());
+  return x.toISOString().slice(0, 10);
+}
+
+function inicioSemanaISO(iso) {
+  const [y, m, d] = iso.split("-").map(Number);
+  const x = new Date(y, m - 1, d);
+  const dow = (x.getDay() + 6) % 7;
+  return sumarDiasISO(iso, -dow);
+}
+
+function vistasConFecha() {
+  return peliculas.filter(p => {
+    const m = marcas[p.titulo] || {};
+    return m.vista && typeof m.vistaDesde === "string" && /^\d{4}-\d{2}-\d{2}$/.test(m.vistaDesde);
+  });
+}
+
+function rachaSemanas() {
+  const semanas = new Set(vistasConFecha().map(p => inicioSemanaISO((marcas[p.titulo] || {}).vistaDesde)));
+  let cursor = inicioSemanaISO(hoyLocalISO());
+  if (!semanas.has(cursor)) cursor = sumarDiasISO(cursor, -7);
+  let racha = 0;
+  while (semanas.has(cursor)) {
+    racha++;
+    cursor = sumarDiasISO(cursor, -7);
+  }
+  return racha;
+}
+
+function maxVistasEnUnMes() {
+  const porMes = {};
+  vistasConFecha().forEach(p => {
+    const k = (marcas[p.titulo] || {}).vistaDesde.slice(0, 7);
+    porMes[k] = (porMes[k] || 0) + 1;
+  });
+  return Math.max(0, ...Object.values(porMes));
+}
+
+function insigniasDeActividad() {
+  const vistas = vistasConFecha().length;
+  const totalVistas = peliculas.filter(p => estadoDe(p).vista).length;
+  const racha = rachaSemanas();
+  const mesMax = maxVistasEnUnMes();
+  return [
+    { t: "Primera vista", ok: totalVistas >= 1 },
+    { t: "10 vistas", ok: totalVistas >= 10 },
+    { t: "25 vistas", ok: totalVistas >= 25 },
+    { t: "50 vistas", ok: totalVistas >= 50 },
+    { t: "Racha de 3 semanas", ok: racha >= 3 },
+    { t: "5 vistas en un mes", ok: mesMax >= 5 }
+  ];
+}
+
+function renderActividad() {
+  const sec = $("actividad");
+  const hayFiltrosAct = hayFiltros();
+  if (!peliculas.length || hayFiltrosAct || pestana !== "catalogo") {
+    sec.style.display = "none";
+    return;
+  }
+  const racha = rachaSemanas();
+  const insignias = insigniasDeActividad();
+  sec.innerHTML =
+    '<div class="actividad-card">' +
+      '<h3>Tu actividad</h3>' +
+      '<p class="racha">Racha: <b>' + racha + '</b> ' + (racha === 1 ? 'semana' : 'semanas') + ' seguidas con alguna vista</p>' +
+      '<div class="insignias">' +
+        insigniasDeActividad().map(i =>
+          '<span class="insignia' + (i.ok ? '' : ' bloq') + '">' + (i.ok ? '🏅 ' : '🔒 ') + esc(i.t) + '</span>'
+        ).join("") +
+      '</div>' +
+    '</div>';
+  sec.style.display = "block";
+}
+
+function textoRecomendacion(r) {
+  const f = r.desglose.find(d => d.puntos > 0);
+  const fuente = f && f.fuentes && f.fuentes[0];
+  const razon = r.razon || (f ? f.etiqueta : "");
+  return "Te recomiendo «" + r.p.titulo + "»" +
+    (razon ? " — " + razon : "") +
+    (fuente ? ", que te gustó en " + fuente.titulo : "") + ".";
+}
+
+async function compartirRecomendacion() {
+  const r = calcularRecomendaciones()[0];
+  if (!r) { setEstado("Aún no hay recomendación para compartir."); return; }
+  const texto = textoRecomendacion(r);
+  if (navigator.share) {
+    try { await navigator.share({ text: texto }); } catch (e) {}
+    return;
+  }
+  try {
+    await navigator.clipboard.writeText(texto);
+    setEstado("Recomendación copiada.");
+  } catch (e) {
+    setEstado(texto);
+  }
 }
 
 /* ---------- Recomendaciones según calificaciones ---------- */
@@ -2219,6 +2334,7 @@ function pintar() {
   renderAvisoEstancados();
   actualizarAvisoFecha();
   actualizarResumenSemana();
+  renderActividad();
   revisarSalud();
   actualizarBotonSalud();
   actualizarBotonAvanzados();
@@ -2814,6 +2930,7 @@ window.addEventListener("load", () => {
       return;
     }
     if (e.target.id === "btnEnlace") { copiarEnlace(); return; }
+    if (e.target.id === "btnCompartirRec") { compartirRecomendacion(); return; }
 
     if (e.target.id === "ahoraVer") {
       if (sugeridaActual) { desdeAleatorio = false; abrirDetalle(sugeridaActual); }
