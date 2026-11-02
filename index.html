@@ -167,6 +167,23 @@
   .bloque-pend { grid-column:1/-1; margin-bottom:8px; }
   .bloque-pend h3 { margin:0 0 12px; font-size:18px; }
 
+  /* CAMBIO: panel de descartadas */
+  .desc-bloque { max-width:900px; margin:0 auto 16px; background:var(--tarjeta); border-radius:18px; box-shadow:var(--sombra); padding:16px 18px; }
+  .desc-bloque h3 { margin:0 0 6px; font-size:16px; }
+  .desc-bloque .meta { margin-bottom:10px; }
+  .desc-item { display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; padding:8px 0; border-top:1px solid var(--borde); }
+  .desc-item:first-of-type { border-top:none; }
+  .desc-item .info-desc { flex:1; min-width:160px; font-size:14px; }
+  .desc-item .info-desc small { display:block; color:var(--gris); font-size:12px; }
+  .desc-acciones { display:flex; gap:6px; flex-wrap:wrap; }
+  .desc-acciones button { font-size:12px; padding:6px 10px; }
+  .desc-barra { max-width:900px; margin:0 auto 14px; display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:space-between; }
+  .desc-barra input[type=search] { flex:1; min-width:200px; padding:10px 14px; font-size:14px; border:1px solid var(--borde); border-radius:999px; background:var(--tarjeta); color:var(--texto); outline:none; }
+  .desc-fila { max-width:900px; margin:0 auto 10px; background:var(--tarjeta); border-radius:16px; box-shadow:var(--sombra); padding:12px 16px; display:flex; align-items:center; gap:12px; }
+  .desc-fila input[type=checkbox] { width:20px; height:20px; flex-shrink:0; accent-color:var(--azul); }
+  .desc-fila .info-fila { flex:1; }
+  .desc-fila .info-fila h2 { margin:0 0 2px; font-size:16px; }
+
   .controles { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:10px; }
   .chipc { border:1px solid var(--borde); background:var(--tarjeta); color:var(--texto); border-radius:999px; padding:6px 12px; font-size:13px; cursor:pointer; transition:transform .15s var(--ease), background .25s, color .25s; }
   .chipc:active { transform:scale(.92); }
@@ -178,13 +195,14 @@
   .estrella:active { transform:scale(.85); }
   .estrella.on { color:var(--estrella); }
 
-  #tabbar { position:fixed; left:0; right:0; bottom:0; z-index:8; display:flex; justify-content:space-around; background:var(--tarjeta); border-top:1px solid var(--borde); padding:8px 8px calc(8px + env(safe-area-inset-bottom, 0px)); }
-  #tabbar button { flex:1; max-width:160px; background:none; border:none; color:var(--gris); font-size:12px; padding:6px 4px; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:2px; border-radius:12px; transition:color .2s; }
+  /* CAMBIO: barra inferior con cinco pestañas */
+  #tabbar { position:fixed; left:0; right:0; bottom:0; z-index:8; display:flex; justify-content:space-around; background:var(--tarjeta); border-top:1px solid var(--borde); padding:8px 4px calc(8px + env(safe-area-inset-bottom, 0px)); }
+  #tabbar button { flex:1; max-width:160px; background:none; border:none; color:var(--gris); font-size:11px; padding:6px 2px; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:2px; border-radius:12px; transition:color .2s; }
   #tabbar button .ico { font-size:20px; line-height:1; }
   #tabbar button.activa { color:var(--azul); font-weight:600; }
   #tabbar button:active { transform:scale(.95); }
   @media (min-width: 900px) {
-    #tabbar { left:50%; right:auto; transform:translateX(-50%); width:min(520px, 100%); bottom:16px; border:1px solid var(--borde); border-radius:999px; padding:6px; box-shadow:var(--sombra); }
+    #tabbar { left:50%; right:auto; transform:translateX(-50%); width:min(560px, 100%); bottom:16px; border:1px solid var(--borde); border-radius:999px; padding:6px; box-shadow:var(--sombra); }
     body { padding-bottom:110px; }
   }
   body.solo-lista .solo-catalogo { display:none !important; }
@@ -278,7 +296,6 @@
       <option value="conAlguien">Para ver con alguien</option>
       <option value="estancados">Pendientes estancados (más de 30 días)</option>
       <option value="favoritas">Favoritas (4 o 5★)</option>
-      <option value="descartadas">Descartadas</option>
     </select>
     <button id="toggleAvanzados" class="pildora">⚙ Filtros avanzados</button>
   </div>
@@ -405,6 +422,7 @@
   <button data-tab="notas"><span class="ico">📝</span>Notas</button>
   <button data-tab="pendientes"><span class="ico">⏳</span>Pendientes</button>
   <button data-tab="vistas"><span class="ico">✓</span>Vistas</button>
+  <button data-tab="descartadas"><span class="ico">🗑</span>Descartadas</button>
 </nav>
 
 <div id="modal">
@@ -463,8 +481,9 @@ let chartsStats = [];
 let pestana = "catalogo";
 let decidiendo = null;
 let deshacerDescarte = null;
-let avisoCerrado = false;      // CAMBIO: el aviso se cerró con ×
-let firmaAvisoCerrado = "";    // CAMBIO: lista de estancadas cuando se cerró el aviso
+let avisoCerrado = false;
+let firmaAvisoCerrado = "";
+let seleccionDesc = new Set(); // CAMBIO: títulos marcados en la pestaña Descartadas
 const paletaCache = new Map();
 
 let ubicacion = { lat: 21.16, lon: -86.85 };
@@ -1096,6 +1115,7 @@ function estadoDe(p) {
   };
 }
 
+// CAMBIO: al descartar se guarda la fecha; al restaurar se quita junto con la revisión
 function cambiarEstado(titulo, cambios) {
   const previo = marcas[titulo] || {};
   const nuevo = Object.assign({}, previo, cambios);
@@ -1110,6 +1130,14 @@ function cambiarEstado(titulo, cambios) {
     delete nuevo.conQuien;
     delete nuevo.conAlguienDesde;
     delete nuevo.conFecha;
+  }
+  if (cambios.descartada === true && !previo.descartada) {
+    nuevo.descartadaDesde = new Date().toISOString().slice(0, 10);
+    delete nuevo.revisionHecha;
+  }
+  if (cambios.descartada === false) {
+    delete nuevo.descartadaDesde;
+    delete nuevo.revisionHecha;
   }
   marcas[titulo] = nuevo;
   programarGuardado();
@@ -1375,6 +1403,14 @@ function diasPendiente(p) {
 
 function diasConAlguien(p) {
   const f = (marcas[p.titulo] || {}).conAlguienDesde;
+  if (!f) return null;
+  const ms = Date.now() - new Date(f + "T00:00:00").getTime();
+  return Math.max(0, Math.floor(ms / 86400000));
+}
+
+// CAMBIO: días desde que se descartó (null si no tiene fecha)
+function diasDescartada(p) {
+  const f = (marcas[p.titulo] || {}).descartadaDesde;
   if (!f) return null;
   const ms = Date.now() - new Date(f + "T00:00:00").getTime();
   return Math.max(0, Math.floor(ms / 86400000));
@@ -1776,10 +1812,9 @@ function renderChips() {
   ).join("");
 }
 
+// CAMBIO: las descartadas ya no se muestran en Catálogo; tienen su propia pestaña
 function coincideEstado(p, valor) {
-  const descartada = !!(marcas[p.titulo] || {}).descartada;
-  if (valor === "descartadas") return descartada;
-  if (descartada) return false;
+  if (marcas[p.titulo] && marcas[p.titulo].descartada) return false;
   if (!valor) return true;
   const s = estadoDe(p);
   if (valor === "vista") return s.vista;
@@ -1886,7 +1921,6 @@ function renderAvisoEstancados() {
   const aviso = $("avisoEstancados");
   const items = listaEstancadas();
 
-  // CAMBIO: si la lista cambió desde que se cerró el aviso, vuelve a mostrarse
   const firmaActual = items.map(x => x.p.titulo + x.tipo).join("|");
   if (firmaActual !== firmaAvisoCerrado) avisoCerrado = false;
 
@@ -1983,8 +2017,105 @@ function accionDecidir(accion, titulo) {
   }
 }
 
+/* ---------- CAMBIO: pestaña Descartadas ---------- */
+function listaDescartadas() {
+  return peliculas.filter(p => (marcas[p.titulo] || {}).descartada);
+}
+
+// Descartadas con más de 90 días y sin revisión hecha
+function revisionesPendientes() {
+  return listaDescartadas().filter(p => {
+    const m = marcas[p.titulo] || {};
+    if (m.revisionHecha) return false;
+    const d = diasDescartada(p);
+    return d !== null && d >= 90;
+  });
+}
+
+function renderPestanaDescartadas() {
+  const todas = listaDescartadas();
+  const texto = buscar.value.trim().toLowerCase();
+  const revisiones = revisionesPendientes();
+
+  // Quita de la selección las que ya no están descartadas
+  seleccionDesc = new Set([...seleccionDesc].filter(t => todas.some(p => p.titulo === t)));
+
+  const visiblesDesc = todas
+    .filter(p => {
+      const m = marcas[p.titulo] || {};
+      return [p.titulo, m.nota || ""].join(" ").toLowerCase().includes(texto);
+    })
+    .sort((a, b) => String(a.titulo).localeCompare(String(b.titulo), "es"));
+
+  visibles = visiblesDesc;
+  contador.textContent = "Descartadas: " + todas.length + " · mostrando " + visiblesDesc.length;
+  chips.innerHTML = "";
+
+  let html = "";
+
+  if (revisiones.length) {
+    html += '<div class="desc-bloque"><h3>Lleva más de 90 días descartada: ¿la reconsideras?</h3>' +
+      '<p class="meta">Tú decides. Nada cambia hasta que pulses un botón.</p>' +
+      revisiones.map(p => {
+        const k = esc(p.titulo);
+        return '<div class="desc-item"><div class="info-desc">' + esc(p.titulo) +
+          '<small>Descartada hace ' + diasDescartada(p) + ' días</small></div>' +
+          '<div class="desc-acciones">' +
+          '<button class="pildora destacado" data-revision="restaurar" data-clave="' + k + '">Restaurar</button>' +
+          '<button class="pildora" data-revision="dejar" data-clave="' + k + '">Dejar así</button>' +
+          '</div></div>';
+      }).join("") +
+      '</div>';
+  }
+
+  html += '<div class="desc-barra">' +
+    '<input type="search" id="buscarDesc" placeholder="Buscar en descartadas" value="' + esc(buscar.value) + '">' +
+    '<button class="pildora" id="selTodasDesc">Seleccionar todas las visibles</button>' +
+    '<button class="pildora destacado" id="restaurarSelDesc"' + (seleccionDesc.size ? '' : ' disabled') + '>Restaurar seleccionadas (' + seleccionDesc.size + ')</button>' +
+    '</div>';
+
+  if (!visiblesDesc.length) {
+    html += '<p class="vacio">' + (todas.length ? "No encontré descartadas con ese texto." : "No tienes películas descartadas.") + '</p>';
+  } else {
+    html += visiblesDesc.map(p => {
+      const k = esc(p.titulo);
+      const d = diasDescartada(p);
+      const cuando = d === null ? "fecha desconocida" : "descartada hace " + d + (d === 1 ? " día" : " días");
+      return '<div class="desc-fila">' +
+        '<input type="checkbox" data-sel="' + k + '"' + (seleccionDesc.has(p.titulo) ? ' checked' : '') + '>' +
+        '<div class="info-fila"><h2>' + esc(p.titulo) + '</h2>' +
+        '<div class="meta">' + esc(p["año"]) + ' · ' + cuando + '</div></div>' +
+        '<button class="chipc" data-restaurar-una="' + k + '">↩ Restaurar</button>' +
+        '</div>';
+    }).join("");
+  }
+
+  lista.innerHTML = html;
+}
+
+// Pone la revisión como hecha ("Dejar así") o restaura la película
+function accionRevision(accion, titulo) {
+  if (accion === "restaurar") {
+    cambiarEstado(titulo, { descartada: false });
+  } else {
+    const m = Object.assign({}, marcas[titulo] || {}, { revisionHecha: true });
+    marcas[titulo] = m;
+    programarGuardado();
+  }
+  refrescarTodo();
+}
+
+function restaurarTitulos(titulos) {
+  if (!titulos.length) return;
+  titulos.forEach(t => cambiarEstado(t, { descartada: false }));
+  seleccionDesc.clear();
+  setEstado(titulos.length + (titulos.length === 1 ? " película restaurada." : " películas restauradas."));
+  refrescarTodo();
+}
+
 /* ---------- Pintado principal ---------- */
 function pintar() {
+  if (pestana === "descartadas") { pintarPestana(); return; }
   if (pestana !== "catalogo") { pintarPestana(); return; }
   $("tagsNotas").style.display = "none";
 
@@ -2033,6 +2164,17 @@ function pintarPestana() {
   $("avisoFecha").style.display = "none";
   $("avisoEstancados").style.display = "none";
   $("tagsNotas").style.display = "none";
+  $("destacados").style.display = "none";
+  $("salud").classList.add("oculto");
+  $("ahora").style.display = "none";
+  $("recomendaciones").style.display = "none";
+  chips.innerHTML = "";
+
+  if (pestana === "descartadas") {
+    renderPestanaDescartadas();
+    return;
+  }
+
   let items = [], extra = null, titulo = "";
 
   if (pestana === "notas") {
@@ -2069,11 +2211,6 @@ function pintarPestana() {
 
     visibles = items;
     contador.textContent = "Pendientes: " + items.length + " · con alguien: " + planeadas.length;
-    chips.innerHTML = "";
-    $("ahora").style.display = "none";
-    $("recomendaciones").style.display = "none";
-    $("destacados").style.display = "none";
-    $("salud").classList.add("oculto");
 
     if (!items.length) {
       lista.innerHTML = '<p class="vacio">No tienes pendientes.</p>';
@@ -2111,11 +2248,6 @@ function pintarPestana() {
 
   visibles = items;
   contador.textContent = titulo + ": " + items.length + (items.length === 1 ? " título" : " títulos");
-  chips.innerHTML = "";
-  $("ahora").style.display = "none";
-  $("recomendaciones").style.display = "none";
-  $("destacados").style.display = "none";
-  $("salud").classList.add("oculto");
 
   if (!items.length) {
     const msg = pestana === "notas"
@@ -2269,7 +2401,7 @@ function cambiarPestana(nombre) {
   }
   $("buscar").placeholder = nombre === "notas"
     ? "Busca en tus notas o escribe #etiqueta..."
-    : "Busca por título, director o actor";
+    : nombre === "descartadas" ? "Buscar en descartadas..." : "Busca por título, director o actor";
   pintar();
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
@@ -2471,13 +2603,13 @@ window.addEventListener("load", () => {
     b.addEventListener("click", () => cambiarPestana(b.dataset.tab));
   });
   const guardada = modoGuardado("pestana_activa", "catalogo");
-  if (["catalogo", "notas", "pendientes", "vistas"].includes(guardada) && guardada !== "catalogo") {
+  if (["catalogo", "notas", "pendientes", "vistas", "descartadas"].includes(guardada) && guardada !== "catalogo") {
     pestana = guardada;
     document.querySelectorAll("#tabbar button").forEach(b => b.classList.toggle("activa", b.dataset.tab === guardada));
     document.body.classList.add("solo-lista");
     $("buscar").placeholder = guardada === "notas"
       ? "Busca en tus notas o escribe #etiqueta..."
-      : "Busca por título, director o actor";
+      : guardada === "descartadas" ? "Buscar en descartadas..." : "Busca por título, director o actor";
   }
 
   chips.addEventListener("click", e => {
@@ -2490,12 +2622,47 @@ window.addEventListener("load", () => {
   });
 
   lista.addEventListener("click", e => {
-    if (e.target.closest("a, [data-accion], [data-tag]")) return;
+    if (e.target.closest("a, [data-accion], [data-tag], [data-sel], [data-restaurar-una], [data-revision], button, input")) return;
     const card = e.target.closest("[data-i]");
     if (card) {
       desdeAleatorio = false;
       abrirDetalle(visibles[Number(card.dataset.i)]);
     }
+  });
+
+  // CAMBIO: eventos de la pestaña Descartadas (usan delegación porque la lista se repinta)
+  lista.addEventListener("input", e => {
+    if (e.target.id === "buscarDesc") {
+      buscar.value = e.target.value;
+      seleccionDesc.clear();
+      pintar();
+      const campo = $("buscarDesc");
+      if (campo) { campo.focus(); campo.setSelectionRange(campo.value.length, campo.value.length); }
+    }
+  });
+
+  lista.addEventListener("change", e => {
+    if (e.target.dataset && e.target.dataset.sel) {
+      const t = e.target.dataset.sel;
+      if (e.target.checked) seleccionDesc.add(t); else seleccionDesc.delete(t);
+      pintar();
+    }
+  });
+
+  lista.addEventListener("click", e => {
+    if (e.target.id === "selTodasDesc") {
+      visibles.forEach(p => seleccionDesc.add(p.titulo));
+      pintar();
+      return;
+    }
+    if (e.target.id === "restaurarSelDesc") {
+      restaurarTitulos([...seleccionDesc]);
+      return;
+    }
+    const una = e.target.closest("[data-restaurar-una]");
+    if (una) { restaurarTitulos([una.dataset.restaurarUna]); return; }
+    const rev = e.target.closest("[data-revision]");
+    if (rev) { accionRevision(rev.dataset.revision, rev.dataset.clave); return; }
   });
 
   $("carrusel").addEventListener("click", e => {
@@ -2530,7 +2697,6 @@ window.addEventListener("load", () => {
     const decision = e.target.closest("[data-decidir]");
     if (decision) { accionDecidir(decision.dataset.decidir, decision.dataset.clave); return; }
 
-    // CAMBIO: al cerrar con × se guarda la firma de la lista actual
     if (e.target.id === "avisoCerrar") {
       avisoCerrado = true;
       firmaAvisoCerrado = listaEstancadas().map(x => x.p.titulo + x.tipo).join("|");
@@ -2605,6 +2771,7 @@ window.addEventListener("load", () => {
 
   $("aleatorio").addEventListener("click", sugerirAleatoria);
   $("estadisticas").addEventListener("click", abrirEstadisticas);
+  $("avisoEstancadosVer").addEventListener && $("avisoEstancadosVer").addEventListener("click", () => {});
   $("guardarPaletas").addEventListener("click", guardarPaletasEnHoja);
   $("cerrarStats").addEventListener("click", cerrarEstadisticas);
   $("statsModal").addEventListener("click", e => { if (e.target.id === "statsModal") cerrarEstadisticas(); });
@@ -2654,7 +2821,7 @@ window.addEventListener("load", () => {
 });
 
 async function borrarMisMarcas() {
-  const ok = confirm("¿Borrar todas tus marcas (vistas, pendientes, estrellas, notas y «con alguien»)? Esta acción no se puede deshacer.");
+  const ok = confirm("¿Borrar todas tus marcas (vistas, pendientes, estrellas, notas, «con alguien» y descartadas)? Esta acción no se puede deshacer.");
   if (!ok) return;
   clearTimeout(guardadoTimer);
   if (idMarcas) {
@@ -2667,6 +2834,7 @@ async function borrarMisMarcas() {
   }
   idMarcas = null;
   marcas = {};
+  seleccionDesc.clear();
   try { localStorage.removeItem("catalogo_estado"); } catch (e) {}
   refrescarTodo();
   setEstado("Tus marcas se borraron de Drive y de este navegador.");
