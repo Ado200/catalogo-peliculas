@@ -2875,7 +2875,7 @@ function abrirDetalle(p) {
     '<div class="meta">' + esc(p.tipo) + ' · ' + esc(p["año"]) + ' · ' + esc(p.duracion) + ' · ' + esc(p.pais) + '</div>' +
     '<div class="meta">Género: ' + esc(p.genero) + '</div>' +
     '<div class="meta">Dirección: ' + esc(p.director) + '</div>' +
-    '<div class="meta">Reparto: ' + nombresReparto(p).map(n => '<button class="etiqueta" data-actor="' + esc(n) + '">' + esc(n) + '</button>').join(" ") + '</div>' +
+    '<div class="meta">Reparto: ' + nombresReparto(p).map(n => '<button class="etiqueta" data-actor="' + esc(n) + '">' + (fotosActores[n] ? '<img class="actor-chip-foto" src="' + esc(fotosActores[n]) + '" alt="">' : '') + esc(n) + '</button>').join(" ") + '</div>' +
     '<div class="pastillas">' + pastillasHtml(p) + '</div>' +
     controlesHtml(p) +
     '<p class="sinopsis">' + esc(p.sinopsis) + '</p>' +
