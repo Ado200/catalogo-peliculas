@@ -71,6 +71,17 @@
   .destacados h3 { margin:0 0 12px; font-size:18px; color:var(--texto); }
   .aviso-estancados { max-width:900px; margin:16px auto 0; padding:12px 16px; background:var(--tema-bg); color:var(--tema-texto); border-radius:14px; font-size:14px; display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; }
   .aviso-estancados button { background:none; border:none; color:inherit; font-size:18px; cursor:pointer; padding:0 4px; }
+
+  /* CAMBIO: tarjeta del resumen semanal (solo lunes) */
+  .resumen-card { max-width:900px; margin:0 auto; background:var(--tarjeta); border-radius:18px; box-shadow:var(--sombra); padding:18px 20px; }
+  .resumen-top { display:flex; justify-content:space-between; align-items:center; }
+  .resumen-top h3 { margin:0; font-size:17px; }
+  .resumen-top button { background:none; border:none; font-size:22px; color:var(--gris); cursor:pointer; padding:0 6px; }
+  .resumen-stats { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:12px 0; }
+  .resumen-sug { border-top:1px solid var(--borde); padding-top:12px; display:flex; flex-direction:column; align-items:flex-start; gap:4px; }
+  .resumen-titulo { font-size:18px; font-weight:600; }
+  .resumen-sug .pildora { margin-top:6px; }
+
   .carrusel { display:flex; gap:14px; overflow-x:auto; padding-bottom:10px; scroll-snap-type:x mandatory; }
   .carrusel .dest { flex:0 0 150px; scroll-snap-align:start; cursor:pointer; transition:transform .25s var(--ease); }
   .carrusel .dest:hover { transform:translateY(-4px); }
@@ -318,6 +329,9 @@
   <button id="avisoEstancadosVer" class="pildora" title="Ver estancadas">Verlas</button>
 </div>
 
+<!-- CAMBIO: tarjeta del resumen semanal, visible solo los lunes -->
+<section id="resumenSemana" class="destacados solo-catalogo" style="display:none"></section>
+
 <section id="destacados" class="destacados solo-catalogo">
   <h3>Estrenos recientes</h3>
   <div id="carrusel" class="carrusel"></div>
@@ -554,7 +568,6 @@ const REGLAS = [
   }
 ];
 
-// Fin de semana por la tarde: prioriza las que se planean con alguien
 function esFinDeSemanaTarde() {
   const ahora = new Date();
   const dia = ahora.getDay();
@@ -627,6 +640,103 @@ function actualizarAhora() {
   sec.style.display = "block";
   if (!sugeridaActual || !estadoDe(sugeridaActual).pendiente) nuevaSugerencia(null);
 }
+
+/* ---------- CAMBIO: resumen semanal (solo lunes) ---------- */
+// Fecha local en formato AAAA-MM-DD (evita el desfase de UTC en Cancún)
+function hoyLocalISO() {
+  const d = new Date();
+  d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+  return d.toISOString().slice(0, 10);
+}
+
+// Fecha local de hace N días, en formato AAAA-MM-DD
+function diaISODesde(dias) {
+  const d = new Date();
+  d.setDate(d.getDate() - dias);
+  d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+  return d.toISOString().slice(0, 10);
+}
+
+function leerJSON(clave, defecto) {
+  try {
+    const v = localStorage.getItem(clave);
+    return v ? JSON.parse(v) : defecto;
+  } catch (e) { return defecto; }
+}
+
+function guardarJSON(clave, valor) {
+  try { localStorage.setItem(clave, JSON.stringify(valor)); } catch (e) {}
+}
+
+// Elige una pendiente para la semana. Se mantiene el mismo día y no repite las últimas 8 sugeridas.
+function sugerenciaSemanal() {
+  const pend = peliculas.filter(p => estadoDe(p).pendiente);
+  if (!pend.length) return null;
+
+  const hoy = hoyLocalISO();
+  const guardada = leerJSON("resumen_sugerida", null);
+  if (guardada && guardada.fecha === hoy) {
+    const previa = pend.find(x => x.titulo === guardada.titulo);
+    if (previa) return previa;
+  }
+
+  const historial = leerJSON("resumen_historial", []);
+  let candidatas = pend.filter(p => !historial.includes(p.titulo));
+  if (!candidatas.length) candidatas = pend;
+  const elegida = candidatas[Math.floor(Math.random() * candidatas.length)];
+
+  guardarJSON("resumen_sugerida", { fecha: hoy, titulo: elegida.titulo });
+  guardarJSON("resumen_historial", [elegida.titulo, ...historial].slice(0, 8));
+  return elegida;
+}
+
+function cerrarResumenSemana() {
+  try { localStorage.setItem("resumen_cerrado", hoyLocalISO()); } catch (e) {}
+  actualizarResumenSemana();
+}
+
+function actualizarResumenSemana() {
+  const sec = $("resumenSemana");
+  const hoy = hoyLocalISO();
+  const esLunes = new Date().getDay() === 1;
+
+  if (!peliculas.length || !esLunes || modoGuardado("resumen_cerrado", "") === hoy || hayFiltros() || pestana !== "catalogo") {
+    sec.style.display = "none";
+    return;
+  }
+
+  const desde = diaISODesde(6);
+  const vistasSemana = peliculas.filter(p => {
+    const m = marcas[p.titulo] || {};
+    return m.vista && m.vistaDesde && m.vistaDesde >= desde && m.vistaDesde <= hoy;
+  });
+  const pendLargas = peliculas.filter(p => {
+    const d = diasPendiente(p);
+    return estadoDe(p).pendiente && d !== null && d > 30;
+  }).length;
+  const sug = sugerenciaSemanal();
+
+  sec.innerHTML =
+    '<div class="resumen-card">' +
+      '<div class="resumen-top"><h3>Resumen de la semana</h3>' +
+        '<button id="cerrarResumen" title="Cerrar">×</button></div>' +
+      '<div class="resumen-stats">' +
+        '<div class="stat"><b>' + vistasSemana.length + '</b><span>vistas esta semana</span></div>' +
+        '<div class="stat"><b>' + pendLargas + '</b><span>pendientes con más de 30 días</span></div>' +
+      '</div>' +
+      (vistasSemana.length === 0 ? '<p class="meta">Esta semana no marcaste películas como vistas.</p>' : '') +
+      (sug
+        ? '<div class="resumen-sug">' +
+            '<span class="meta">Hoy te sugiero</span>' +
+            '<div class="resumen-titulo">' + esc(sug.titulo) + '</div>' +
+            '<div class="meta">' + esc(sug["año"]) + ' · ' + esc(sug.duracion) + '</div>' +
+            '<button class="pildora destacado" id="resumenVer" data-titulo="' + esc(sug.titulo) + '">Ver ficha</button>' +
+          '</div>'
+        : '<p class="meta">No tienes pendientes para sugerir hoy.</p>') +
+    '</div>';
+  sec.style.display = "block";
+}
+/* ---------- FIN CAMBIO: resumen semanal ---------- */
 
 /* ---------- Recomendaciones según calificaciones ---------- */
 function calcularRecomendaciones() {
@@ -950,7 +1060,6 @@ function cambiarEstado(titulo, cambios) {
   if (cambios.pendiente === false || (cambios.pendiente === undefined && !nuevo.pendiente)) {
     delete nuevo.pendienteDesde;
   }
-  // Vista o descartar quitan la marca "con alguien"
   if (cambios.vista === true || cambios.descartada === true) {
     delete nuevo.conAlguien;
     delete nuevo.conQuien;
@@ -960,7 +1069,6 @@ function cambiarEstado(titulo, cambios) {
   programarGuardado();
 }
 
-// Activa o quita "Para ver con alguien"; el nombre de la persona es opcional
 function alternarConAlguien(titulo) {
   const previo = marcas[titulo] || {};
   if (previo.conAlguien) {
@@ -1558,6 +1666,7 @@ function pintar() {
   renderRecomendaciones();
   actualizarAhora();
   actualizarAvisoEstancados();
+  actualizarResumenSemana(); // CAMBIO
   revisarSalud();
   actualizarBotonSalud();
   actualizarBotonAvanzados();
@@ -1577,6 +1686,7 @@ function pintar() {
 }
 
 function pintarPestana() {
+  $("resumenSemana").style.display = "none"; // CAMBIO: el resumen solo vive en Catálogo
   let items = [], extra = null, titulo = "";
 
   if (pestana === "notas") {
@@ -2045,6 +2155,12 @@ window.addEventListener("load", () => {
   });
 
   document.addEventListener("click", e => {
+    if (e.target.id === "cerrarResumen") { cerrarResumenSemana(); return; } // CAMBIO
+    if (e.target.id === "resumenVer") { // CAMBIO
+      const p = peliculas.find(x => x.titulo === e.target.dataset.titulo);
+      if (p) { desdeAleatorio = false; abrirDetalle(p); }
+      return;
+    }
     if (e.target.id === "btnBorrarNota") { borrarNota(); return; }
     if (e.target.id === "otraSugerencia") { sugerirAleatoria(); return; }
     if (e.target.id === "btnCompartir") {
