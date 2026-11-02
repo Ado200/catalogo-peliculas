@@ -111,7 +111,6 @@
   @keyframes fundo { from { opacity:0; } to { opacity:1; } }
   @keyframes crecer { from { opacity:0; transform:scale(.92) translateY(10px); } to { opacity:1; transform:scale(1) translateY(0); } }
   .ventana { background:var(--tarjeta); color:var(--texto); border-radius:18px; padding:24px; max-width:560px; width:100%; max-height:90vh; overflow:auto; position:relative; }
-  /* La ficha toma el tono del póster; si no hay tono, usa el azul por defecto */
   #modal .ventana { background:linear-gradient(180deg, rgba(var(--acento-rgb), .32), var(--tarjeta) 45%); transition:background .4s ease; }
   .ventana h2 { margin:0 0 6px; font-size:22px; }
   .cerrar { position:absolute; top:12px; right:14px; background:none; border:none; font-size:26px; cursor:pointer; color:var(--gris); transition:transform .2s var(--ease); }
@@ -202,6 +201,7 @@
     </select>
     <button id="aleatorio" class="pildora destacado">🎲 Aleatorio</button>
     <button id="estadisticas" class="pildora">📊 Estadísticas</button>
+    <button id="guardarColores" class="pildora">🎨 Guardar colores</button>
     <button id="vista" class="pildora">Ver como lista</button>
     <button id="agrupar" class="pildora">Agrupar por tema</button>
     <button id="limpiar" class="pildora">Limpiar</button>
@@ -238,10 +238,12 @@
 <script>
 const CLIENT_ID = "45846987194-cm8mnhijljms8k8u8j44n8aeq674vuis.apps.googleusercontent.com";
 const HOJA_ID = "1W5oSA5yy4TpbVYxjya6S9T6NkeE6irwSHABXFAijO2k";
-const SCOPES = "https://www.googleapis.com/auth/spreadsheets.readonly https://www.googleapis.com/auth/drive.appdata";
+const SCOPES = "https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.appdata";
 
 let peliculas = [];
 let visibles = [];
+let encabezados = [];
+let COL_COLOR = -1;
 let tokenClient;
 let accessToken = null;
 let marcas = {};
@@ -263,6 +265,7 @@ const etiquetas = { tipo:"Tipo", genero:"Género", tema:"Tema", anio:"Año", pai
 function esc(x) {
   return String(x == null ? "" : x).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 }
+function setEstado(msg) { $("estadoGuardado").textContent = msg; }
 function generosDe(p) { return String(p.genero || "").split(",").map(s => s.trim()).filter(Boolean); }
 function temasDe(p) { return String(p.temas || "").split(";").map(s => s.trim()).filter(Boolean); }
 function personasDe(p) {
@@ -294,8 +297,7 @@ const ordenes = {
 };
 
 /* ---------- Color dominante del póster ---------- */
-// Lee la portada en un lienzo pequeño y promedia los colores más frecuentes,
-// descartando negros, blancos y grises. Devuelve "r, g, b" o "" si no hay color útil.
+// Devuelve "r, g, b" o "" si la imagen no se puede leer o no tiene color útil
 function colorDePoster(url) {
   if (colorCache.has(url)) return Promise.resolve(colorCache.get(url));
   return new Promise(resolve => {
@@ -328,7 +330,6 @@ function colorDePoster(url) {
         colorCache.set(url, rgb);
         resolve(rgb);
       } catch (e) {
-        // El servidor de la imagen no permite leer sus colores: se usa el azul por defecto
         colorCache.set(url, "");
         resolve("");
       }
@@ -342,10 +343,79 @@ function aplicarColorPoster(p) {
   const caja = document.querySelector("#modal .ventana");
   if (!caja) return;
   caja.style.removeProperty("--acento-rgb");
+  if (p.color_poster) {
+    caja.style.setProperty("--acento-rgb", p.color_poster);
+    return;
+  }
   if (!p.portada) return;
   colorDePoster(p.portada).then(rgb => {
     if (rgb && detalleActual === p) caja.style.setProperty("--acento-rgb", rgb);
   });
+}
+
+// Convierte un número de columna (0 = A) en letras de Sheets
+function letraColumna(n) {
+  let s = "";
+  n = n + 1;
+  while (n > 0) {
+    const m = (n - 1) % 26;
+    s = String.fromCharCode(65 + m) + s;
+    n = Math.floor((n - 1) / 26);
+  }
+  return s;
+}
+
+async function sheetsFetch(path, metodo, cuerpo) {
+  const r = await fetch("https://sheets.googleapis.com/v4/spreadsheets/" + HOJA_ID + "/" + path, {
+    method: metodo || "GET",
+    headers: { Authorization: "Bearer " + accessToken, "Content-Type": "application/json" },
+    body: cuerpo ? JSON.stringify(cuerpo) : undefined
+  });
+  if (!r.ok) throw new Error("Sheets respondió " + r.status);
+  return r.json();
+}
+
+// Crea la columna color_poster en la hoja si todavía no existe
+async function asegurarColumnaColor() {
+  if (COL_COLOR !== -1) return;
+  COL_COLOR = encabezados.length;
+  encabezados.push("color_poster");
+  await sheetsFetch("values/" + letraColumna(COL_COLOR) + "1?valueInputOption=RAW", "PUT", {
+    values: [["color_poster"]]
+  });
+}
+
+// Calcula y guarda en la hoja los colores de las películas que no lo tienen
+async function guardarColoresEnHoja() {
+  const pendientes = peliculas.filter(p => !p.color_poster && p.portada);
+  if (!pendientes.length) {
+    setEstado("Todas las portadas ya tienen color guardado.");
+    return;
+  }
+  setEstado("Calculando colores de " + pendientes.length + " películas...");
+  const cambios = [];
+  for (const p of pendientes) {
+    const rgb = await colorDePoster(p.portada);
+    if (rgb) {
+      p.color_poster = rgb;
+      cambios.push(p);
+    }
+  }
+  if (!cambios.length) {
+    setEstado("No pude leer el color de las portadas en este navegador.");
+    return;
+  }
+  try {
+    await asegurarColumnaColor();
+    const data = cambios.map(p => ({
+      range: letraColumna(COL_COLOR) + p._fila,
+      values: [[p.color_poster]]
+    }));
+    await sheetsFetch("values:batchUpdate", "POST", { valueInputOption: "RAW", data: data });
+    setEstado("Colores guardados en la hoja: " + cambios.length);
+  } catch (e) {
+    setEstado("No pude guardar en la hoja. Esta opción solo funciona con la cuenta dueña de la hoja.");
+  }
 }
 
 /* ---------- Marcas personales en la carpeta privada de Drive ---------- */
@@ -375,7 +445,7 @@ async function cargarMarcas() {
     }
   } catch (e) {
     marcas = marcasLocales();
-    $("estadoGuardado").textContent = "No pude leer tus marcas de Drive; usando las del navegador.";
+    setEstado("No pude leer tus marcas de Drive; usando las del navegador.");
   }
 }
 
@@ -401,9 +471,9 @@ async function guardarMarcasDrive() {
       const j = await r.json();
       idMarcas = j.id;
     }
-    $("estadoGuardado").textContent = "Marcas guardadas en tu Drive";
+    setEstado("Marcas guardadas en tu Drive");
   } catch (e) {
-    $("estadoGuardado").textContent = "No se pudieron guardar las marcas. Revisa tu conexión.";
+    setEstado("No se pudieron guardar las marcas. Revisa tu conexión.");
   }
   try { localStorage.setItem("catalogo_estado", JSON.stringify(marcas)); } catch (e) {}
 }
@@ -783,7 +853,7 @@ function pintar() {
   lista.innerHTML = visibles.map((p, i) => vistaLista ? filaHtml(p, i) : tarjeta(p, i)).join("");
 }
 
-/* ---------- Tráiler: español, inglés o idioma original con subtítulos ---------- */
+/* ---------- Tráiler ---------- */
 function iframeTrailer(codigo, titulo) {
   const parametros = "?cc_load_policy=1&cc_lang_pref=es&hl=es&rel=0";
   return '<iframe src="https://www.youtube.com/embed/' + esc(codigo) + parametros + '" title="Tráiler de ' + esc(titulo) + '" ' +
@@ -845,9 +915,9 @@ async function compartirPelicula(p) {
   const texto = datos.text + (datos.url ? "\n" + datos.url : "");
   try {
     await navigator.clipboard.writeText(texto);
-    $("estadoGuardado").textContent = "Texto copiado. Pégalo donde quieras compartirlo.";
+    setEstado("Texto copiado. Pégalo donde quieras compartirlo.");
   } catch (e) {
-    $("estadoGuardado").textContent = "Este navegador no permite compartir directamente.";
+    setEstado("Este navegador no permite compartir directamente.");
   }
 }
 
@@ -921,11 +991,15 @@ async function cargarHoja() {
     if (!r.ok) throw new Error(json.error?.message || "No se pudo leer la hoja.");
 
     const filas = json.values || [];
-    const enc = filas[0] || [];
-    peliculas = filas.slice(1).filter(f => f[0]).map(f => {
-      const o = {};
-      enc.forEach((n, i) => o[n] = f[i] ?? "");
-      return o;
+    encabezados = (filas[0] || []).slice();
+    COL_COLOR = encabezados.indexOf("color_poster");
+
+    peliculas = [];
+    filas.slice(1).forEach((f, i) => {
+      if (!f[0]) return;
+      const o = { _fila: i + 2 };
+      encabezados.forEach((n, j) => o[n] = f[j] ?? "");
+      peliculas.push(o);
     });
 
     $("login").style.display = "none";
@@ -1055,6 +1129,7 @@ window.addEventListener("load", () => {
 
   $("aleatorio").addEventListener("click", sugerirAleatoria);
   $("estadisticas").addEventListener("click", abrirEstadisticas);
+  $("guardarColores").addEventListener("click", guardarColoresEnHoja);
   $("cerrarStats").addEventListener("click", cerrarEstadisticas);
   $("statsModal").addEventListener("click", e => { if (e.target.id === "statsModal") cerrarEstadisticas(); });
 
