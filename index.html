@@ -117,6 +117,12 @@
   .ventana .portada { max-width:200px; margin-bottom:12px; }
   .otra { margin-top:14px; }
 
+  .trailer { margin:16px 0; }
+  .trailer-titulo { font-size:14px; color:var(--gris); margin-bottom:8px; }
+  .trailer-caja { position:relative; width:100%; aspect-ratio:16/9; border-radius:14px; overflow:hidden; background:#000; }
+  .trailer-caja iframe { position:absolute; inset:0; width:100%; height:100%; border:0; }
+  .trailer-vacio { font-size:13px; color:var(--gris); }
+
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation:none !important; transition:none !important; }
   }
@@ -216,7 +222,6 @@ let vistaLista = false;
 let agrupado = false;
 let desdeAleatorio = false;
 
-// Ubicación para calcular el sol. Por defecto Cancún.
 let ubicacion = { lat: 21.16, lon: -86.85 };
 
 const $ = id => document.getElementById(id);
@@ -269,7 +274,6 @@ async function driveFetch(url, opts = {}) {
   return r;
 }
 
-// Lee tus marcas desde Drive. Si es la primera vez, toma las que tenías en este navegador.
 async function cargarMarcas() {
   try {
     const q = encodeURIComponent("name='marcas.json'");
@@ -318,7 +322,6 @@ async function guardarMarcasDrive() {
   try { localStorage.setItem("catalogo_estado", JSON.stringify(marcas)); } catch (e) {}
 }
 
-// Espera un momento tras cada cambio para no guardar en cada clic
 function programarGuardado() {
   clearTimeout(guardadoTimer);
   guardadoTimer = setTimeout(guardarMarcasDrive, 600);
@@ -610,7 +613,21 @@ function pintar() {
   lista.innerHTML = visibles.map((p, i) => vistaLista ? filaHtml(p, i) : tarjeta(p, i)).join("");
 }
 
-/* ---------- Detalle y sugerencia aleatoria ---------- */
+/* ---------- Detalle con tráiler ---------- */
+function bloqueTrailer(p) {
+  const codigo = String(p.trailer || "").trim();
+  if (!codigo || codigo === "sin tráiler") {
+    return '<div class="trailer"><div class="trailer-vacio">Esta película no tiene tráiler disponible.</div></div>';
+  }
+  return '<div class="trailer">' +
+    '<div class="trailer-titulo">Tráiler</div>' +
+    '<div class="trailer-caja">' +
+    '<iframe src="https://www.youtube.com/embed/' + esc(codigo) + '" title="Tráiler de ' + esc(p.titulo) + '" ' +
+    'allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" ' +
+    'allowfullscreen loading="lazy"></iframe>' +
+    '</div></div>';
+}
+
 function abrirDetalle(p) {
   $("detalle").innerHTML =
     (p.portada ? '<img class="portada" src="' + esc(p.portada) + '" alt="">' : '') +
@@ -622,7 +639,8 @@ function abrirDetalle(p) {
     '<div class="pastillas">' + pastillasHtml(p) + '</div>' +
     controlesHtml(p) +
     '<p class="sinopsis">' + esc(p.sinopsis) + '</p>' +
-    '<a class="boton" href="' + esc(p.link) + '" target="_blank" rel="noopener">Ver</a>';
+    bloqueTrailer(p) +
+    '<a class="boton" href="' + esc(p.link) + '" target="_blank" rel="noopener">Ver película</a>';
 
   $("otra").innerHTML = desdeAleatorio
     ? '<button class="pildora destacado" id="otraSugerencia">🎲 Otra sugerencia</button>'
@@ -632,6 +650,7 @@ function abrirDetalle(p) {
 
 function cerrarDetalle() {
   $("modal").classList.remove("abierto");
+  $("detalle").innerHTML = "";
   desdeAleatorio = false;
   $("otra").innerHTML = "";
 }
@@ -691,7 +710,6 @@ async function cargarHoja() {
   }
 }
 
-// Primero tus marcas, luego el catálogo
 async function iniciarApp() {
   await cargarMarcas();
   await cargarHoja();
