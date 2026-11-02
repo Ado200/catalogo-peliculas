@@ -49,6 +49,7 @@
 
   #contador { color:var(--gris); font-size:14px; margin-top:12px; }
   #error { color:var(--error); margin-top:12px; }
+  #estadoGuardado { color:var(--gris); font-size:12px; margin-top:6px; min-height:16px; }
   #login { text-align:center; margin-top:60px; }
   #app { display:none; }
 
@@ -180,6 +181,7 @@
   </div>
   <div id="chips"></div>
   <div id="contador"></div>
+  <div id="estadoGuardado"></div>
 </header>
 
 <section id="destacados" class="destacados">
@@ -201,10 +203,15 @@
 <script>
 const CLIENT_ID = "45846987194-cm8mnhijljms8k8u8j44n8aeq674vuis.apps.googleusercontent.com";
 const HOJA_ID = "1W5oSA5yy4TpbVYxjya6S9T6NkeE6irwSHABXFAijO2k";
+const SCOPES = "https://www.googleapis.com/auth/spreadsheets.readonly https://www.googleapis.com/auth/drive.appdata";
 
 let peliculas = [];
 let visibles = [];
 let tokenClient;
+let accessToken = null;
+let marcas = {};
+let idMarcas = null;
+let guardadoTimer = null;
 let vistaLista = false;
 let agrupado = false;
 let desdeAleatorio = false;
@@ -250,6 +257,105 @@ const ordenes = {
   duracion: (a, b) => minutos(b) - minutos(a)
 };
 
+/* ---------- Marcas personales en la carpeta privada de Drive ---------- */
+function marcasLocales() {
+  try { return JSON.parse(localStorage.getItem("catalogo_estado") || "{}"); } catch (e) { return {}; }
+}
+
+async function driveFetch(url, opts = {}) {
+  const headers = Object.assign({ Authorization: "Bearer " + accessToken }, opts.headers || {});
+  const r = await fetch(url, Object.assign({}, opts, { headers }));
+  if (!r.ok) throw new Error("Drive respondió " + r.status);
+  return r;
+}
+
+// Lee tus marcas desde Drive. Si es la primera vez, toma las que tenías en este navegador.
+async function cargarMarcas() {
+  try {
+    const q = encodeURIComponent("name='marcas.json'");
+    const r = await driveFetch(`https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q=${q}&fields=files(id)`);
+    const j = await r.json();
+    if (j.files && j.files.length) {
+      idMarcas = j.files[0].id;
+      const c = await driveFetch(`https://www.googleapis.com/drive/v3/files/${idMarcas}?alt=media`);
+      marcas = await c.json();
+    } else {
+      marcas = marcasLocales();
+      await guardarMarcasDrive();
+    }
+  } catch (e) {
+    marcas = marcasLocales();
+    $("estadoGuardado").textContent = "No pude leer tus marcas de Drive; usando las del navegador.";
+  }
+}
+
+async function guardarMarcasDrive() {
+  const cuerpo = JSON.stringify(marcas);
+  try {
+    if (idMarcas) {
+      await driveFetch(`https://www.googleapis.com/upload/drive/v3/files/${idMarcas}?uploadType=media`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: cuerpo
+      });
+    } else {
+      const frontera = "marcas_frontera";
+      const meta = JSON.stringify({ name: "marcas.json", parents: ["appDataFolder"] });
+      const partes = `--${frontera}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${meta}\r\n` +
+        `--${frontera}\r\nContent-Type: application/json\r\n\r\n${cuerpo}\r\n--${frontera}--`;
+      const r = await driveFetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart", {
+        method: "POST",
+        headers: { "Content-Type": `multipart/related; boundary=${frontera}` },
+        body: partes
+      });
+      const j = await r.json();
+      idMarcas = j.id;
+    }
+    $("estadoGuardado").textContent = "Marcas guardadas en tu Drive";
+  } catch (e) {
+    $("estadoGuardado").textContent = "No se pudieron guardar las marcas. Revisa tu conexión.";
+  }
+  try { localStorage.setItem("catalogo_estado", JSON.stringify(marcas)); } catch (e) {}
+}
+
+// Espera un momento tras cada cambio para no guardar en cada clic
+function programarGuardado() {
+  clearTimeout(guardadoTimer);
+  guardadoTimer = setTimeout(guardarMarcasDrive, 600);
+}
+
+function estadoDe(p) {
+  const o = marcas[p.titulo] || {};
+  return { vista: !!o.vista, pendiente: !!o.pendiente, estrellas: o.estrellas || 0 };
+}
+function cambiarEstado(titulo, cambios) {
+  marcas[titulo] = Object.assign({}, marcas[titulo] || {}, cambios);
+  programarGuardado();
+}
+
+function controlesHtml(p) {
+  const s = estadoDe(p);
+  const k = esc(p.titulo);
+  let estrellas = "";
+  for (let n = 1; n <= 5; n++) {
+    estrellas += '<button class="estrella' + (n <= s.estrellas ? ' on' : '') + '" data-accion="estrella" data-clave="' + k + '" data-n="' + n + '">★</button>';
+  }
+  return '<div class="controles">' +
+    '<button class="chipc' + (s.vista ? ' activo' : '') + '" data-accion="vista" data-clave="' + k + '">' + (s.vista ? '✓ Vista' : 'Marcar vista') + '</button>' +
+    '<button class="chipc' + (s.pendiente ? ' activo' : '') + '" data-accion="pendiente" data-clave="' + k + '">' + (s.pendiente ? '⏳ En pendientes' : 'Pendiente') + '</button>' +
+    '<span class="estrellas">' + estrellas + '</span></div>';
+}
+
+function contarEstados() {
+  let vistas = 0, pendientes = 0;
+  peliculas.forEach(p => {
+    const s = estadoDe(p);
+    if (s.vista) vistas++;
+    if (s.pendiente) pendientes++;
+  });
+  return { vistas, pendientes };
+}
+
 /* ---------- Posición del sol ---------- */
 const RAD = Math.PI / 180;
 
@@ -289,7 +395,6 @@ function horasSolares(fecha, lat, lon) {
 }
 
 /* ---------- Tema claro u oscuro ---------- */
-// Lo que indique el sistema del celular o computadora (modo automático)
 function oscuroDelSistema() {
   return !!(window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches);
 }
@@ -311,7 +416,7 @@ function decidirOscuro(modo) {
   if (modo === "oscuro") return true;
   if (modo === "hora") return esOscuroPorHora();
   if (modo === "sol") return esOscuroPorSol();
-  return oscuroDelSistema(); // "sistema", el valor por defecto
+  return oscuroDelSistema();
 }
 
 function actualizarTema() {
@@ -322,7 +427,7 @@ function modoGuardado(clave, defecto) {
   try { return localStorage.getItem(clave) || defecto; } catch (e) { return defecto; }
 }
 
-/* ---------- Protección de la vista (capa cálida gradual) ---------- */
+/* ---------- Protección de la vista ---------- */
 function intensidadPorSol() {
   const alt = alturaSol(new Date(), ubicacion.lat, ubicacion.lon);
   const t = (4 - alt) / 10;
@@ -354,46 +459,6 @@ function pedirUbicacion() {
     () => {},
     { timeout: 8000, maximumAge: 86400000 }
   );
-}
-
-/* ---------- Estado personal: vista, pendiente y estrellas ---------- */
-function leerEstado() {
-  try { return JSON.parse(localStorage.getItem("catalogo_estado") || "{}"); } catch (e) { return {}; }
-}
-function guardarEstado(todo) {
-  try { localStorage.setItem("catalogo_estado", JSON.stringify(todo)); } catch (e) {}
-}
-function estadoDe(p) {
-  const o = leerEstado()[p.titulo] || {};
-  return { vista: !!o.vista, pendiente: !!o.pendiente, estrellas: o.estrellas || 0 };
-}
-function cambiarEstado(titulo, cambios) {
-  const todo = leerEstado();
-  todo[titulo] = Object.assign({}, todo[titulo] || {}, cambios);
-  guardarEstado(todo);
-}
-
-function controlesHtml(p) {
-  const s = estadoDe(p);
-  const k = esc(p.titulo);
-  let estrellas = "";
-  for (let n = 1; n <= 5; n++) {
-    estrellas += '<button class="estrella' + (n <= s.estrellas ? ' on' : '') + '" data-accion="estrella" data-clave="' + k + '" data-n="' + n + '">★</button>';
-  }
-  return '<div class="controles">' +
-    '<button class="chipc' + (s.vista ? ' activo' : '') + '" data-accion="vista" data-clave="' + k + '">' + (s.vista ? '✓ Vista' : 'Marcar vista') + '</button>' +
-    '<button class="chipc' + (s.pendiente ? ' activo' : '') + '" data-accion="pendiente" data-clave="' + k + '">' + (s.pendiente ? '⏳ En pendientes' : 'Pendiente') + '</button>' +
-    '<span class="estrellas">' + estrellas + '</span></div>';
-}
-
-function contarEstados() {
-  let vistas = 0, pendientes = 0;
-  peliculas.forEach(p => {
-    const s = estadoDe(p);
-    if (s.vista) vistas++;
-    if (s.pendiente) pendientes++;
-  });
-  return { vistas, pendientes };
 }
 
 /* ---------- Sugerencias de búsqueda ---------- */
@@ -599,10 +664,10 @@ function mostrarError(msg) {
   $("btnLogin").textContent = "Iniciar sesión con Google";
 }
 
-async function cargarHoja(token) {
+async function cargarHoja() {
   try {
     const r = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${HOJA_ID}/values/A:Z`, {
-      headers: { Authorization: "Bearer " + token }
+      headers: { Authorization: "Bearer " + accessToken }
     });
     const json = await r.json();
     if (!r.ok) throw new Error(json.error?.message || "No se pudo leer la hoja.");
@@ -626,6 +691,12 @@ async function cargarHoja(token) {
   }
 }
 
+// Primero tus marcas, luego el catálogo
+async function iniciarApp() {
+  await cargarMarcas();
+  await cargarHoja();
+}
+
 window.addEventListener("load", () => {
   $("tema-modo").value = modoGuardado("tema_modo", "sistema");
   $("vista-modo").value = modoGuardado("vista_modo", "auto");
@@ -633,7 +704,6 @@ window.addEventListener("load", () => {
   pedirUbicacion();
   setInterval(actualizarTodo, 60000);
 
-  // Si el sistema cambia de claro a oscuro (o al revés), la página lo sigue al instante
   if (window.matchMedia) {
     const mq = window.matchMedia("(prefers-color-scheme: dark)");
     const alCambiar = () => actualizarTema();
@@ -643,10 +713,14 @@ window.addEventListener("load", () => {
 
   tokenClient = google.accounts.oauth2.initTokenClient({
     client_id: CLIENT_ID,
-    scope: "https://www.googleapis.com/auth/spreadsheets.readonly",
+    scope: SCOPES,
     callback: resp => {
-      if (resp.access_token) cargarHoja(resp.access_token);
-      else mostrarError("No se pudo iniciar sesión.");
+      if (resp.access_token) {
+        accessToken = resp.access_token;
+        iniciarApp();
+      } else {
+        mostrarError("No se pudo iniciar sesión.");
+      }
     }
   });
 
