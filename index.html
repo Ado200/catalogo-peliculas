@@ -91,6 +91,15 @@
   .resumen-sug { border-top:1px solid var(--borde); padding-top:12px; display:flex; flex-direction:column; align-items:flex-start; gap:4px; }
   .resumen-titulo { font-size:18px; font-weight:600; }
   .resumen-sug .pildora { margin-top:6px; }
+  .cal-card { max-width:900px; margin:0 auto 14px; background:var(--tarjeta); border-radius:18px; box-shadow:var(--sombra); padding:14px; }
+  .cal-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+  .cal-semana, .cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:4px; }
+  .cal-semana { font-size:12px; color:var(--gris); text-align:center; margin-bottom:4px; }
+  .cal-dia { min-height:62px; background:var(--boton-suave); border-radius:8px; padding:4px; font-size:11px; overflow:hidden; }
+  .cal-dia.hoy { outline:2px solid var(--texto); }
+  .cal-vacio { min-height:62px; }
+  .cal-num { font-weight:600; display:block; }
+  .cal-chip { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .actividad-card { max-width:900px; margin:12px auto 0; background:var(--tarjeta); border-radius:18px; box-shadow:var(--sombra); padding:16px 20px; }
   .actividad-card h3 { margin:0 0 10px; font-size:16px; }
   .racha { font-size:15px; margin:0 0 12px; }
@@ -363,6 +372,9 @@
     <button id="limpiar" class="pildora">Limpiar</button>
     <button id="borrarMarcas" class="pildora">🗑 Borrar mis marcas</button>
     <button id="exportar" class="pildora">⬇ Exportar CSV</button>
+    <button id="respaldoExportar" class="pildora">⬇ Respaldo JSON</button>
+    <button id="respaldoImportar" class="pildora">⬆ Cargar respaldo</button>
+    <input type="file" id="respaldoArchivo" accept="application/json,.json" hidden>
   </div>
   <div id="chips" class="solo-catalogo"></div>
   <div id="contador"></div>
@@ -394,6 +406,7 @@
   <div id="recomCarrusel" class="carrusel"></div>
 </section>
 
+<section id="cena" class="destacados solo-catalogo" style="display:none"></section>
 <section id="ahora" class="destacados solo-catalogo" style="display:none">
   <h3>Para esta hora</h3>
   <p id="ahoraTexto" class="meta"></p>
@@ -407,6 +420,19 @@
   <input type="file" id="archivoRestaurar" accept="application/json,.json" hidden>
 </section>
 
+<div id="toolbarVistas" class="filtros" style="display:none">
+  <div class="campo"><label for="personaVistas">Vistas con</label>
+    <select id="personaVistas"><option value="">Todas</option></select></div>
+</div>
+<div id="toolbarNotas" class="filtros" style="display:none">
+  <div class="campo"><label for="ordenNotas">Ordenar notas</label>
+    <select id="ordenNotas">
+      <option value="fecha">Más recientes</option>
+      <option value="titulo">A a Z</option>
+      <option value="calif">Mejor calificadas</option>
+    </select></div>
+  <button id="agruparNotas" class="pildora">Agrupar por tema</button>
+</div>
 <div id="tagsNotas" class="tags-bar"></div>
 
 <main id="lista"></main>
@@ -482,6 +508,8 @@ let guardadoTimer = null;
 let vistaLista = false;
 let agrupado = false;
 let desdeAleatorio = false;
+let cenaElegida = null;
+let mesCalendario = null;
 let detalleActual = null;
 let sugeridaActual = null;
 let textoSugerida = "";
@@ -812,6 +840,144 @@ function actualizarResumenSemana() {
         : '<p class="meta">No tienes pendientes para sugerir hoy.</p>') +
     '</div>';
   sec.style.display = "block";
+}
+
+/* ---------- Respaldo de marcas (JSON) ---------- */
+function exportarRespaldo() {
+  const datos = { app: "catalogo-peliculas", version: 1, fecha: hoyLocalISO(), marcas };
+  const blob = new Blob([JSON.stringify(datos, null, 2)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "respaldo-marcas-" + hoyLocalISO() + ".json";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  setEstado("Respaldo descargado.");
+}
+
+function importarRespaldo(ev) {
+  const f = ev.target.files[0];
+  ev.target.value = "";
+  if (!f) return;
+  const lector = new FileReader();
+  lector.onload = () => {
+    let datos;
+    try { datos = JSON.parse(lector.result); }
+    catch (e) { setEstado("El archivo no es un respaldo válido."); return; }
+    const nuevas = datos && typeof datos === "object" && datos.marcas && typeof datos.marcas === "object" ? datos.marcas : null;
+    if (!nuevas) { setEstado("El archivo no tiene marcas."); return; }
+    if (!confirm("Esto reemplaza tus marcas actuales (" + Object.keys(marcas).length + ") por las del respaldo (" + Object.keys(nuevas).length + "). ¿Continuar?")) return;
+    marcas = nuevas;
+    programarGuardado();
+    pintar();
+    setEstado("Respaldo cargado.");
+  };
+  lector.readAsText(f);
+}
+
+/* ---------- Modo cena: pendiente de menos de 2 h, con alguien si aplica ---------- */
+function candidatasCena() {
+  return peliculas.filter(p => {
+    const s = estadoDe(p);
+    const m = minutos(p);
+    return s.pendiente && m > 0 && m < 120;
+  });
+}
+
+function elegirCena(otra) {
+  const c = candidatasCena();
+  if (!c.length) { cenaElegida = null; renderCena(); return; }
+  const preferidas = c.filter(p => estadoDe(p).conAlguien);
+  let pool = preferidas.length ? preferidas : c;
+  if (otra && pool.length > 1) pool = pool.filter(p => p !== cenaElegida);
+  cenaElegida = pool[Math.floor(Math.random() * pool.length)];
+  renderCena();
+}
+
+function renderCena() {
+  const sec = $("cena");
+  if (!peliculas.length || hayFiltros() || pestana !== "catalogo") {
+    sec.style.display = "none";
+    return;
+  }
+  let cuerpo;
+  if (!cenaElegida || !candidatasCena().includes(cenaElegida)) {
+    cuerpo = '<p class="meta">Pulsa el botón y te doy una película pendiente de menos de 2 horas.</p>' +
+      '<button class="pildora destacado" id="btnCena">Elegir para esta noche</button>';
+  } else {
+    const m = (marcas[cenaElegida.titulo] || {});
+    const conAlguien = estadoDe(cenaElegida).conAlguien;
+    cuerpo = '<div class="resumen-titulo">' + esc(cenaElegida.titulo) + '</div>' +
+      '<div class="meta">' + esc(cenaElegida["año"]) + ' · ' + esc(cenaElegida.duracion) +
+      (conAlguien ? ' · para ver con ' + esc(m.conQuien || "alguien") : '') + '</div>' +
+      '<div class="insignias" style="margin-top:8px">' +
+        '<button class="pildora destacado" id="cenaVer" data-titulo="' + esc(cenaElegida.titulo) + '">Ver ficha</button>' +
+        '<button class="pildora" id="cenaOtra">Otra</button>' +
+      '</div>';
+  }
+  sec.innerHTML = '<div class="actividad-card"><h3>Para esta noche</h3>' + cuerpo + '</div>';
+  sec.style.display = "block";
+}
+
+/* ---------- Calendario de planeación (pestaña Pendientes) ---------- */
+const MESES_ES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+
+function desplazarMes(ym, delta) {
+  const [y, m] = ym.split("-").map(Number);
+  const d = new Date(y, m - 1 + delta, 1);
+  return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0");
+}
+
+function htmlCalendario() {
+  const hoyISO = hoyLocalISO();
+  if (!mesCalendario) mesCalendario = hoyISO.slice(0, 7);
+  const [y, m] = mesCalendario.split("-").map(Number);
+
+  const eventos = {};
+  const agregar = (f, tipo, titulo) => {
+    if (typeof f === "string" && /^\d{4}-\d{2}-\d{2}$/.test(f)) {
+      (eventos[f] = eventos[f] || []).push({ tipo, titulo });
+    }
+  };
+  peliculas.forEach(p => {
+    const o = marcas[p.titulo] || {};
+    const s = estadoDe(p);
+    if (s.pendiente) agregar(o.pendienteDesde, "📌", p.titulo);
+    if (s.conAlguien) {
+      agregar(o.conAlguienDesde, "👥", p.titulo);
+      agregar(o.conFecha, "📅", p.titulo);
+    }
+  });
+
+  const diasMes = new Date(y, m, 0).getDate();
+  const offset = (new Date(y, m - 1, 1).getDay() + 6) % 7;
+  let celdas = "";
+  for (let i = 0; i < offset; i++) celdas += '<div class="cal-vacio"></div>';
+  for (let d = 1; d <= diasMes; d++) {
+    const key = y + "-" + String(m).padStart(2, "0") + "-" + String(d).padStart(2, "0");
+    const ev = eventos[key] || [];
+    const chips = ev.slice(0, 2).map(e => '<div class="cal-chip">' + e.tipo + ' ' + esc(e.titulo) + '</div>').join("") +
+      (ev.length > 2 ? '<div class="cal-chip">+' + (ev.length - 2) + '</div>' : "");
+    celdas += '<div class="cal-dia' + (key === hoyISO ? ' hoy' : '') + '"><span class="cal-num">' + d + '</span>' + chips + '</div>';
+  }
+
+  return '<section class="cal-card">' +
+    '<div class="cal-head"><button class="pildora" id="calPrev">‹</button><b>' + MESES_ES[m - 1] + ' ' + y + '</b><button class="pildora" id="calNext">›</button></div>' +
+    '<div class="cal-semana"><span>L</span><span>M</span><span>X</span><span>J</span><span>V</span><span>S</span><span>D</span></div>' +
+    '<div class="cal-grid">' + celdas + '</div>' +
+    '<p class="meta">📌 pendiente desde · 👥 con alguien desde · 📅 fecha planeada</p>' +
+  '</section>';
+}
+
+/* ---------- Orden de notas ---------- */
+function ordenNotasFn() {
+  const v = $("ordenNotas") ? $("ordenNotas").value : "fecha";
+  const m = t => marcas[t] || {};
+  const porFecha = (a, b) => String(m(b.titulo).notaFecha || "").localeCompare(String(m(a.titulo).notaFecha || ""));
+  if (v === "titulo") return (a, b) => String(a.titulo).localeCompare(String(b.titulo), "es");
+  if (v === "calif") return (a, b) => ((m(b.titulo).estrellas || 0) - (m(a.titulo).estrellas || 0)) || porFecha(a, b);
+  return porFecha;
 }
 
 /* ---------- Actividad: racha, insignias y compartir recomendación ---------- */
@@ -1292,6 +1458,11 @@ function estadoDe(p) {
 function cambiarEstado(titulo, cambios) {
   const previo = marcas[titulo] || {};
   const nuevo = Object.assign({}, previo, cambios);
+  if (cambios.vista === true) {
+    if (previo.conAlguien && previo.conQuien) nuevo.vistaCon = previo.conQuien;
+    else delete nuevo.vistaCon;
+  }
+  if (cambios.vista === false) delete nuevo.vistaCon;
   if (cambios.pendiente === true && !previo.pendiente) {
     nuevo.pendienteDesde = new Date().toISOString().slice(0, 10);
   }
@@ -2335,6 +2506,7 @@ function pintar() {
   actualizarAvisoFecha();
   actualizarResumenSemana();
   renderActividad();
+  renderCena();
   revisarSalud();
   actualizarBotonSalud();
   actualizarBotonAvanzados();
@@ -2358,6 +2530,8 @@ function pintarPestana() {
   $("avisoFecha").style.display = "none";
   $("avisoEstancados").style.display = "none";
   $("tagsNotas").style.display = "none";
+  $("toolbarNotas").style.display = "none";
+  $("toolbarVistas").style.display = "none";
   $("destacados").style.display = "none";
   $("salud").classList.add("oculto");
   $("ahora").style.display = "none";
@@ -2379,7 +2553,7 @@ function pintarPestana() {
       .filter(p => etiquetaBuscada
         ? coincideEtiqueta(p, etiquetaBuscada)
         : [p.titulo, (marcas[p.titulo] || {}).nota].join(" ").toLowerCase().includes(f))
-      .sort((a, b) => String((marcas[b.titulo] || {}).notaFecha || "").localeCompare(String((marcas[a.titulo] || {}).notaFecha || "")));
+      .sort(ordenNotasFn());
     extra = p => {
       const m = marcas[p.titulo] || {};
       const txt = String(m.nota || "").slice(0, 160) + (String(m.nota || "").length > 160 ? "…" : "");
@@ -2388,6 +2562,7 @@ function pintarPestana() {
         (tags ? '<div class="etiquetas-fila">' + tags + '</div>' : '') +
         '<div class="meta" style="margin-top:6px">Editada: ' + esc(m.notaFecha || "") + '</div>';
     };
+    $("toolbarNotas").style.display = "flex";
     renderBarraEtiquetas();
   } else if (pestana === "pendientes") {
     titulo = "Pendientes";
@@ -2427,15 +2602,23 @@ function pintarPestana() {
         resto.map((p, i) => filaPestana(p, i, extra(p))).join("") +
         '</div></div>';
     }
-    lista.innerHTML = html;
+    lista.innerHTML = htmlCalendario() + html;
     return;
   } else if (pestana === "vistas") {
     titulo = "Vistas";
     items = peliculas.filter(p => estadoDe(p).vista)
       .sort((a, b) => String((marcas[b.titulo] || {}).vistaDesde || "").localeCompare(String((marcas[a.titulo] || {}).vistaDesde || "")));
+    $("toolbarVistas").style.display = "flex";
+    const personas = [...new Set(peliculas.map(p => (marcas[p.titulo] || {}).vistaCon).filter(Boolean))]
+      .sort((a, b) => a.localeCompare(b, "es"));
+    const selP = $("personaVistas");
+    const previoP = selP.value;
+    selP.innerHTML = '<option value="">Todas</option>' + personas.map(x => '<option value="' + esc(x) + '">' + esc(x) + '</option>').join("");
+    selP.value = personas.includes(previoP) ? previoP : "";
+    if (selP.value) items = items.filter(p => (marcas[p.titulo] || {}).vistaCon === selP.value);
     extra = p => {
       const m = marcas[p.titulo] || {};
-      return (m.vistaDesde ? '<div class="meta" style="margin-top:6px">Vista el ' + esc(m.vistaDesde) + '</div>' : '') +
+      return (m.vistaDesde ? '<div class="meta" style="margin-top:6px">Vista el ' + esc(m.vistaDesde) + (m.vistaCon ? ' con ' + esc(m.vistaCon) : '') + '</div>' : '') +
         (m.nota ? '<p class="nota-corta">' + esc(String(m.nota).slice(0, 160)) + '</p>' : '');
     };
   }
@@ -2931,6 +3114,17 @@ window.addEventListener("load", () => {
     }
     if (e.target.id === "btnEnlace") { copiarEnlace(); return; }
     if (e.target.id === "btnCompartirRec") { compartirRecomendacion(); return; }
+    if (e.target.id === "btnCena" || e.target.id === "cenaOtra") { elegirCena(e.target.id === "cenaOtra"); return; }
+    if (e.target.id === "calPrev" || e.target.id === "calNext") {
+      mesCalendario = desplazarMes(mesCalendario || hoyLocalISO().slice(0, 7), e.target.id === "calNext" ? 1 : -1);
+      pintar();
+      return;
+    }
+    if (e.target.id === "cenaVer") {
+      const p = peliculas.find(x => x.titulo === e.target.dataset.titulo);
+      if (p) { desdeAleatorio = false; abrirDetalle(p); }
+      return;
+    }
 
     if (e.target.id === "ahoraVer") {
       if (sugeridaActual) { desdeAleatorio = false; abrirDetalle(sugeridaActual); }
@@ -2998,11 +3192,17 @@ window.addEventListener("load", () => {
     pintar();
   });
 
-  $("agrupar").addEventListener("click", () => {
+  function alternarAgrupado() {
     agrupado = !agrupado;
-    $("agrupar").textContent = agrupado ? "Quitar agrupación" : "Agrupar por tema";
+    const txt = agrupado ? "Quitar agrupación" : "Agrupar por tema";
+    $("agrupar").textContent = txt;
+    $("agruparNotas").textContent = txt;
     pintar();
-  });
+  }
+  $("agrupar").addEventListener("click", alternarAgrupado);
+  $("agruparNotas").addEventListener("click", alternarAgrupado);
+  $("ordenNotas").addEventListener("change", () => pintar());
+  $("personaVistas").addEventListener("change", () => pintar());
 
   $("limpiar").addEventListener("click", () => {
     buscar.value = "";
@@ -3093,6 +3293,9 @@ function exportarCSV() {
 }
 
 $("exportar").addEventListener("click", exportarCSV);
+$("respaldoExportar").addEventListener("click", exportarRespaldo);
+$("respaldoImportar").addEventListener("click", () => $("respaldoArchivo").click());
+$("respaldoArchivo").addEventListener("change", importarRespaldo);
 
 let swipe = null;
 
