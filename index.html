@@ -40,7 +40,6 @@
   .boton-login { background:var(--azul); color:#fff; border:none; padding:14px 28px; font-size:16px; cursor:pointer; border-radius:999px; transition:transform .15s var(--ease); }
   .boton-login:active { transform:scale(.96); }
 
-  /* CAMBIO: panel de filtros avanzados */
   .panel-avanzados { display:none; max-width:900px; margin:14px auto 0; padding:16px; background:var(--tarjeta); border-radius:18px; box-shadow:var(--sombra); grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:12px; text-align:left; }
   .panel-avanzados.abierto { display:grid; animation:aparecer .3s var(--ease) both; }
   .campo label { display:block; font-size:12px; color:var(--gris); margin-bottom:4px; }
@@ -147,6 +146,11 @@
   .barra-num { text-align:right; color:var(--gris); }
   .stats-vacio { color:var(--gris); font-size:14px; }
 
+  /* CAMBIO: pie de página con aviso de privacidad y crédito de TMDB */
+  .pie { text-align:center; font-size:12px; color:var(--gris); padding:24px 20px 32px; line-height:1.6; }
+  .pie a { color:var(--azul); text-decoration:none; }
+  .pie a:hover { text-decoration:underline; }
+
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation:none !important; transition:none !important; }
   }
@@ -168,7 +172,6 @@
   <input id="buscar" type="search" list="sugerencias" placeholder="Busca por título, director o actor">
   <datalist id="sugerencias"></datalist>
 
-  <!-- CAMBIO: solo se ven Género y Estado; el resto va en el panel -->
   <div class="filtros">
     <select id="genero"><option value="">Todos los géneros</option></select>
     <select id="estado">
@@ -181,7 +184,6 @@
     <button id="toggleAvanzados" class="pildora">⚙ Filtros avanzados</button>
   </div>
 
-  <!-- CAMBIO: panel de filtros avanzados y ajustes -->
   <div id="panelAvanzados" class="panel-avanzados">
     <div class="campo"><label for="tipo">Tipo</label>
       <select id="tipo"><option value="">Películas y series</option></select></div>
@@ -242,6 +244,13 @@
 </section>
 
 <main id="lista"></main>
+
+<!-- CAMBIO: aviso de privacidad y crédito de TMDB -->
+<footer class="pie">
+  <a href="https://github.com/Ado200/catalogo-peliculas/blob/main/PRIVACIDAD.md" target="_blank" rel="noopener">Aviso de privacidad</a>
+  <br>
+  Este producto utiliza la API de TMDB, pero no está respaldado ni certificado por TMDB.
+</footer>
 </div>
 
 <div id="modal">
@@ -287,7 +296,6 @@ const $ = id => document.getElementById(id);
 const lista = $("lista"), buscar = $("buscar"), contador = $("contador"), chips = $("chips");
 const sel = { tipo:$("tipo"), genero:$("genero"), tema:$("tema"), anio:$("anio"), pais:$("pais"), duracion:$("duracion"), estado:$("estado") };
 const etiquetas = { tipo:"Tipo", genero:"Género", tema:"Tema", anio:"Año", pais:"País", duracion:"Duración", estado:"Estado" };
-// CAMBIO: filtros que están dentro del panel avanzado
 const AVANZADOS = ["tipo", "tema", "anio", "pais", "duracion"];
 
 function esc(x) {
@@ -324,6 +332,53 @@ const ordenes = {
   duracion: (a, b) => minutos(b) - minutos(a)
 };
 
+/* ---------- Enlaces directos: ?id=nombre-de-la-pelicula ---------- */
+// CAMBIO: convierte el título en un identificador corto y estable para la URL
+function slugDe(p) {
+  return String(p.titulo || "")
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+}
+
+// CAMBIO: enlace completo a una película
+function urlDePelicula(p) {
+  const u = new URL(location.href);
+  u.search = "";
+  u.hash = "";
+  u.searchParams.set("id", slugDe(p));
+  return u.toString();
+}
+
+// CAMBIO: actualiza la barra de direcciones sin recargar la página
+function ponerIdEnUrl(valor) {
+  try {
+    const u = new URL(location.href);
+    if (valor) u.searchParams.set("id", valor); else u.searchParams.delete("id");
+    history.replaceState(null, "", u.toString());
+  } catch (e) {}
+}
+
+// CAMBIO: si la URL trae ?id=, abre esa película al cargar
+function abrirDesdeUrl() {
+  const id = new URLSearchParams(location.search).get("id");
+  if (!id) return;
+  const p = peliculas.find(x => slugDe(x) === id);
+  if (p) {
+    desdeAleatorio = false;
+    abrirDetalle(p);
+  } else {
+    setEstado("No encontré la película del enlace.");
+  }
+}
+
+// CAMBIO: copia el enlace de la película que está abierta
+function copiarEnlace() {
+  if (!detalleActual) return;
+  navigator.clipboard.writeText(urlDePelicula(detalleActual))
+    .then(() => setEstado("Enlace copiado."))
+    .catch(() => setEstado("Este navegador no permite copiar el enlace."));
+}
+
 /* ---------- Paleta de 3 colores del póster ---------- */
 function distancia(a, b) {
   return Math.sqrt((a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2 + (a[2] - b[2]) ** 2);
@@ -349,7 +404,6 @@ function paletaDePoster(url) {
         for (let i = 0; i < datos.length; i += 4) {
           const r = datos[i], g = datos[i + 1], b = datos[i + 2];
           const max = Math.max(r, g, b), min = Math.min(r, g, b);
-          // LÍMITES RELAJADOS
           if (max < 15 || min > 240) continue;
           if (max - min < 10) continue;
           total++;
@@ -366,11 +420,9 @@ function paletaDePoster(url) {
         const elegidos = [];
         for (const g of grupos) {
           if (elegidos.length >= 3) break;
-          // Distancia reducida para aceptar tonos más similares
           if (elegidos.every(e => distancia(e, g.rgb) > 40)) elegidos.push(g.rgb);
         }
 
-        // Respaldo para pósters en blanco y negro
         if (elegidos.length === 0) elegidos.push([100, 100, 100], [60, 60, 60], [30, 30, 30]);
 
         paletaCache.set(url, elegidos);
@@ -400,7 +452,6 @@ function paletaDeTexto(texto) {
   return String(texto || "").split(",").map(hexARgb).filter(Boolean).slice(0, 3);
 }
 
-// Resplandor ambiental usando gradientes radiales muy difuminados
 function fondoDesde(paleta) {
   const [a, b, c] = paleta.length >= 3 ? paleta : (paleta.length ? [paleta[0], paleta[0], paleta[0]] : [[0,0,0],[0,0,0],[0,0,0]]);
   return `radial-gradient(circle at 0% 0%, rgba(${a.join(",")}, 0.2) 0%, transparent 50%), ` +
@@ -409,10 +460,8 @@ function fondoDesde(paleta) {
          `var(--tarjeta)`;
 }
 
-// Paleta de respaldo para películas sin paleta guardada (tonos grises azulados)
 const PALETA_RESPALDO = [[140, 150, 170], [100, 110, 130], [60, 66, 84]];
 
-// Aplica el fondo y el resplandor del póster al modal
 function aplicarFondoModal(caja, posterModal, paleta) {
   caja.style.background = fondoDesde(paleta);
   if (posterModal) {
@@ -420,23 +469,19 @@ function aplicarFondoModal(caja, posterModal, paleta) {
   }
 }
 
-// Ahora todas las fichas usan un fondo elegante
 function aplicarPaleta(p) {
   const caja = document.querySelector("#modal .ventana");
   if (!caja) return;
 
-  // 1. Si la hoja tiene paleta, se usa esa
   const paletaHoja = paletaDeTexto(p[NOMBRE_PALETA]);
   if (paletaHoja.length) {
     aplicarFondoModal(caja, caja.querySelector(".portada"), paletaHoja);
     return;
   }
 
-  // 2. Si no, se muestra de inmediato la paleta de respaldo
   aplicarFondoModal(caja, caja.querySelector(".portada"), PALETA_RESPALDO);
   if (!p.portada) return;
 
-  // 3. Si el navegador puede leer la portada, se cambia por su paleta real
   paletaDePoster(p.portada).then(calc => {
     if (calc.length && detalleActual === p) {
       aplicarFondoModal(caja, caja.querySelector(".portada"), calc);
@@ -860,7 +905,6 @@ function hayFiltros() {
   return buscar.value.trim() !== "" || Object.values(sel).some(s => s.value !== "");
 }
 
-// CAMBIO: cuenta cuántos filtros avanzados están activos y actualiza el botón
 function actualizarBotonAvanzados() {
   const n = AVANZADOS.filter(k => sel[k].value).length;
   const boton = $("toggleAvanzados");
@@ -904,7 +948,6 @@ function renderAgrupado() {
   if (sinTema.length) bloques.push({ nombre: "Sin tema", items: sinTema });
 
   return bloques.map(b => {
-    // El índice debe ser la posición en "visibles", no en el grupo
     const cuerpo = b.items.map(p => {
       const i = visibles.indexOf(p);
       return vistaLista ? filaHtml(p, i) : tarjeta(p, i);
@@ -1015,6 +1058,7 @@ async function compartirPelicula(p) {
 
 function abrirDetalle(p) {
   detalleActual = p;
+  ponerIdEnUrl(slugDe(p)); // CAMBIO: la URL muestra la película abierta
   $("detalle").innerHTML =
     (p.portada ? '<img class="portada" src="' + esc(p.portada) + '" alt="">' : '') +
     '<h2>' + esc(p.titulo) + '</h2>' +
@@ -1029,6 +1073,7 @@ function abrirDetalle(p) {
     '<div class="acciones">' +
       '<a class="boton" href="' + esc(p.link) + '" target="_blank" rel="noopener">Ver película</a>' +
       '<button class="pildora" id="btnCompartir">Compartir</button>' +
+      '<button class="pildora" id="btnEnlace">🔗 Copiar enlace</button>' + // CAMBIO
     '</div>';
 
   $("otra").innerHTML = desdeAleatorio
@@ -1044,6 +1089,7 @@ function cerrarDetalle() {
   desdeAleatorio = false;
   detalleActual = null;
   $("otra").innerHTML = "";
+  ponerIdEnUrl(null); // CAMBIO: quita ?id= al cerrar
 }
 
 function sugerirAleatoria() {
@@ -1100,6 +1146,7 @@ async function cargarHoja() {
     llenarSugerencias();
     renderDestacados();
     pintar();
+    abrirDesdeUrl(); // CAMBIO: abre la película si la URL trae ?id=
   } catch (e) {
     mostrarError(e.message);
   }
@@ -1143,7 +1190,6 @@ window.addEventListener("load", () => {
     tokenClient.requestAccessToken();
   });
 
-  // CAMBIO: abre y cierra el panel de filtros avanzados
   $("toggleAvanzados").addEventListener("click", () => {
     $("panelAvanzados").classList.toggle("abierto");
   });
@@ -1193,6 +1239,7 @@ window.addEventListener("load", () => {
       if (detalleActual) compartirPelicula(detalleActual);
       return;
     }
+    if (e.target.id === "btnEnlace") { copiarEnlace(); return; } // CAMBIO
 
     const idioma = e.target.closest("[data-trailer]");
     if (idioma) {
@@ -1254,7 +1301,6 @@ window.addEventListener("load", () => {
   });
 });
 
-// Borra las marcas personales de Drive y del navegador
 async function borrarMisMarcas() {
   const ok = confirm("¿Borrar todas tus marcas (vistas, pendientes y estrellas)? Esta acción no se puede deshacer.");
   if (!ok) return;
@@ -1276,7 +1322,6 @@ async function borrarMisMarcas() {
 
 $("borrarMarcas").addEventListener("click", borrarMisMarcas);
 
-// Exporta el catálogo y tus marcas personales a un archivo CSV
 function exportarCSV() {
   const columnas = ["titulo", "tipo", "año", "duracion", "pais", "director", "genero", "reparto", "temas", "link", "vista", "pendiente", "estrellas"];
 
@@ -1297,7 +1342,6 @@ function exportarCSV() {
     filas.push(valores.map(esc).join(","));
   });
 
-  // El BOM (\uFEFF) hace que Excel abra bien los acentos
   const blob = new Blob(["\uFEFF" + filas.join("\r\n")], { type: "text/csv;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -1334,12 +1378,10 @@ lista.addEventListener("touchmove", e => {
   const dx = t.clientX - swipe.x;
   const dy = t.clientY - swipe.y;
   if (!swipe.activo) {
-    // Si el movimiento es mayormente vertical, es scroll: no hacemos nada
     if (Math.abs(dy) > Math.abs(dx)) { reiniciarTarjeta(swipe.el); swipe = null; return; }
     if (Math.abs(dx) < 12) return;
     swipe.activo = true;
   }
-  // Solo mostramos movimiento hacia la derecha
   swipe.dx = Math.max(0, dx);
   swipe.el.style.transition = "none";
   swipe.el.style.transform = "translateX(" + Math.min(120, swipe.dx) + "px)";
