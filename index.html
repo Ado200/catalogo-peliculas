@@ -119,6 +119,7 @@
 
   .trailer { margin:16px 0; }
   .trailer-titulo { font-size:14px; color:var(--gris); margin-bottom:8px; }
+  .trailer-opciones { display:flex; gap:8px; margin-bottom:10px; }
   .trailer-caja { position:relative; width:100%; aspect-ratio:16/9; border-radius:14px; overflow:hidden; background:#000; }
   .trailer-caja iframe { position:absolute; inset:0; width:100%; height:100%; border:0; }
   .trailer-vacio { font-size:13px; color:var(--gris); }
@@ -613,19 +614,33 @@ function pintar() {
   lista.innerHTML = visibles.map((p, i) => vistaLista ? filaHtml(p, i) : tarjeta(p, i)).join("");
 }
 
-/* ---------- Detalle con tráiler ---------- */
+/* ---------- Detalle con tráiler en español o inglés ---------- */
+function iframeTrailer(codigo, titulo) {
+  return '<iframe src="https://www.youtube.com/embed/' + esc(codigo) + '" title="Tráiler de ' + esc(titulo) + '" ' +
+    'allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" ' +
+    'allowfullscreen loading="lazy"></iframe>';
+}
+
 function bloqueTrailer(p) {
-  const codigo = String(p.trailer || "").trim();
-  if (!codigo || codigo === "sin tráiler") {
+  const es = String(p.trailer_es || "").trim();
+  const en = String(p.trailer_en || "").trim();
+  const hayEs = es && es !== "sin tráiler";
+  const hayEn = en && en !== "sin tráiler";
+
+  if (!hayEs && !hayEn) {
     return '<div class="trailer"><div class="trailer-vacio">Esta película no tiene tráiler disponible.</div></div>';
   }
-  return '<div class="trailer">' +
-    '<div class="trailer-titulo">Tráiler</div>' +
-    '<div class="trailer-caja">' +
-    '<iframe src="https://www.youtube.com/embed/' + esc(codigo) + '" title="Tráiler de ' + esc(p.titulo) + '" ' +
-    'allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" ' +
-    'allowfullscreen loading="lazy"></iframe>' +
-    '</div></div>';
+
+  const principal = hayEs ? es : en;
+  let opciones = "";
+  if (hayEs && hayEn) {
+    opciones = '<div class="trailer-opciones">' +
+      '<button class="chipc activo" data-trailer="es" data-codigo="' + esc(es) + '">Español</button>' +
+      '<button class="chipc" data-trailer="en" data-codigo="' + esc(en) + '">Inglés</button>' +
+      '</div>';
+  }
+  return '<div class="trailer"><div class="trailer-titulo">Tráiler</div>' + opciones +
+    '<div class="trailer-caja" id="trailerCaja">' + iframeTrailer(principal, p.titulo) + '</div></div>';
 }
 
 function abrirDetalle(p) {
@@ -789,6 +804,16 @@ window.addEventListener("load", () => {
 
   document.addEventListener("click", e => {
     if (e.target.id === "otraSugerencia") { sugerirAleatoria(); return; }
+
+    // Cambiar entre tráiler en español e inglés
+    const idioma = e.target.closest("[data-trailer]");
+    if (idioma) {
+      const caja = $("trailerCaja");
+      const titulo = $("detalle").querySelector("h2")?.textContent || "";
+      caja.innerHTML = iframeTrailer(idioma.dataset.codigo, titulo);
+      document.querySelectorAll("[data-trailer]").forEach(b => b.classList.toggle("activo", b === idioma));
+      return;
+    }
 
     const b = e.target.closest("[data-accion]");
     if (!b) return;
