@@ -69,8 +69,20 @@
 
   .destacados { max-width:1100px; margin:20px auto 0; padding:0 20px; }
   .destacados h3 { margin:0 0 12px; font-size:18px; color:var(--texto); }
-  .aviso-estancados { max-width:900px; margin:16px auto 0; padding:12px 16px; background:var(--tema-bg); color:var(--tema-texto); border-radius:14px; font-size:14px; display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; }
-  .aviso-estancados button { background:none; border:none; color:inherit; font-size:18px; cursor:pointer; padding:0 4px; }
+
+  /* CAMBIO: aviso de estancadas con lista y botón Decidir */
+  .aviso-estancados { max-width:900px; margin:16px auto 0; padding:12px 16px; background:var(--tema-bg); color:var(--tema-texto); border-radius:14px; font-size:14px; }
+  .aviso-cabecera { display:flex; justify-content:space-between; align-items:center; gap:12px; }
+  .aviso-cabecera button.cerrar-aviso { background:none; border:none; color:inherit; font-size:20px; cursor:pointer; padding:0 4px; }
+  .aviso-lista { margin-top:10px; display:flex; flex-direction:column; gap:8px; }
+  .aviso-item { background:var(--tarjeta); color:var(--texto); border-radius:12px; padding:10px 12px; display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; }
+  .aviso-item .info-aviso { font-size:14px; min-width:160px; flex:1; }
+  .aviso-item .info-aviso small { display:block; color:var(--gris); font-size:12px; }
+  .aviso-opciones { display:flex; gap:6px; flex-wrap:wrap; }
+  .aviso-opciones button { font-size:12px; padding:6px 10px; }
+  .aviso-deshacer { position:fixed; left:50%; transform:translateX(-50%); bottom:90px; z-index:12; background:var(--texto); color:var(--fondo); padding:10px 14px; border-radius:999px; font-size:14px; display:flex; gap:12px; align-items:center; box-shadow:var(--sombra); }
+  .aviso-deshacer button { background:none; border:none; color:inherit; font-weight:700; cursor:pointer; text-decoration:underline; font-size:14px; }
+  .aviso-deshacer[hidden] { display:none; }
 
   .resumen-card { max-width:900px; margin:0 auto; background:var(--tarjeta); border-radius:18px; box-shadow:var(--sombra); padding:18px 20px; }
   .resumen-top { display:flex; justify-content:space-between; align-items:center; }
@@ -104,6 +116,9 @@
   .salud .ok { color:#1f9d55; }
   .salud .alerta { color:#d93025; }
   .salud summary { cursor:pointer; font-size:14px; color:var(--texto); }
+
+  .respaldo { max-width:900px; margin:14px auto 0; padding:14px 18px; background:var(--tarjeta); border-radius:18px; box-shadow:var(--sombra); display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:space-between; }
+  .respaldo p { margin:0; font-size:13px; color:var(--gris); flex:1; min-width:200px; }
 
   main { display:grid; grid-template-columns:repeat(auto-fill,minmax(270px,1fr)); gap:18px; padding:20px; max-width:1100px; margin:auto; }
   body.lista main { grid-template-columns:1fr; max-width:900px; }
@@ -330,12 +345,15 @@
   <div id="estadoGuardado"></div>
 </header>
 
+<!-- CAMBIO: aviso de estancadas con lista y botón Decidir (reemplaza el botón "Verlas") -->
 <div id="avisoEstancados" class="aviso-estancados solo-catalogo" style="display:none">
-  <span id="avisoEstancadosTexto"></span>
-  <button id="avisoEstancadosVer" class="pildora" title="Ver estancadas">Verlas</button>
+  <div class="aviso-cabecera">
+    <span id="avisoEstancadosTexto"></span>
+    <button id="avisoCerrar" class="cerrar-aviso" title="Cerrar aviso">×</button>
+  </div>
+  <div id="avisoLista" class="aviso-lista"></div>
 </div>
 
-<!-- CAMBIO: aviso de planeaciones con fecha cercana (hoy o mañana) -->
 <div id="avisoFecha" class="aviso-estancados solo-catalogo" style="display:none">
   <span id="avisoFechaTexto"></span>
 </div>
@@ -358,6 +376,13 @@
   <div id="ahoraCaja"></div>
 </section>
 
+<section class="respaldo solo-catalogo">
+  <p>Guarda una copia de tus marcas (vistas, pendientes, notas, etc.) o restaura una copia anterior.</p>
+  <button id="respaldarMarcas" class="pildora">⬆ Respaldar marcas</button>
+  <button id="restaurarMarcas" class="pildora">⬇ Restaurar marcas</button>
+  <input type="file" id="archivoRestaurar" accept="application/json,.json" hidden>
+</section>
+
 <div id="tagsNotas" class="tags-bar"></div>
 
 <main id="lista"></main>
@@ -370,6 +395,12 @@
   <br>
   Este producto utiliza la API de TMDB, pero no está respaldado ni certificado por TMDB.
 </footer>
+</div>
+
+<!-- CAMBIO: aviso flotante para deshacer un descarte -->
+<div id="avisoDeshacer" class="aviso-deshacer" hidden>
+  <span id="avisoDeshacerTexto"></span>
+  <button id="avisoDeshacerBtn">Deshacer</button>
 </div>
 
 <nav id="tabbar">
@@ -433,6 +464,8 @@ let textoSugerida = "";
 let ahorroActivo = null;
 let chartsStats = [];
 let pestana = "catalogo";
+let decidiendo = null;     // CAMBIO: título cuya opción de Decidir está abierta
+let deshacerDescarte = null; // CAMBIO: { titulo, previo, timer }
 const paletaCache = new Map();
 
 let ubicacion = { lat: 21.16, lon: -86.85 };
@@ -1064,7 +1097,6 @@ function estadoDe(p) {
   };
 }
 
-// CAMBIO: vista o descartar también quitan la fecha planeada
 function cambiarEstado(titulo, cambios) {
   const previo = marcas[titulo] || {};
   const nuevo = Object.assign({}, previo, cambios);
@@ -1084,7 +1116,6 @@ function cambiarEstado(titulo, cambios) {
   programarGuardado();
 }
 
-// CAMBIO: al marcar "con alguien" se pregunta también la fecha (opcional)
 function alternarConAlguien(titulo) {
   const previo = marcas[titulo] || {};
   if (previo.conAlguien) {
@@ -1128,7 +1159,6 @@ function alternarConAlguien(titulo) {
   }
 }
 
-// CAMBIO: cambia o quita la fecha de una película ya marcada "con alguien"
 function cambiarFechaConAlguien(titulo) {
   const previo = marcas[titulo] || {};
   if (!previo.conAlguien) {
@@ -1174,6 +1204,53 @@ function borrarNota() {
   guardarNota(detalleActual.titulo, "");
   setEstado("Nota borrada");
   abrirDetalle(detalleActual);
+}
+
+/* ---------- Respaldo y restauración de marcas ---------- */
+function respaldarMarcas() {
+  const datos = {
+    formato: "catalogo-marcas",
+    version: 1,
+    fecha: new Date().toISOString(),
+    marcas: marcas
+  };
+  const blob = new Blob([JSON.stringify(datos, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "marcas-" + hoyLocalISO() + ".json";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  setEstado("Respaldo descargado: " + Object.keys(marcas).length + " películas con marcas.");
+}
+
+function validarRespaldo(texto) {
+  let datos;
+  try { datos = JSON.parse(texto); } catch (e) { return { error: "El archivo no es un JSON válido." }; }
+  if (!datos || datos.formato !== "catalogo-marcas") return { error: "Este archivo no es un respaldo de marcas del catálogo." };
+  if (datos.version !== 1) return { error: "Versión de respaldo no compatible." };
+  if (!datos.marcas || typeof datos.marcas !== "object" || Array.isArray(datos.marcas)) return { error: "El respaldo no tiene marcas válidas." };
+  return { marcas: datos.marcas };
+}
+
+async function restaurarMarcasDesdeArchivo(archivo) {
+  let texto;
+  try { texto = await archivo.text(); } catch (e) { setEstado("No pude leer el archivo."); return; }
+  const res = validarRespaldo(texto);
+  if (res.error) { setEstado(res.error); return; }
+
+  const n = Object.keys(res.marcas).length;
+  const ok = confirm("¿Reemplazar tus marcas actuales por las de este respaldo (" + n + " películas)? Las marcas actuales se perderán.");
+  if (!ok) { setEstado("Restauración cancelada."); return; }
+
+  clearTimeout(guardadoTimer);
+  marcas = res.marcas;
+  try { localStorage.setItem("catalogo_estado", JSON.stringify(marcas)); } catch (e) {}
+  await guardarMarcasDrive();
+  refrescarTodo();
+  setEstado("Marcas restauradas: " + n + " películas.");
 }
 
 /* ---------- Etiquetas con # dentro de las notas ---------- */
@@ -1242,7 +1319,6 @@ document.addEventListener("change", e => {
 });
 
 /* ---------- Fechas ---------- */
-// Revisa que el texto sea una fecha real en formato AAAA-MM-DD
 function fechaValida(s) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return false;
   const [y, m, d] = s.split("-").map(Number);
@@ -1250,7 +1326,6 @@ function fechaValida(s) {
   return dt.getFullYear() === y && dt.getMonth() === m - 1 && dt.getDate() === d;
 }
 
-// Días desde hoy hasta la fecha (0 = hoy, 1 = mañana, negativo = ya pasó)
 function diasHasta(s) {
   const [y, m, d] = s.split("-").map(Number);
   const obj = Date.UTC(y, m - 1, d);
@@ -1259,7 +1334,6 @@ function diasHasta(s) {
   return Math.round((obj - hoyUTC) / 86400000);
 }
 
-// Texto de la fecha planeada para la ficha y las listas
 function lineaFechaConAlguien(p) {
   const m = marcas[p.titulo] || {};
   if (!m.conFecha) return '<div class="meta" style="margin-top:6px">📅 Sin fecha</div>';
@@ -1268,7 +1342,6 @@ function lineaFechaConAlguien(p) {
   return '<div class="meta" style="margin-top:6px">📅 ' + esc(m.conFecha) + ' · ' + cuando + '</div>';
 }
 
-// CAMBIO: aviso de planeaciones que son hoy o mañana
 function actualizarAvisoFecha() {
   const aviso = $("avisoFecha");
   if (hayFiltros() || pestana !== "catalogo") {
@@ -1293,7 +1366,6 @@ function actualizarAvisoFecha() {
   $("avisoFechaTexto").textContent = "📅 Planeado para pronto: " + partes.join(", ") + ".";
   aviso.style.display = "flex";
 }
-/* ---------- FIN CAMBIO: fechas ---------- */
 
 function diasPendiente(p) {
   const f = (marcas[p.titulo] || {}).pendienteDesde;
@@ -1331,7 +1403,6 @@ function controlesHtml(p) {
   const etiquetaAlguien = s.conAlguien
     ? '👥 Con alguien' + (quien ? ' · ' + esc(quien) : '')
     : '👥 Con alguien';
-  // CAMBIO: botón de fecha, solo cuando la película está marcada "con alguien"
   const fechaPlan = (marcas[p.titulo] || {}).conFecha;
   const botonFecha = s.conAlguien
     ? '<button class="chipc' + (fechaPlan ? ' activo' : '') + '" data-accion="conFecha" data-clave="' + k + '">📅 ' + (fechaPlan ? esc(fechaPlan) : 'Fecha') + '</button>'
@@ -1793,26 +1864,125 @@ function revisarSalud() {
     '</ul></details>';
 }
 
-function actualizarAvisoEstancados() {
-  const aviso = $("avisoEstancados");
-  const n = peliculas.filter(p => {
-    const d = diasPendiente(p);
-    return estadoDe(p).pendiente && d !== null && d > 30;
-  }).length;
-  const planeadas = peliculas.filter(p => {
-    const d = diasConAlguien(p);
-    return estadoDe(p).conAlguien && d !== null && d > 30;
-  }).length;
+/* ---------- CAMBIO: aviso de estancadas con botón Decidir ---------- */
+function listaEstancadas() {
+  const pend = peliculas
+    .filter(p => {
+      const m = marcas[p.titulo] || {};
+      if (m.descartada) return false;
+      const d = diasPendiente(p);
+      return estadoDe(p).pendiente && d !== null && d > 30;
+    })
+    .map(p => ({ p, tipo: "pendiente", dias: diasPendiente(p) }));
+  const planeadas = peliculas
+    .filter(p => {
+      const d = diasConAlguien(p);
+      return estadoDe(p).conAlguien && d !== null && d > 30;
+    })
+    .map(p => ({ p, tipo: "planeada", dias: diasConAlguien(p) }));
+  return [...pend, ...planeadas];
+}
 
-  if (hayFiltros() || pestana !== "catalogo" || (!n && !planeadas)) {
+// Oculta el aviso hasta el siguiente cambio de la lista
+let avisoCerrado = false;
+
+function renderAvisoEstancados() {
+  const aviso = $("avisoEstancados");
+  const items = listaEstancadas();
+
+  if (hayFiltros() || pestana !== "catalogo" || !items.length || avisoCerrado) {
     aviso.style.display = "none";
     return;
   }
+
+  const n = items.filter(x => x.tipo === "pendiente").length;
+  const planeadas = items.length - n;
   const partes = [];
   if (n) partes.push(n + (n === 1 ? " pendiente lleva" : " pendientes llevan") + " más de 30 días sin ver");
-  if (planeadas) partes.push(planeadas + (planeadas === 1 ? " planeada con alguien lleva" : " planeadas con alguien llevan") + " más de 30 días: ¿elegimos fecha o la quitamos?");
-  $("avisoEstancadosTexto").textContent = partes.join(". ") + ".";
-  aviso.style.display = "flex";
+  if (planeadas) partes.push(planeadas + (planeadas === 1 ? " planeada con alguien lleva" : " planeadas con alguien llevan") + " más de 30 días");
+  $("avisoEstancadosTexto").textContent = partes.join(" · ") + ".";
+
+  $("avisoLista").innerHTML = items.map(x => {
+    const k = esc(x.p.titulo);
+    const detalle = x.tipo === "pendiente"
+      ? "Pendiente hace " + x.dias + " días"
+      : "Planeada con alguien hace " + x.dias + " días" + ((marcas[x.p.titulo] || {}).conFecha ? " · " + esc(marcas[x.p.titulo].conFecha) : "");
+    const abierta = decidiendo === x.p.titulo;
+    const opciones = x.tipo === "pendiente"
+      ? '<button class="pildora destacado" data-decidir="ver" data-clave="' + k + '">Ver ahora</button>' +
+        '<button class="pildora" data-decidir="planear" data-clave="' + k + '">Planear fecha</button>' +
+        '<button class="pildora" data-decidir="descartar" data-clave="' + k + '">Descartar</button>'
+      : '<button class="pildora destacado" data-decidir="ver" data-clave="' + k + '">Ver ahora</button>' +
+        '<button class="pildora" data-decidir="cambiarFecha" data-clave="' + k + '">Cambiar fecha</button>' +
+        '<button class="pildora" data-decidir="quitarPlan" data-clave="' + k + '">Quitar de planeadas</button>';
+    return '<div class="aviso-item"><div class="info-aviso">' + esc(x.p.titulo) +
+      '<small>' + detalle + '</small></div>' +
+      (abierta
+        ? '<div class="aviso-opciones">' + opciones + '</div>'
+        : '<div class="aviso-opciones"><button class="pildora" data-decidir-abrir="' + k + '">Decidir</button></div>') +
+      '</div>';
+  }).join("");
+
+  aviso.style.display = "block";
+}
+
+function mostrarDeshacer(texto, previo, titulo) {
+  if (deshacerDescarte && deshacerDescarte.timer) clearTimeout(deshacerDescarte.timer);
+  deshacerDescarte = { titulo, previo };
+  $("avisoDeshacerTexto").textContent = texto;
+  $("avisoDeshacer").hidden = false;
+  deshacerDescarte.timer = setTimeout(() => {
+    $("avisoDeshacer").hidden = true;
+    deshacerDescarte = null;
+  }, 6000);
+}
+
+function deshacerUltimoDescarte() {
+  if (!deshacerDescarte) return;
+  const { titulo, previo } = deshacerDescarte;
+  if (previo) marcas[titulo] = previo; else delete marcas[titulo];
+  clearTimeout(deshacerDescarte.timer);
+  deshacerDescarte = null;
+  $("avisoDeshacer").hidden = true;
+  programarGuardado();
+  refrescarTodo();
+  setEstado("Descarte deshecho.");
+}
+
+function accionDecidir(accion, titulo) {
+  const p = peliculas.find(x => x.titulo === titulo);
+  if (!p) return;
+  decidiendo = null;
+
+  if (accion === "ver") {
+    desdeAleatorio = false;
+    abrirDetalle(p);
+    return;
+  }
+  if (accion === "planear") {
+    // Marca "con alguien" y pide la fecha; si cancela, no cambia nada
+    const previo = marcas[titulo] || {};
+    alternarConAlguien(titulo);
+    if (!(marcas[titulo] || {}).conAlguien) { decidiendo = titulo; renderAvisoEstancados(); }
+    refrescarTodo();
+    return;
+  }
+  if (accion === "cambiarFecha") {
+    cambiarFechaConAlguien(titulo);
+    refrescarTodo();
+    return;
+  }
+  if (accion === "quitarPlan") {
+    alternarConAlguien(titulo);
+    refrescarTodo();
+    return;
+  }
+  if (accion === "descartar") {
+    const previo = marcas[titulo] ? Object.assign({}, marcas[titulo]) : null;
+    cambiarEstado(titulo, { descartada: true, pendiente: false, vista: false });
+    mostrarDeshacer("«" + titulo + "» descartada.", previo, titulo);
+    refrescarTodo();
+  }
 }
 
 /* ---------- Pintado principal ---------- */
@@ -1839,7 +2009,7 @@ function pintar() {
   $("destacados").style.display = hayFiltros() ? "none" : "block";
   renderRecomendaciones();
   actualizarAhora();
-  actualizarAvisoEstancados();
+  renderAvisoEstancados();
   actualizarAvisoFecha();
   actualizarResumenSemana();
   revisarSalud();
@@ -1863,6 +2033,7 @@ function pintar() {
 function pintarPestana() {
   $("resumenSemana").style.display = "none";
   $("avisoFecha").style.display = "none";
+  $("avisoEstancados").style.display = "none";
   $("tagsNotas").style.display = "none";
   let items = [], extra = null, titulo = "";
 
@@ -1887,7 +2058,6 @@ function pintarPestana() {
   } else if (pestana === "pendientes") {
     titulo = "Pendientes";
     const todas = peliculas.filter(p => estadoDe(p).pendiente);
-    // CAMBIO: las planeadas se ordenan por fecha más cercana; sin fecha, al final
     const planeadas = todas.filter(p => estadoDe(p).conAlguien)
       .sort((a, b) => {
         const fa = (marcas[a.titulo] || {}).conFecha || "9999-12-31";
@@ -1904,7 +2074,6 @@ function pintarPestana() {
     chips.innerHTML = "";
     $("ahora").style.display = "none";
     $("recomendaciones").style.display = "none";
-    $("avisoEstancados").style.display = "none";
     $("destacados").style.display = "none";
     $("salud").classList.add("oculto");
 
@@ -1919,7 +2088,7 @@ function pintarPestana() {
         planeadas.map((p, i) => filaPestana(p, i,
           extra(p) +
           (marcas[p.titulo] && marcas[p.titulo].conQuien ? '<div class="meta">con ' + esc(marcas[p.titulo].conQuien) + '</div>' : '') +
-          lineaFechaConAlguien(p) // CAMBIO
+          lineaFechaConAlguien(p)
         )).join("") +
         '</div></div>';
     }
@@ -1947,7 +2116,6 @@ function pintarPestana() {
   chips.innerHTML = "";
   $("ahora").style.display = "none";
   $("recomendaciones").style.display = "none";
-  $("avisoEstancados").style.display = "none";
   $("destacados").style.display = "none";
   $("salud").classList.add("oculto");
 
@@ -2359,6 +2527,14 @@ window.addEventListener("load", () => {
       return;
     }
 
+    // CAMBIO: botones del aviso de estancadas
+    const abrir = e.target.closest("[data-decidir-abrir]");
+    if (abrir) { decidiendo = abrir.dataset.decidirAbrir; renderAvisoEstancados(); return; }
+    const decision = e.target.closest("[data-decidir]");
+    if (decision) { accionDecidir(decision.dataset.decidir, decision.dataset.clave); return; }
+    if (e.target.id === "avisoCerrar") { avisoCerrado = true; $("avisoEstancados").style.display = "none"; return; }
+    if (e.target.id === "avisoDeshacerBtn") { deshacerUltimoDescarte(); return; }
+
     if (e.target.id === "cerrarResumen") { cerrarResumenSemana(); return; }
     if (e.target.id === "resumenVer") {
       const p = peliculas.find(x => x.titulo === e.target.dataset.titulo);
@@ -2425,11 +2601,6 @@ window.addEventListener("load", () => {
 
   $("aleatorio").addEventListener("click", sugerirAleatoria);
   $("estadisticas").addEventListener("click", abrirEstadisticas);
-  $("avisoEstancadosVer").addEventListener("click", () => {
-    $("estado").value = "estancados";
-    pintar();
-    window.scrollTo({ top: $("lista").offsetTop - 80, behavior: "smooth" });
-  });
   $("guardarPaletas").addEventListener("click", guardarPaletasEnHoja);
   $("cerrarStats").addEventListener("click", cerrarEstadisticas);
   $("statsModal").addEventListener("click", e => { if (e.target.id === "statsModal") cerrarEstadisticas(); });
@@ -2468,6 +2639,14 @@ window.addEventListener("load", () => {
     try { localStorage.setItem("salud_oculta", oculta ? "0" : "1"); } catch (e) {}
     actualizarBotonSalud();
   });
+
+  $("respaldarMarcas").addEventListener("click", respaldarMarcas);
+  $("restaurarMarcas").addEventListener("click", () => $("archivoRestaurar").click());
+  $("archivoRestaurar").addEventListener("change", e => {
+    const archivo = e.target.files && e.target.files[0];
+    e.target.value = "";
+    if (archivo) restaurarMarcasDesdeArchivo(archivo);
+  });
 });
 
 async function borrarMisMarcas() {
@@ -2492,7 +2671,6 @@ async function borrarMisMarcas() {
 $("borrarMarcas").addEventListener("click", borrarMisMarcas);
 
 function exportarCSV() {
-  // CAMBIO: se agrega la columna conFecha
   const columnas = ["titulo", "tipo", "año", "duracion", "pais", "director", "genero", "reparto", "temas", "link", "vista", "pendiente", "estrellas", "nota", "conAlguien", "conQuien", "conFecha"];
 
   const esc = v => {
