@@ -94,6 +94,13 @@
   .actor-fila { display:flex; justify-content:space-between; align-items:center; gap:10px; padding:10px 0; border-top:1px solid var(--borde); cursor:pointer; }
   .actor-fila:first-of-type { border-top:none; }
   .actor-chips { display:flex; flex-wrap:wrap; gap:8px; }
+  .nota-recuerdo { margin-top:6px; font-size:14px; }
+  .siguiente { margin:12px 0; }
+  .historial { margin:10px 0; font-size:14px; }
+  .historial summary { cursor:pointer; color:var(--gris); }
+  .historial ul { margin:6px 0 0 18px; padding:0; }
+  .nota-recuerdo summary { cursor:pointer; color:var(--gris); }
+  .nota-recuerdo .nota-corta { white-space:pre-wrap; margin:6px 0; }
   .cena-portada { width:120px; height:180px; object-fit:cover; border-radius:14px; box-shadow:var(--sombra); display:block; margin:8px 0; }
   .cena-sinportada { font-size:48px; margin:8px 0; }
   .actor-foto-grande { width:96px; height:144px; object-fit:cover; border-radius:14px; display:block; margin:0 auto 10px; box-shadow:var(--sombra); }
@@ -375,6 +382,10 @@
   </div>
 
   <div class="filtros acciones solo-catalogo">
+    <div class="campo"><label for="presetsSel">Mis filtros</label>
+      <select id="presetsSel"><option value="">Filtros guardados…</option></select></div>
+    <button id="presetGuardar" class="pildora">Guardar filtros</button>
+    <button id="presetBorrar" class="pildora">Borrar filtros</button>
     <button id="aleatorio" class="pildora destacado">🎲 Aleatorio</button>
     <button id="clasificar" class="pildora destacado">⚡ Clasificar</button>
     <button id="estadisticas" class="pildora">📊 Estadísticas</button>
@@ -1131,6 +1142,89 @@ function cerrarActor() {
   $("actorModal").classList.remove("abierto");
 }
 
+/* ---------- Mis filtros guardados ---------- */
+function leerPresets() { return Array.isArray(marcas.__filtros) ? marcas.__filtros : []; }
+
+// Los filtros viven dentro de marcas.json (en tu Drive), bajo la clave reservada "__filtros"
+function guardarListaPresets(lista) {
+  marcas.__filtros = lista;
+  programarGuardado();
+}
+
+function renderPresets() {
+  const lista = leerPresets();
+  $("presetsSel").innerHTML = '<option value="">Filtros guardados…</option>' +
+    lista.map((x, i) => '<option value="' + i + '">' + esc(x.nombre) + '</option>').join("");
+}
+
+function guardarPreset() {
+  const nombre = (prompt("Nombre para estos filtros:", "") || "").trim();
+  if (!nombre) return;
+  const valores = { buscar: buscar.value, orden: $("orden").value };
+  Object.entries(sel).forEach(([k, el]) => { valores[k] = el.value; });
+  const lista = leerPresets().filter(x => x.nombre !== nombre);
+  lista.push({ nombre, valores });
+  guardarListaPresets(lista);
+  renderPresets();
+  setEstado("Filtros guardados como «" + nombre + "».");
+}
+
+function aplicarPreset() {
+  const i = $("presetsSel").value;
+  if (i === "") return;
+  const p = leerPresets()[Number(i)];
+  if (!p) return;
+  buscar.value = p.valores.buscar || "";
+  $("orden").value = p.valores.orden || $("orden").value;
+  Object.entries(sel).forEach(([k, el]) => { el.value = p.valores[k] || ""; });
+  pintar();
+}
+
+function borrarPreset() {
+  const i = $("presetsSel").value;
+  if (i === "") return;
+  const lista = leerPresets();
+  const x = lista[Number(i)];
+  if (!x) return;
+  if (!confirm("¿Borrar «" + x.nombre + "»?")) return;
+  lista.splice(Number(i), 1);
+  guardarListaPresets(lista);
+  renderPresets();
+}
+
+/* ---------- ¿Qué sigue? (desde una película vista) ---------- */
+function siguienteHtml(p) {
+  if (!estadoDe(p).vista) return "";
+  const libre = x => x !== p && !estadoDe(x).vista && !(marcas[x.titulo] || {}).descartada;
+  let cands = [], razon = "";
+  if (p.saga && p.saga !== "-") {
+    cands = peliculas.filter(x => libre(x) && x.saga === p.saga);
+    if (cands.length) razon = "De la saga " + p.saga;
+  }
+  if (!cands.length) {
+    const dirs = directoresDe(p);
+    if (dirs.length) {
+      cands = peliculas.filter(x => libre(x) && directoresDe(x).some(d => dirs.includes(d)));
+      if (cands.length) razon = "Del mismo director";
+    }
+  }
+  cands = cands.slice(0, 3);
+  if (!cands.length) return "";
+  return '<div class="siguiente"><b>¿Qué sigue?</b> <span class="meta">' + esc(razon) + '</span>' +
+    '<div class="insignias" style="margin-top:6px">' +
+      cands.map(x => '<button class="pildora" data-siguiente="' + esc(x.titulo) + '">' + esc(x.titulo) + '</button>').join("") +
+    '</div></div>';
+}
+
+/* ---------- Historial de cambios de una película ---------- */
+function historialHtml(p) {
+  const h = (marcas[p.titulo] || {}).historial || [];
+  if (!h.length) return "";
+  return '<details class="historial"><summary>Historial (' + h.length + ')</summary><ul>' +
+    h.slice().reverse().map(e => '<li>' + esc(e.f) + ' · ' + esc(e.a) + '</li>').join("") +
+    '</ul></details>';
+}
+
 /* ---------- Orden de notas ---------- */
 function ordenNotasFn() {
   const v = $("ordenNotas") ? $("ordenNotas").value : "fecha";
@@ -1643,6 +1737,17 @@ function cambiarEstado(titulo, cambios) {
   if (cambios.descartada === false) {
     delete nuevo.descartadaDesde;
     delete nuevo.revisionHecha;
+  }
+  const eventos = [];
+  if (cambios.pendiente === true && !previo.pendiente) eventos.push("pendiente");
+  if (cambios.vista === true && !previo.vista) eventos.push("vista");
+  if (cambios.descartada === true && !previo.descartada) eventos.push("descartada");
+  if (cambios.estrellas !== undefined && cambios.estrellas !== (previo.estrellas || 0)) {
+    eventos.push(cambios.estrellas ? "calificada " + cambios.estrellas + "★" : "sin calificación");
+  }
+  if (eventos.length) {
+    const hoyH = hoyLocalISO();
+    nuevo.historial = (previo.historial || []).concat(eventos.map(a => ({ f: hoyH, a }))).slice(-30);
   }
   marcas[titulo] = nuevo;
   programarGuardado();
@@ -2782,7 +2887,8 @@ function pintarPestana() {
     extra = p => {
       const m = marcas[p.titulo] || {};
       return (m.vistaDesde ? '<div class="meta" style="margin-top:6px">Vista el ' + esc(m.vistaDesde) + (m.vistaCon ? ' con ' + esc(m.vistaCon) : '') + '</div>' : '') +
-        (m.nota ? '<p class="nota-corta">' + esc(String(m.nota).slice(0, 160)) + '</p>' : '');
+        (m.nota ? '<details class="nota-recuerdo"><summary>Ver mi nota</summary><p class="nota-corta">' + esc(String(m.nota)) + '</p>' +
+          (m.notaFecha ? '<div class="meta">Editada: ' + esc(m.notaFecha) + '</div>' : '') + '</details>' : '');
     };
   }
 
@@ -2878,6 +2984,8 @@ function abrirDetalle(p) {
     '<div class="meta">Reparto: ' + nombresReparto(p).map(n => '<button class="etiqueta" data-actor="' + esc(n) + '">' + (fotosActores[n] ? '<img class="actor-chip-foto" src="' + esc(fotosActores[n]) + '" alt="">' : '') + esc(n) + '</button>').join(" ") + '</div>' +
     '<div class="pastillas">' + pastillasHtml(p) + '</div>' +
     controlesHtml(p) +
+    siguienteHtml(p) +
+    historialHtml(p) +
     '<p class="sinopsis">' + esc(p.sinopsis) + '</p>' +
     '<div class="nota-bloque"><label for="notaTexto">Mi nota</label>' +
       '<textarea id="notaTexto" placeholder="Escribe lo que te pareció. Usa #etiquetas para encontrarla después.">' + esc(notaActual) + '</textarea>' +
@@ -3302,6 +3410,12 @@ window.addEventListener("load", () => {
     }
     const botonSaga = e.target.closest("[data-saga-pend]");
     if (botonSaga) { marcarSagaPendiente(botonSaga.dataset.sagaPend); return; }
+    const botonSiguiente = e.target.closest("[data-siguiente]");
+    if (botonSiguiente) {
+      const p = peliculas.find(x => x.titulo === botonSiguiente.dataset.siguiente);
+      if (p) { desdeAleatorio = false; abrirDetalle(p); }
+      return;
+    }
     if (e.target.id === "cenaVer") {
       const p = peliculas.find(x => x.titulo === e.target.dataset.titulo);
       if (p) { desdeAleatorio = false; abrirDetalle(p); }
@@ -3385,6 +3499,10 @@ window.addEventListener("load", () => {
   $("agruparNotas").addEventListener("click", alternarAgrupado);
   $("ordenNotas").addEventListener("change", () => pintar());
   $("personaVistas").addEventListener("change", () => pintar());
+  $("presetGuardar").addEventListener("click", guardarPreset);
+  $("presetBorrar").addEventListener("click", borrarPreset);
+  $("presetsSel").addEventListener("change", aplicarPreset);
+  renderPresets();
   $("cerrarActor").addEventListener("click", cerrarActor);
   $("actorModal").addEventListener("click", e => { if (e.target.id === "actorModal") cerrarActor(); });
 
