@@ -117,8 +117,11 @@
   .ventana .portada { max-width:200px; margin-bottom:12px; }
   .otra { margin-top:14px; }
 
+  .acciones { display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-top:16px; }
+
   .trailer { margin:16px 0; }
   .trailer-titulo { font-size:14px; color:var(--gris); margin-bottom:8px; }
+  .trailer-nota { font-size:12px; color:var(--gris); margin-top:8px; }
   .trailer-opciones { display:flex; gap:8px; margin-bottom:10px; }
   .trailer-caja { position:relative; width:100%; aspect-ratio:16/9; border-radius:14px; overflow:hidden; background:#000; }
   .trailer-caja iframe { position:absolute; inset:0; width:100%; height:100%; border:0; }
@@ -222,6 +225,7 @@ let guardadoTimer = null;
 let vistaLista = false;
 let agrupado = false;
 let desdeAleatorio = false;
+let detalleActual = null;
 
 let ubicacion = { lat: 21.16, lon: -86.85 };
 
@@ -614,9 +618,11 @@ function pintar() {
   lista.innerHTML = visibles.map((p, i) => vistaLista ? filaHtml(p, i) : tarjeta(p, i)).join("");
 }
 
-/* ---------- Detalle con tráiler en español o inglés ---------- */
+/* ---------- Tráiler: español, inglés o idioma original con subtítulos ---------- */
+// Subtítulos en español activados por defecto; si el video no los tiene, YouTube muestra los suyos
 function iframeTrailer(codigo, titulo) {
-  return '<iframe src="https://www.youtube.com/embed/' + esc(codigo) + '" title="Tráiler de ' + esc(titulo) + '" ' +
+  const parametros = "?cc_load_policy=1&cc_lang_pref=es&hl=es&rel=0";
+  return '<iframe src="https://www.youtube.com/embed/' + esc(codigo) + parametros + '" title="Tráiler de ' + esc(titulo) + '" ' +
     'allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" ' +
     'allowfullscreen loading="lazy"></iframe>';
 }
@@ -631,19 +637,61 @@ function bloqueTrailer(p) {
     return '<div class="trailer"><div class="trailer-vacio">Esta película no tiene tráiler disponible.</div></div>';
   }
 
-  const principal = hayEs ? es : en;
-  let opciones = "";
+  // Hay ambos: se muestran los dos botones
   if (hayEs && hayEn) {
-    opciones = '<div class="trailer-opciones">' +
-      '<button class="chipc activo" data-trailer="es" data-codigo="' + esc(es) + '">Español</button>' +
-      '<button class="chipc" data-trailer="en" data-codigo="' + esc(en) + '">Inglés</button>' +
-      '</div>';
+    return '<div class="trailer"><div class="trailer-titulo">Tráiler</div>' +
+      '<div class="trailer-opciones">' +
+        '<button class="chipc activo" data-trailer="es" data-codigo="' + esc(es) + '">Español</button>' +
+        '<button class="chipc" data-trailer="en" data-codigo="' + esc(en) + '">Inglés</button>' +
+      '</div>' +
+      '<div class="trailer-caja" id="trailerCaja">' + iframeTrailer(es, p.titulo) + '</div></div>';
   }
-  return '<div class="trailer"><div class="trailer-titulo">Tráiler</div>' + opciones +
-    '<div class="trailer-caja" id="trailerCaja">' + iframeTrailer(principal, p.titulo) + '</div></div>';
+
+  // Solo español
+  if (hayEs) {
+    return '<div class="trailer"><div class="trailer-titulo">Tráiler en español</div>' +
+      '<div class="trailer-caja">' + iframeTrailer(es, p.titulo) + '</div></div>';
+  }
+
+  // Solo inglés: idioma original con subtítulos en español
+  return '<div class="trailer"><div class="trailer-titulo">Tráiler en su idioma original (inglés)</div>' +
+    '<div class="trailer-caja">' + iframeTrailer(en, p.titulo) + '</div>' +
+    '<div class="trailer-nota">Activa los subtítulos en el reproductor (CC) para verlos en español.</div></div>';
+}
+
+/* ---------- Compartir ---------- */
+function datosCompartir(p) {
+  const es = String(p.trailer_es || "").trim();
+  const en = String(p.trailer_en || "").trim();
+  const codigo = (es && es !== "sin tráiler") ? es : ((en && en !== "sin tráiler") ? en : "");
+  const url = codigo ? "https://www.youtube.com/watch?v=" + codigo : "";
+  const anio = p["año"] ? " (" + p["año"] + ")" : "";
+  return {
+    title: p.titulo,
+    text: 'Te recomiendo "' + p.titulo + '"' + anio,
+    url: url
+  };
+}
+
+async function compartirPelicula(p) {
+  const datos = datosCompartir(p);
+  if (navigator.share) {
+    try {
+      await navigator.share(datos);
+    } catch (e) {}
+    return;
+  }
+  const texto = datos.text + (datos.url ? "\n" + datos.url : "");
+  try {
+    await navigator.clipboard.writeText(texto);
+    $("estadoGuardado").textContent = "Texto copiado. Pégalo donde quieras compartirlo.";
+  } catch (e) {
+    $("estadoGuardado").textContent = "Este navegador no permite compartir directamente.";
+  }
 }
 
 function abrirDetalle(p) {
+  detalleActual = p;
   $("detalle").innerHTML =
     (p.portada ? '<img class="portada" src="' + esc(p.portada) + '" alt="">' : '') +
     '<h2>' + esc(p.titulo) + '</h2>' +
@@ -655,7 +703,10 @@ function abrirDetalle(p) {
     controlesHtml(p) +
     '<p class="sinopsis">' + esc(p.sinopsis) + '</p>' +
     bloqueTrailer(p) +
-    '<a class="boton" href="' + esc(p.link) + '" target="_blank" rel="noopener">Ver película</a>';
+    '<div class="acciones">' +
+      '<a class="boton" href="' + esc(p.link) + '" target="_blank" rel="noopener">Ver película</a>' +
+      '<button class="pildora" id="btnCompartir">Compartir</button>' +
+    '</div>';
 
   $("otra").innerHTML = desdeAleatorio
     ? '<button class="pildora destacado" id="otraSugerencia">🎲 Otra sugerencia</button>'
@@ -667,6 +718,7 @@ function cerrarDetalle() {
   $("modal").classList.remove("abierto");
   $("detalle").innerHTML = "";
   desdeAleatorio = false;
+  detalleActual = null;
   $("otra").innerHTML = "";
 }
 
@@ -804,6 +856,10 @@ window.addEventListener("load", () => {
 
   document.addEventListener("click", e => {
     if (e.target.id === "otraSugerencia") { sugerirAleatoria(); return; }
+    if (e.target.id === "btnCompartir") {
+      if (detalleActual) compartirPelicula(detalleActual);
+      return;
+    }
 
     // Cambiar entre tráiler en español e inglés
     const idioma = e.target.closest("[data-trailer]");
