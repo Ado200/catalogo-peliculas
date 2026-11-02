@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Mi catálogo de películas</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0071e3">
@@ -10,7 +10,6 @@
 <meta name="apple-mobile-web-app-title" content="Catálogo">
 <link rel="apple-touch-icon" href="icon.svg">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
-<!-- CAMBIO: Chart.js desde cdnjs para las gráficas de estadísticas -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
   :root {
@@ -28,7 +27,7 @@
   }
 
   * { box-sizing:border-box; }
-  body { margin:0; font-family:-apple-system,"Segoe UI",Roboto,sans-serif; background:var(--fondo); color:var(--texto); transition:background 15s linear, color 15s linear; }
+  body { margin:0; font-family:-apple-system,"Segoe UI",Roboto,sans-serif; background:var(--fondo); color:var(--texto); transition:background 15s linear, color 15s linear; padding-bottom:calc(72px + env(safe-area-inset-bottom, 0px)); }
   header { padding:28px 20px 10px; text-align:center; }
   h1 { margin:0 0 16px; font-size:26px; }
   #buscar { width:min(560px,100%); padding:14px 18px; font-size:16px; border:1px solid var(--borde); border-radius:999px; outline:none; background:var(--tarjeta); color:var(--texto); transition:box-shadow .2s, border-color .2s; }
@@ -86,7 +85,6 @@
   .ahora-card h4 { margin:0 0 4px; font-size:17px; }
   .ahora-card .acciones { margin-top:10px; }
 
-  /* CAMBIO: la visibilidad de la salud la controla solo la clase "oculto" */
   .salud-toggle { display:block; margin:20px auto 0; }
   .salud { max-width:900px; margin:12px auto 0; padding:16px 20px; background:var(--tarjeta); border-radius:18px; box-shadow:var(--sombra); }
   .salud.oculto { display:none !important; }
@@ -121,6 +119,7 @@
   .fila .info { flex:1; min-width:220px; }
   .fila h2 { margin:0 0 4px; font-size:17px; }
   .vacio { text-align:center; color:var(--gris); grid-column:1/-1; }
+  .nota-corta { font-size:14px; line-height:1.45; color:var(--texto); margin:8px 0 0; white-space:pre-wrap; }
 
   .animar { animation:aparecer .5s var(--ease) both; animation-delay:var(--retraso, 0ms); }
   @keyframes aparecer { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:translateY(0); } }
@@ -140,6 +139,18 @@
   .estrella:hover { transform:scale(1.2); }
   .estrella:active { transform:scale(.85); }
   .estrella.on { color:var(--estrella); }
+
+  /* Barra inferior de navegación */
+  #tabbar { position:fixed; left:0; right:0; bottom:0; z-index:8; display:flex; justify-content:space-around; background:var(--tarjeta); border-top:1px solid var(--borde); padding:8px 8px calc(8px + env(safe-area-inset-bottom, 0px)); }
+  #tabbar button { flex:1; max-width:160px; background:none; border:none; color:var(--gris); font-size:12px; padding:6px 4px; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:2px; border-radius:12px; transition:color .2s; }
+  #tabbar button .ico { font-size:20px; line-height:1; }
+  #tabbar button.activa { color:var(--azul); font-weight:600; }
+  #tabbar button:active { transform:scale(.95); }
+  @media (min-width: 900px) {
+    #tabbar { left:50%; right:auto; transform:translateX(-50%); width:min(520px, 100%); bottom:16px; border:1px solid var(--borde); border-radius:999px; padding:6px; box-shadow:var(--sombra); }
+    body { padding-bottom:110px; }
+  }
+  body.solo-lista .solo-catalogo { display:none !important; }
 
   #modal, #statsModal { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); align-items:center; justify-content:center; padding:20px; z-index:10; }
   #modal.abierto, #statsModal.abierto { display:flex; animation:fundo .25s ease both; }
@@ -169,22 +180,14 @@
   .stat { background:var(--boton-suave); border-radius:14px; padding:12px 8px; text-align:center; }
   .stat b { display:block; font-size:22px; }
   .stat span { font-size:12px; color:var(--gris); }
-  .stats-sec { margin-top:18px; }
-  .stats-sec h3 { margin:0 0 10px; font-size:15px; color:var(--gris); font-weight:600; }
-  .barra-fila { display:grid; grid-template-columns:110px 1fr 36px; align-items:center; gap:10px; margin-bottom:8px; font-size:13px; }
-  .barra-pista { background:var(--boton-suave); border-radius:999px; height:12px; overflow:hidden; }
-  .barra-valor { height:100%; border-radius:999px; background:var(--azul); transition:width .6s var(--ease); }
-  .barra-valor.estrella { background:var(--estrella); }
-  .barra-num { text-align:right; color:var(--gris); }
   .stats-vacio { color:var(--gris); font-size:14px; }
-
-  /* CAMBIO: gráficas de estadísticas */
   .graficas { display:grid; gap:18px; margin-top:18px; }
   .grafica-caja { background:var(--boton-suave); border-radius:14px; padding:12px; }
   .grafica-caja h3 { margin:0 0 8px; font-size:15px; color:var(--gris); font-weight:600; }
   .grafica-caja canvas { max-height:240px; }
   .graficas-dos { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
   @media (max-width: 640px) { .graficas-dos { grid-template-columns:1fr; } }
+  .meta b { color:var(--texto); }
 
   .pie { text-align:center; font-size:12px; color:var(--gris); padding:24px 20px 32px; line-height:1.6; }
   .pie a { color:var(--azul); text-decoration:none; }
@@ -229,7 +232,7 @@
   <datalist id="sugerencias"></datalist>
   <button id="voz" class="boton-voz" title="Buscar por voz" hidden>🎤</button>
 
-  <div class="filtros">
+  <div class="filtros solo-catalogo">
     <select id="genero"><option value="">Todos los géneros</option></select>
     <select id="estado">
       <option value="">Todas las películas</option>
@@ -288,7 +291,7 @@
       </select></div>
   </div>
 
-  <div class="filtros acciones">
+  <div class="filtros acciones solo-catalogo">
     <button id="aleatorio" class="pildora destacado">🎲 Aleatorio</button>
     <button id="clasificar" class="pildora destacado">⚡ Clasificar</button>
     <button id="estadisticas" class="pildora">📊 Estadísticas</button>
@@ -299,22 +302,22 @@
     <button id="borrarMarcas" class="pildora">🗑 Borrar mis marcas</button>
     <button id="exportar" class="pildora">⬇ Exportar CSV</button>
   </div>
-  <div id="chips"></div>
+  <div id="chips" class="solo-catalogo"></div>
   <div id="contador"></div>
   <div id="estadoGuardado"></div>
 </header>
 
-<div id="avisoEstancados" class="aviso-estancados" style="display:none">
+<div id="avisoEstancados" class="aviso-estancados solo-catalogo" style="display:none">
   <span id="avisoEstancadosTexto"></span>
   <button id="avisoEstancadosVer" class="pildora" title="Ver estancadas">Verlas</button>
 </div>
 
-<section id="destacados" class="destacados">
+<section id="destacados" class="destacados solo-catalogo">
   <h3>Estrenos recientes</h3>
   <div id="carrusel" class="carrusel"></div>
 </section>
 
-<section id="ahora" class="destacados" style="display:none">
+<section id="ahora" class="destacados solo-catalogo" style="display:none">
   <h3>Para esta hora</h3>
   <p id="ahoraTexto" class="meta"></p>
   <div id="ahoraCaja"></div>
@@ -322,9 +325,8 @@
 
 <main id="lista"></main>
 
-<div style="text-align:center"><button id="toggleSalud" class="pildora salud-toggle">🩺 Mostrar salud de la hoja</button></div>
-<!-- CAMBIO: sin style inline; solo la clase "oculto" controla la visibilidad -->
-<section id="salud" class="salud oculto"></section>
+<div class="solo-catalogo" style="text-align:center"><button id="toggleSalud" class="pildora salud-toggle">🩺 Mostrar salud de la hoja</button></div>
+<section id="salud" class="salud oculto solo-catalogo"></section>
 
 <footer class="pie">
   <a href="https://github.com/Ado200/catalogo-peliculas/blob/main/PRIVACIDAD.md" target="_blank" rel="noopener">Aviso de privacidad</a>
@@ -332,6 +334,13 @@
   Este producto utiliza la API de TMDB, pero no está respaldado ni certificado por TMDB.
 </footer>
 </div>
+
+<nav id="tabbar">
+  <button data-tab="catalogo" class="activa"><span class="ico">🎬</span>Catálogo</button>
+  <button data-tab="notas"><span class="ico">📝</span>Notas</button>
+  <button data-tab="pendientes"><span class="ico">⏳</span>Pendientes</button>
+  <button data-tab="vistas"><span class="ico">✓</span>Vistas</button>
+</nav>
 
 <div id="modal">
   <div class="ventana">
@@ -385,7 +394,8 @@ let detalleActual = null;
 let sugeridaActual = null;
 let textoSugerida = "";
 let ahorroActivo = null;
-let chartsStats = []; // CAMBIO: gráficas activas, para destruirlas al reabrir
+let chartsStats = [];
+let pestana = "catalogo";
 const paletaCache = new Map();
 
 let ubicacion = { lat: 21.16, lon: -86.85 };
@@ -430,9 +440,7 @@ const ordenes = {
   duracion: (a, b) => minutos(b) - minutos(a)
 };
 
-/* ---------- Ahorro de datos: automático o manual ---------- */
-// Automático: activa ahorro si el navegador lo pide (Data Saver), si la conexión es 3G o más lenta,
-// o si el sistema pide reducir datos. Safari de iPhone no informa la conexión, así que queda en normal.
+/* ---------- Ahorro de datos ---------- */
 function datosLimitados() {
   const modo = modoGuardado("ahorro_modo", "auto");
   if (modo === "ahorro") return true;
@@ -443,7 +451,6 @@ function datosLimitados() {
   return false;
 }
 
-// Aplica el modo ahorro y vuelve a pintar solo si cambió
 function actualizarAhorro() {
   const nuevo = datosLimitados();
   if (nuevo === ahorroActivo) return;
@@ -456,13 +463,12 @@ function actualizarAhorro() {
   if ($("modal").classList.contains("abierto") && detalleActual) abrirDetalle(detalleActual);
 }
 
-// Enlace o ficha de tráiler: en ahorro, el video no se carga hasta que la persona lo pide
 function contenidoTrailer(codigo, titulo) {
   if (!datosLimitados()) return iframeTrailer(codigo, titulo);
   return '<div class="trailer-espera"><button class="pildora destacado" data-cargar-trailer="' + esc(codigo) + '">▶ Cargar tráiler</button></div>';
 }
 
-/* ---------- Enlaces directos: ?id=nombre-de-la-pelicula ---------- */
+/* ---------- Enlaces directos ---------- */
 function slugDe(p) {
   return String(p.titulo || "")
     .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
@@ -553,7 +559,6 @@ function elegirParaAhora(excluir) {
   return { texto, p: candidatas[Math.floor(Math.random() * candidatas.length)] };
 }
 
-// Dibuja la sugerencia actual (se usa también al cambiar el modo de ahorro)
 function pintarSugerencia() {
   if (!sugeridaActual) return;
   const p = sugeridaActual;
@@ -587,7 +592,7 @@ function nuevaSugerencia(excluir) {
 function actualizarAhora() {
   const sec = $("ahora");
   const hayPendientes = peliculas.some(p => estadoDe(p).pendiente);
-  if (hayFiltros() || !hayPendientes) {
+  if (hayFiltros() || !hayPendientes || pestana !== "catalogo") {
     sec.style.display = "none";
     return;
   }
@@ -696,7 +701,6 @@ function aplicarPaleta(p) {
   }
 
   aplicarFondoModal(caja, caja.querySelector(".portada"), PALETA_RESPALDO);
-  // En modo ahorro no se descarga el póster solo para calcular colores
   if (!p.portada || datosLimitados()) return;
 
   paletaDePoster(p.portada).then(calc => {
@@ -768,7 +772,7 @@ async function guardarPaletasEnHoja() {
   }
 }
 
-/* ---------- Marcas personales en la carpeta privada de Drive ---------- */
+/* ---------- Marcas personales en Drive ---------- */
 function marcasLocales() {
   try { return JSON.parse(localStorage.getItem("catalogo_estado") || "{}"); } catch (e) { return {}; }
 }
@@ -838,7 +842,6 @@ function estadoDe(p) {
   return { vista: !!o.vista, pendiente: !!o.pendiente, estrellas: o.estrellas || 0 };
 }
 
-// Guarda la fecha en que la película pasó a pendiente y la quita al salir de pendientes
 function cambiarEstado(titulo, cambios) {
   const previo = marcas[titulo] || {};
   const nuevo = Object.assign({}, previo, cambios);
@@ -852,7 +855,6 @@ function cambiarEstado(titulo, cambios) {
   programarGuardado();
 }
 
-// Guarda la nota en marcas.json; si queda vacía, se quita del archivo
 function guardarNota(titulo, texto) {
   const t = String(texto || "").trim();
   const nuevo = Object.assign({}, marcas[titulo] || {});
@@ -867,7 +869,6 @@ function guardarNota(titulo, texto) {
   programarGuardado();
 }
 
-// Se guarda al salir del campo (evento change), sin botón
 document.addEventListener("change", e => {
   if (e.target.id === "notaTexto" && detalleActual) {
     guardarNota(detalleActual.titulo, e.target.value);
@@ -918,19 +919,9 @@ function contarEstados() {
   return { vistas, pendientes };
 }
 
-function barraHtml(etiqueta, valor, maximo, clase) {
-  const pct = maximo > 0 ? Math.round((valor / maximo) * 100) : 0;
-  return '<div class="barra-fila">' +
-    '<span>' + esc(etiqueta) + '</span>' +
-    '<div class="barra-pista"><div class="barra-valor ' + (clase || '') + '" style="width:' + pct + '%"></div></div>' +
-    '<span class="barra-num">' + valor + '</span></div>';
-}
-
-/* ---------- CAMBIO: estadísticas con gráficas (Chart.js) ---------- */
-// Meses en español para las etiquetas
+/* ---------- Estadísticas ---------- */
 const MESES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
 
-// Colores que respetan el tema claro/oscuro
 function coloresGrafica() {
   const oscuro = document.body.classList.contains("oscuro");
   return {
@@ -940,7 +931,6 @@ function coloresGrafica() {
   };
 }
 
-// Vistas por mes del año actual, según la fecha en que se marcaron como vistas
 function vistasPorMes() {
   const anio = new Date().getFullYear();
   const conteo = new Array(12).fill(0);
@@ -952,7 +942,6 @@ function vistasPorMes() {
   return conteo;
 }
 
-// Destruye las gráficas anteriores para no duplicarlas al reabrir el panel
 function destruirGraficas() {
   chartsStats.forEach(c => c.destroy());
   chartsStats = [];
@@ -968,14 +957,12 @@ function renderGraficas() {
   Chart.defaults.color = c.texto;
   Chart.defaults.borderColor = c.rejilla;
 
-  // Géneros que más has visto (dona)
   const generos = {};
   peliculas.forEach(p => {
     if (estadoDe(p).vista) generosDe(p).forEach(g => generos[g] = (generos[g] || 0) + 1);
   });
   const topG = Object.entries(generos).sort((a, b) => b[1] - a[1]).slice(0, 8);
 
-  // Calificaciones de 1 a 5 estrellas (barras)
   const estrellas = [0, 0, 0, 0, 0];
   peliculas.forEach(p => {
     const n = estadoDe(p).estrellas;
@@ -997,20 +984,14 @@ function renderGraficas() {
 
   chartsStats.push(new Chart($("gMes"), {
     type: "bar",
-    data: {
-      labels: MESES,
-      datasets: [{ label: "Vistas", data: vMes, backgroundColor: c.paleta[0], borderRadius: 6 }]
-    },
+    data: { labels: MESES, datasets: [{ label: "Vistas", data: vMes, backgroundColor: c.paleta[0], borderRadius: 6 }] },
     options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } }
   }));
 
   if (topG.length) {
     chartsStats.push(new Chart($("gGen"), {
       type: "doughnut",
-      data: {
-        labels: topG.map(x => x[0]),
-        datasets: [{ data: topG.map(x => x[1]), backgroundColor: c.paleta }]
-      },
+      data: { labels: topG.map(x => x[0]), datasets: [{ data: topG.map(x => x[1]), backgroundColor: c.paleta }] },
       options: { plugins: { legend: { position: "bottom" } } }
     }));
   }
@@ -1076,6 +1057,7 @@ function cerrarEstadisticas() {
   destruirGraficas();
 }
 
+/* ---------- Clima solar: tema y protección de la vista ---------- */
 const RAD = Math.PI / 180;
 
 function datosSolares(fecha) {
@@ -1230,6 +1212,20 @@ function filaHtml(p, i) {
     '<a class="boton" href="' + esc(p.link) + '" target="_blank" rel="noopener">Ver</a></article>';
 }
 
+// Tarjeta compacta para Notas, Pendientes y Vistas (sin controles de búsqueda)
+function filaPestana(p, i, extra) {
+  const m = marcas[p.titulo] || {};
+  const portada = (p.portada && !datosLimitados())
+    ? '<img src="' + esc(p.portada) + '" alt="" style="width:64px;height:96px;object-fit:cover;border-radius:10px;flex-shrink:0">'
+    : '<div class="sinportada" style="width:64px;height:96px;display:flex;align-items:center;justify-content:center;flex-shrink:0">🎬</div>';
+  const estrellas = m.estrellas ? ' · ' + '★'.repeat(m.estrellas) : '';
+  return '<article class="fila animar" style="' + retraso(i) + '" data-i="' + i + '">' + portada +
+    '<div class="info"><h2>' + esc(p.titulo) + '</h2>' +
+    '<div class="meta">' + esc(p["año"]) + ' · ' + esc(p.duracion) + estrellas + '</div>' +
+    (extra || '') +
+    '</div></article>';
+}
+
 function renderDestacados() {
   const recientes = [...peliculas]
     .filter(p => Number(p["año"]))
@@ -1310,7 +1306,6 @@ function renderAgrupado() {
   }).join("");
 }
 
-// CAMBIO: la salud solo cambia la clase; ya no se toca style.display
 function actualizarBotonSalud() {
   const oculto = modoGuardado("salud_oculta", "1") === "1";
   $("salud").classList.toggle("oculto", oculto);
@@ -1367,7 +1362,7 @@ function actualizarAvisoEstancados() {
     const d = diasPendiente(p);
     return estadoDe(p).pendiente && d !== null && d > 30;
   }).length;
-  if (!n || hayFiltros()) {
+  if (!n || hayFiltros() || pestana !== "catalogo") {
     aviso.style.display = "none";
     return;
   }
@@ -1376,7 +1371,10 @@ function actualizarAvisoEstancados() {
   aviso.style.display = "flex";
 }
 
+/* ---------- Pintado principal ---------- */
 function pintar() {
+  if (pestana !== "catalogo") { pintarPestana(); return; }
+
   const f = buscar.value.trim().toLowerCase();
   visibles = peliculas.filter(p => {
     const texto = [p.titulo, p.director, p.reparto, (marcas[p.titulo] || {}).nota || ""].join(" ").toLowerCase();
@@ -1411,6 +1409,62 @@ function pintar() {
     return;
   }
   lista.innerHTML = visibles.map((p, i) => vistaLista ? filaHtml(p, i) : tarjeta(p, i)).join("");
+}
+
+// Pestañas Notas, Pendientes y Vistas
+function pintarPestana() {
+  let items = [], extra = null, titulo = "";
+
+  if (pestana === "notas") {
+    const f = buscar.value.trim().toLowerCase();
+    titulo = "Mis notas";
+    items = peliculas.filter(p => (marcas[p.titulo] || {}).nota)
+      .filter(p => {
+        const texto = [p.titulo, (marcas[p.titulo] || {}).nota].join(" ").toLowerCase();
+        return texto.includes(f);
+      })
+      .sort((a, b) => String((marcas[b.titulo] || {}).notaFecha || "").localeCompare(String((marcas[a.titulo] || {}).notaFecha || "")));
+    extra = p => {
+      const m = marcas[p.titulo] || {};
+      const txt = String(m.nota || "").slice(0, 160) + (String(m.nota || "").length > 160 ? "…" : "");
+      return '<p class="nota-corta">' + esc(txt) + '</p><div class="meta" style="margin-top:6px">Editada: ' + esc(m.notaFecha || "") + '</div>';
+    };
+  } else if (pestana === "pendientes") {
+    titulo = "Pendientes";
+    items = peliculas.filter(p => estadoDe(p).pendiente)
+      .sort((a, b) => String((marcas[a.titulo] || {}).pendienteDesde || "9999").localeCompare(String((marcas[b.titulo] || {}).pendienteDesde || "9999")));
+    extra = p => '<div class="meta" style="margin-top:6px">' + esc(diasPendiente(p) === null ? "fecha desconocida" : "hace " + diasPendiente(p) + " días") + '</div>';
+  } else if (pestana === "vistas") {
+    titulo = "Vistas";
+    items = peliculas.filter(p => estadoDe(p).vista)
+      .sort((a, b) => String((marcas[b.titulo] || {}).vistaDesde || "").localeCompare(String((marcas[a.titulo] || {}).vistaDesde || "")));
+    extra = p => {
+      const m = marcas[p.titulo] || {};
+      return (m.vistaDesde ? '<div class="meta" style="margin-top:6px">Vista el ' + esc(m.vistaDesde) + '</div>' : '') +
+        (m.nota ? '<p class="nota-corta">' + esc(String(m.nota).slice(0, 160)) + '</p>' : '');
+    };
+  }
+
+  visibles = items;
+  contador.textContent = titulo + ": " + items.length + (items.length === 1 ? " título" : " títulos");
+  chips.innerHTML = "";
+  $("ahora").style.display = "none";
+  $("avisoEstancados").style.display = "none";
+  $("destacados").style.display = "none";
+  $("salud").classList.add("oculto");
+
+  if (!items.length) {
+    const msg = pestana === "notas" ? "Aún no tienes notas. Abre una película y escribe en «Mi nota»."
+      : pestana === "pendientes" ? "No tienes pendientes."
+      : "Aún no has marcado películas como vistas.";
+    lista.innerHTML = '<p class="vacio">' + msg + '</p>';
+    return;
+  }
+  lista.innerHTML = items.map((p, i) => {
+    const idx = i;
+    visibles[idx] = p;
+    return filaPestana(p, idx, extra ? extra(p) : "");
+  }).join("");
 }
 
 function iframeTrailer(codigo, titulo) {
@@ -1537,6 +1591,24 @@ function refrescarTodo() {
     const actual = peliculas.find(p => p.titulo === $("detalle").querySelector("h2")?.textContent);
     if (actual) abrirDetalle(actual);
   }
+}
+
+/* ---------- Pestañas ---------- */
+function cambiarPestana(nombre) {
+  pestana = nombre;
+  try { localStorage.setItem("pestana_activa", nombre); } catch (e) {}
+  document.querySelectorAll("#tabbar button").forEach(b => b.classList.toggle("activa", b.dataset.tab === nombre));
+  document.body.classList.toggle("solo-lista", nombre !== "catalogo");
+  if (nombre !== "catalogo") {
+    buscar.value = "";
+    Object.values(sel).forEach(s => s.value = "");
+    $("panelAvanzados").classList.remove("abierto");
+  }
+  $("buscar").placeholder = nombre === "notas"
+    ? "Busca en tus notas..."
+    : "Busca por título, director o actor";
+  pintar();
+  window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
 let cls = { cola: [], pila: [], x: 0, dx: 0, activo: false };
@@ -1682,12 +1754,10 @@ window.addEventListener("load", () => {
     if (mq.addEventListener) mq.addEventListener("change", alCambiar);
     else if (mq.addListener) mq.addListener(alCambiar);
 
-    // Ahorro automático: si el sistema pide reducir datos, se aplica al momento
     const mqDatos = window.matchMedia("(prefers-reduced-data: reduce)");
     if (mqDatos.addEventListener) mqDatos.addEventListener("change", actualizarAhorro);
   }
 
-  // Ahorro automático: si cambia la conexión (Wi-Fi, 4G, Data Saver), se revisa de nuevo
   if (navigator.connection && navigator.connection.addEventListener) {
     navigator.connection.addEventListener("change", actualizarAhorro);
   }
@@ -1727,12 +1797,23 @@ window.addEventListener("load", () => {
 
   $("ahorro-modo").addEventListener("change", () => {
     try { localStorage.setItem("ahorro_modo", $("ahorro-modo").value); } catch (e) {}
-    ahorroActivo = null; // fuerza a volver a pintar con el nuevo modo
+    ahorroActivo = null;
     actualizarAhorro();
   });
 
   [buscar, sel.tipo, sel.genero, sel.tema, sel.anio, sel.pais, sel.duracion, sel.estado, $("orden")]
     .forEach(el => el.addEventListener("input", pintar));
+
+  document.querySelectorAll("#tabbar button").forEach(b => {
+    b.addEventListener("click", () => cambiarPestana(b.dataset.tab));
+  });
+  const guardada = modoGuardado("pestana_activa", "catalogo");
+  if (["catalogo", "notas", "pendientes", "vistas"].includes(guardada) && guardada !== "catalogo") {
+    pestana = guardada;
+    document.querySelectorAll("#tabbar button").forEach(b => b.classList.toggle("activa", b.dataset.tab === guardada));
+    document.body.classList.add("solo-lista");
+    $("buscar").placeholder = guardada === "notas" ? "Busca en tus notas..." : "Busca por título, director o actor";
+  }
 
   chips.addEventListener("click", e => {
     const chip = e.target.closest(".chip");
@@ -1774,7 +1855,6 @@ window.addEventListener("load", () => {
     }
     if (e.target.id === "ahoraOtra") { nuevaSugerencia(sugeridaActual); return; }
 
-    // Ahorro de datos: cargar el tráiler solo cuando la persona lo pide
     const cargar = e.target.closest("[data-cargar-trailer]");
     if (cargar) {
       const caja = cargar.closest(".trailer-caja");
@@ -1863,7 +1943,7 @@ window.addEventListener("load", () => {
 });
 
 async function borrarMisMarcas() {
-  const ok = confirm("¿Borrar todas tus marcas (vistas, pendientes y estrellas)? Esta acción no se puede deshacer.");
+  const ok = confirm("¿Borrar todas tus marcas (vistas, pendientes, estrellas y notas)? Esta acción no se puede deshacer.");
   if (!ok) return;
   clearTimeout(guardadoTimer);
   if (idMarcas) {
