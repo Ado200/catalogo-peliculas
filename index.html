@@ -40,7 +40,6 @@
   .boton-login { background:var(--azul); color:#fff; border:none; padding:14px 28px; font-size:16px; cursor:pointer; border-radius:999px; transition:transform .15s var(--ease); }
   .boton-login:active { transform:scale(.96); }
 
-  /* Capa cálida de protección de la vista */
   #calido { position:fixed; inset:0; pointer-events:none; z-index:9; background:#ff9a3c; mix-blend-mode:multiply; opacity:0; transition:opacity 60s linear; }
 
   #chips { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-top:12px; min-height:4px; }
@@ -163,6 +162,7 @@
       <option value="duracion">Ordenar: más largas</option>
     </select>
     <select id="tema-modo" title="Tema de la página">
+      <option value="sistema">Tema: automático del sistema</option>
       <option value="sol">Tema: amanecer y atardecer</option>
       <option value="hora">Tema: 19:00 a 7:00 oscuro</option>
       <option value="claro">Tema: siempre claro</option>
@@ -253,7 +253,6 @@ const ordenes = {
 /* ---------- Posición del sol ---------- */
 const RAD = Math.PI / 180;
 
-// Ecuación del tiempo y declinación solar para una fecha
 function datosSolares(fecha) {
   const diaAnio = Math.floor((fecha - new Date(fecha.getFullYear(), 0, 0)) / 86400000);
   const g = 2 * Math.PI / 365 * (diaAnio - 1);
@@ -265,7 +264,6 @@ function datosSolares(fecha) {
   return { eq, dec };
 }
 
-// Altura del sol sobre el horizonte en grados (negativa = bajo el horizonte)
 function alturaSol(fecha, lat, lon) {
   const { eq, dec } = datosSolares(fecha);
   const minUTC = fecha.getUTCHours() * 60 + fecha.getUTCMinutes() + fecha.getUTCSeconds() / 60;
@@ -276,7 +274,6 @@ function alturaSol(fecha, lat, lon) {
   return Math.asin(Math.max(-1, Math.min(1, seno))) / RAD;
 }
 
-// Horas de amanecer y atardecer del día actual, para el modo "sol"
 function horasSolares(fecha, lat, lon) {
   const { eq, dec } = datosSolares(fecha);
   const latR = lat * RAD;
@@ -292,6 +289,11 @@ function horasSolares(fecha, lat, lon) {
 }
 
 /* ---------- Tema claro u oscuro ---------- */
+// Lo que indique el sistema del celular o computadora (modo automático)
+function oscuroDelSistema() {
+  return !!(window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches);
+}
+
 function esOscuroPorSol() {
   const ahora = new Date();
   const h = horasSolares(ahora, ubicacion.lat, ubicacion.lon);
@@ -308,7 +310,8 @@ function decidirOscuro(modo) {
   if (modo === "claro") return false;
   if (modo === "oscuro") return true;
   if (modo === "hora") return esOscuroPorHora();
-  return esOscuroPorSol();
+  if (modo === "sol") return esOscuroPorSol();
+  return oscuroDelSistema(); // "sistema", el valor por defecto
 }
 
 function actualizarTema() {
@@ -320,7 +323,6 @@ function modoGuardado(clave, defecto) {
 }
 
 /* ---------- Protección de la vista (capa cálida gradual) ---------- */
-// Devuelve 0 de día, 1 de noche. Entre +4° y -6° de altura solar la capa sube o baja poco a poco.
 function intensidadPorSol() {
   const alt = alturaSol(new Date(), ubicacion.lat, ubicacion.lon);
   const t = (4 - alt) / 10;
@@ -337,13 +339,11 @@ function actualizarCalido() {
   $("calido").style.opacity = opacidad.toFixed(3);
 }
 
-// Revisa todo cada minuto: la capa cambia suave y el tema se ajusta
 function actualizarTodo() {
   actualizarTema();
   actualizarCalido();
 }
 
-// Si aceptas el permiso de ubicación, usa tu lugar exacto para el sol
 function pedirUbicacion() {
   if (!navigator.geolocation) return;
   navigator.geolocation.getCurrentPosition(
@@ -627,11 +627,19 @@ async function cargarHoja(token) {
 }
 
 window.addEventListener("load", () => {
-  $("tema-modo").value = modoGuardado("tema_modo", "sol");
+  $("tema-modo").value = modoGuardado("tema_modo", "sistema");
   $("vista-modo").value = modoGuardado("vista_modo", "auto");
   actualizarTodo();
   pedirUbicacion();
   setInterval(actualizarTodo, 60000);
+
+  // Si el sistema cambia de claro a oscuro (o al revés), la página lo sigue al instante
+  if (window.matchMedia) {
+    const mq = window.matchMedia("(prefers-color-scheme: dark)");
+    const alCambiar = () => actualizarTema();
+    if (mq.addEventListener) mq.addEventListener("change", alCambiar);
+    else if (mq.addListener) mq.addListener(alCambiar);
+  }
 
   tokenClient = google.accounts.oauth2.initTokenClient({
     client_id: CLIENT_ID,
