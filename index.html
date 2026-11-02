@@ -156,6 +156,7 @@
   .trailer-opciones { display:flex; gap:8px; margin-bottom:10px; }
   .trailer-caja { position:relative; width:100%; aspect-ratio:16/9; border-radius:14px; overflow:hidden; background:#000; }
   .trailer-caja iframe { position:absolute; inset:0; width:100%; height:100%; border:0; }
+  .trailer-espera { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:var(--boton-suave); }
   .trailer-vacio { font-size:13px; color:var(--gris); }
 
   .stats-resumen { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin:16px 0; }
@@ -273,6 +274,12 @@
         <option value="siempre">Siempre activa</option>
         <option value="apagada">Apagada</option>
       </select></div>
+    <div class="campo"><label for="ahorro-modo">Ahorro de datos</label>
+      <select id="ahorro-modo">
+        <option value="auto">Automático según mi conexión</option>
+        <option value="ahorro">Siempre ahorro</option>
+        <option value="normal">Siempre normal</option>
+      </select></div>
   </div>
 
   <div class="filtros acciones">
@@ -365,6 +372,8 @@ let agrupado = false;
 let desdeAleatorio = false;
 let detalleActual = null;
 let sugeridaActual = null;
+let textoSugerida = "";
+let ahorroActivo = null;
 let chartsStats = []; // CAMBIO: gráficas activas, para destruirlas al reabrir
 const paletaCache = new Map();
 
@@ -409,6 +418,38 @@ const ordenes = {
   antiguas: (a, b) => (Number(a["año"]) || 0) - (Number(b["año"]) || 0),
   duracion: (a, b) => minutos(b) - minutos(a)
 };
+
+/* ---------- Ahorro de datos: automático o manual ---------- */
+// Automático: activa ahorro si el navegador lo pide (Data Saver), si la conexión es 3G o más lenta,
+// o si el sistema pide reducir datos. Safari de iPhone no informa la conexión, así que queda en normal.
+function datosLimitados() {
+  const modo = modoGuardado("ahorro_modo", "auto");
+  if (modo === "ahorro") return true;
+  if (modo === "normal") return false;
+  const c = navigator.connection;
+  if (c && (c.saveData || ["slow-2g", "2g", "3g"].includes(c.effectiveType))) return true;
+  if (window.matchMedia && window.matchMedia("(prefers-reduced-data: reduce)").matches) return true;
+  return false;
+}
+
+// Aplica el modo ahorro y vuelve a pintar solo si cambió
+function actualizarAhorro() {
+  const nuevo = datosLimitados();
+  if (nuevo === ahorroActivo) return;
+  ahorroActivo = nuevo;
+  document.body.classList.toggle("ahorro", nuevo);
+  if (!peliculas.length) return;
+  renderDestacados();
+  pintarSugerencia();
+  pintar();
+  if ($("modal").classList.contains("abierto") && detalleActual) abrirDetalle(detalleActual);
+}
+
+// Enlace o ficha de tráiler: en ahorro, el video no se carga hasta que la persona lo pide
+function contenidoTrailer(codigo, titulo) {
+  if (!datosLimitados()) return iframeTrailer(codigo, titulo);
+  return '<div class="trailer-espera"><button class="pildora destacado" data-cargar-trailer="' + esc(codigo) + '">▶ Cargar tráiler</button></div>';
+}
 
 /* ---------- Enlaces directos: ?id=nombre-de-la-pelicula ---------- */
 function slugDe(p) {
@@ -501,6 +542,25 @@ function elegirParaAhora(excluir) {
   return { texto, p: candidatas[Math.floor(Math.random() * candidatas.length)] };
 }
 
+// Dibuja la sugerencia actual (se usa también al cambiar el modo de ahorro)
+function pintarSugerencia() {
+  if (!sugeridaActual) return;
+  const p = sugeridaActual;
+  $("ahoraTexto").textContent = textoSugerida;
+  $("ahoraCaja").innerHTML =
+    '<div class="ahora-card">' +
+      (p.portada && !datosLimitados() ? '<img src="' + esc(p.portada) + '" alt="">' : '<div class="sinportada">🎬</div>') +
+      '<div>' +
+        '<h4>' + esc(p.titulo) + '</h4>' +
+        '<div class="meta">' + esc(p["año"]) + ' · ' + esc(p.duracion) + '</div>' +
+        '<div class="acciones">' +
+          '<button class="pildora destacado" id="ahoraVer">Ver ficha</button>' +
+          '<button class="pildora" id="ahoraOtra">Otra</button>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+}
+
 function nuevaSugerencia(excluir) {
   const s = elegirParaAhora(excluir);
   if (!s) {
@@ -509,19 +569,8 @@ function nuevaSugerencia(excluir) {
     return;
   }
   sugeridaActual = s.p;
-  $("ahoraTexto").textContent = s.texto;
-  $("ahoraCaja").innerHTML =
-    '<div class="ahora-card">' +
-      (s.p.portada ? '<img src="' + esc(s.p.portada) + '" alt="">' : '<div class="sinportada">🎬</div>') +
-      '<div>' +
-        '<h4>' + esc(s.p.titulo) + '</h4>' +
-        '<div class="meta">' + esc(s.p["año"]) + ' · ' + esc(s.p.duracion) + '</div>' +
-        '<div class="acciones">' +
-          '<button class="pildora destacado" id="ahoraVer">Ver ficha</button>' +
-          '<button class="pildora" id="ahoraOtra">Otra</button>' +
-        '</div>' +
-      '</div>' +
-    '</div>';
+  textoSugerida = s.texto;
+  pintarSugerencia();
 }
 
 function actualizarAhora() {
@@ -636,7 +685,8 @@ function aplicarPaleta(p) {
   }
 
   aplicarFondoModal(caja, caja.querySelector(".portada"), PALETA_RESPALDO);
-  if (!p.portada) return;
+  // En modo ahorro no se descarga el póster solo para calcular colores
+  if (!p.portada || datosLimitados()) return;
 
   paletaDePoster(p.portada).then(calc => {
     if (calc.length && detalleActual === p) {
@@ -1120,7 +1170,7 @@ function pastillasHtml(p) {
 function retraso(i) { return "--retraso:" + Math.min(i * 40, 400) + "ms"; }
 
 function tarjeta(p, i) {
-  const portada = p.portada ? '<img class="portada" src="' + esc(p.portada) + '" alt="">' : '<div class="sinportada">🎬</div>';
+  const portada = (p.portada && !datosLimitados()) ? '<img class="portada" src="' + esc(p.portada) + '" alt="">' : '<div class="sinportada">🎬</div>';
   return '<article class="tarjeta animar" style="' + retraso(i) + '" data-i="' + i + '">' + portada +
     '<h2>' + esc(p.titulo) + '</h2>' +
     '<div class="meta">' + esc(p.tipo) + ' · ' + esc(p["año"]) + ' · ' + esc(p.duracion) + ' · ' + esc(p.pais) + '</div>' +
@@ -1150,7 +1200,7 @@ function renderDestacados() {
 
   $("carrusel").innerHTML = recientes.map(p => {
     const idx = peliculas.indexOf(p);
-    const img = p.portada
+    const img = (p.portada && !datosLimitados())
       ? '<img src="' + esc(p.portada) + '" alt="">'
       : '<div class="sinportada-mini">🎬</div>';
     return '<div class="dest" data-idx="' + idx + '">' + img +
@@ -1296,7 +1346,7 @@ function pintar() {
   actualizarBotonAvanzados();
   renderChips();
   contador.textContent = visibles.length + " de " + peliculas.length + " títulos · " +
-    vistas + " vistas · " + pendientes + " pendientes";
+    vistas + " vistas · " + pendientes + " pendientes" + (datosLimitados() ? " · modo ahorro" : "");
 
   if (!visibles.length) {
     lista.innerHTML = '<p class="vacio">No encontré nada con esos criterios.</p>';
@@ -1332,16 +1382,16 @@ function bloqueTrailer(p) {
         '<button class="chipc activo" data-trailer="es" data-codigo="' + esc(es) + '">Español</button>' +
         '<button class="chipc" data-trailer="en" data-codigo="' + esc(en) + '">Inglés</button>' +
       '</div>' +
-      '<div class="trailer-caja" id="trailerCaja">' + iframeTrailer(es, p.titulo) + '</div></div>';
+      '<div class="trailer-caja" id="trailerCaja">' + contenidoTrailer(es, p.titulo) + '</div></div>';
   }
 
   if (hayEs) {
     return '<div class="trailer"><div class="trailer-titulo">Tráiler en español</div>' +
-      '<div class="trailer-caja">' + iframeTrailer(es, p.titulo) + '</div></div>';
+      '<div class="trailer-caja">' + contenidoTrailer(es, p.titulo) + '</div></div>';
   }
 
   return '<div class="trailer"><div class="trailer-titulo">Tráiler en su idioma original (inglés)</div>' +
-    '<div class="trailer-caja">' + iframeTrailer(en, p.titulo) + '</div>' +
+    '<div class="trailer-caja">' + contenidoTrailer(en, p.titulo) + '</div>' +
     '<div class="trailer-nota">Activa los subtítulos en el reproductor (CC) para verlos en español.</div></div>';
 }
 
@@ -1379,7 +1429,7 @@ function abrirDetalle(p) {
   detalleActual = p;
   ponerIdEnUrl(slugDe(p));
   $("detalle").innerHTML =
-    (p.portada ? '<img class="portada" src="' + esc(p.portada) + '" alt="">' : '') +
+    (p.portada && !datosLimitados() ? '<img class="portada" src="' + esc(p.portada) + '" alt="">' : '') +
     '<h2>' + esc(p.titulo) + '</h2>' +
     '<div class="meta">' + esc(p.tipo) + ' · ' + esc(p["año"]) + ' · ' + esc(p.duracion) + ' · ' + esc(p.pais) + '</div>' +
     '<div class="meta">Género: ' + esc(p.genero) + '</div>' +
@@ -1465,7 +1515,7 @@ function pintarClasificador() {
     '<div class="clas-card" id="clasCard">' +
       '<div class="clas-sello izq">DESCARTAR</div>' +
       '<div class="clas-sello der">PENDIENTE</div>' +
-      (p.portada ? '<img src="' + esc(p.portada) + '" alt="">' : '<div class="sinportada">🎬</div>') +
+      (p.portada && !datosLimitados() ? '<img src="' + esc(p.portada) + '" alt="">' : '<div class="sinportada">🎬</div>') +
       '<h2>' + esc(p.titulo) + '</h2>' +
       '<div class="meta">' + esc(p.tipo) + ' · ' + esc(p["año"]) + ' · ' + esc(p.duracion) + ' · ' + esc(p.pais) + '</div>' +
       '<div class="meta">' + esc(p.genero) + '</div>' +
@@ -1564,7 +1614,9 @@ async function iniciarApp() {
 window.addEventListener("load", () => {
   $("tema-modo").value = modoGuardado("tema_modo", "sistema");
   $("vista-modo").value = modoGuardado("vista_modo", "auto");
+  $("ahorro-modo").value = modoGuardado("ahorro_modo", "auto");
   actualizarTodo();
+  actualizarAhorro();
   pedirUbicacion();
   setInterval(actualizarTodo, 60000);
 
@@ -1573,6 +1625,15 @@ window.addEventListener("load", () => {
     const alCambiar = () => actualizarTema();
     if (mq.addEventListener) mq.addEventListener("change", alCambiar);
     else if (mq.addListener) mq.addListener(alCambiar);
+
+    // Ahorro automático: si el sistema pide reducir datos, se aplica al momento
+    const mqDatos = window.matchMedia("(prefers-reduced-data: reduce)");
+    if (mqDatos.addEventListener) mqDatos.addEventListener("change", actualizarAhorro);
+  }
+
+  // Ahorro automático: si cambia la conexión (Wi-Fi, 4G, Data Saver), se revisa de nuevo
+  if (navigator.connection && navigator.connection.addEventListener) {
+    navigator.connection.addEventListener("change", actualizarAhorro);
   }
 
   tokenClient = google.accounts.oauth2.initTokenClient({
@@ -1606,6 +1667,12 @@ window.addEventListener("load", () => {
   $("vista-modo").addEventListener("change", () => {
     try { localStorage.setItem("vista_modo", $("vista-modo").value); } catch (e) {}
     actualizarCalido();
+  });
+
+  $("ahorro-modo").addEventListener("change", () => {
+    try { localStorage.setItem("ahorro_modo", $("ahorro-modo").value); } catch (e) {}
+    ahorroActivo = null; // fuerza a volver a pintar con el nuevo modo
+    actualizarAhorro();
   });
 
   [buscar, sel.tipo, sel.genero, sel.tema, sel.anio, sel.pais, sel.duracion, sel.estado, $("orden")]
@@ -1651,11 +1718,20 @@ window.addEventListener("load", () => {
     }
     if (e.target.id === "ahoraOtra") { nuevaSugerencia(sugeridaActual); return; }
 
+    // Ahorro de datos: cargar el tráiler solo cuando la persona lo pide
+    const cargar = e.target.closest("[data-cargar-trailer]");
+    if (cargar) {
+      const caja = cargar.closest(".trailer-caja");
+      const titulo = $("detalle").querySelector("h2")?.textContent || "";
+      if (caja) caja.innerHTML = iframeTrailer(cargar.dataset.cargarTrailer, titulo);
+      return;
+    }
+
     const idioma = e.target.closest("[data-trailer]");
     if (idioma) {
       const caja = $("trailerCaja");
       const titulo = $("detalle").querySelector("h2")?.textContent || "";
-      caja.innerHTML = iframeTrailer(idioma.dataset.codigo, titulo);
+      caja.innerHTML = contenidoTrailer(idioma.dataset.codigo, titulo);
       document.querySelectorAll("[data-trailer]").forEach(b => b.classList.toggle("activo", b === idioma));
       return;
     }
