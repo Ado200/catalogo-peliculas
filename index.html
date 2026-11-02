@@ -78,6 +78,7 @@
   .carrusel .sinportada-mini { background:var(--tarjeta); font-size:44px; display:flex; align-items:center; justify-content:center; }
   .carrusel .dest-titulo { font-size:13px; margin-top:8px; line-height:1.3; }
   .carrusel .dest-anio { font-size:12px; color:var(--gris); }
+  .carrusel .dest-razon { font-size:11px; color:var(--tema-texto); margin-top:2px; line-height:1.3; }
 
   .ahora-card { display:flex; gap:14px; align-items:center; background:var(--tarjeta); border-radius:18px; padding:14px; box-shadow:var(--sombra); max-width:560px; }
   .ahora-card img { width:90px; border-radius:10px; flex-shrink:0; }
@@ -319,6 +320,11 @@
   <div id="carrusel" class="carrusel"></div>
 </section>
 
+<section id="recomendaciones" class="destacados solo-catalogo" style="display:none">
+  <h3>Porque calificaste bien a…</h3>
+  <div id="recomCarrusel" class="carrusel"></div>
+</section>
+
 <section id="ahora" class="destacados solo-catalogo" style="display:none">
   <h3>Para esta hora</h3>
   <p id="ahoraTexto" class="meta"></p>
@@ -414,6 +420,7 @@ function esc(x) {
 function setEstado(msg) { $("estadoGuardado").textContent = msg; }
 function generosDe(p) { return String(p.genero || "").split(",").map(s => s.trim()).filter(Boolean); }
 function temasDe(p) { return String(p.temas || "").split(";").map(s => s.trim()).filter(Boolean); }
+function directoresDe(p) { return String(p.director || "").split(",").map(s => s.trim()).filter(Boolean); }
 function personasDe(p) {
   return [...String(p.director || "").split(","), ...String(p.reparto || "").split(",")]
     .map(s => s.trim()).filter(Boolean);
@@ -600,6 +607,74 @@ function actualizarAhora() {
   }
   sec.style.display = "block";
   if (!sugeridaActual || !estadoDe(sugeridaActual).pendiente) nuevaSugerencia(null);
+}
+
+/* ---------- Recomendaciones según calificaciones ---------- */
+// Cada género de una película de 4 o 5★ suma 1; cada director suma 2.
+// Solo se recomiendan películas sin marcar (ni vista, pendiente, descartada ni calificada).
+function calcularRecomendaciones() {
+  const pesoGenero = {}, pesoDirector = {};
+  peliculas.forEach(p => {
+    const s = estadoDe(p);
+    if (s.estrellas < 4) return;
+    generosDe(p).forEach(g => pesoGenero[g] = (pesoGenero[g] || 0) + 1);
+    directoresDe(p).forEach(d => pesoDirector[d] = (pesoDirector[d] || 0) + 2);
+  });
+
+  if (!Object.keys(pesoGenero).length && !Object.keys(pesoDirector).length) return [];
+
+  const candidatas = [];
+  peliculas.forEach(p => {
+    const o = marcas[p.titulo] || {};
+    if (o.vista || o.pendiente || o.descartada || o.estrellas) return;
+
+    let puntaje = 0;
+    let mejorRazon = null, mejorPeso = 0;
+
+    directoresDe(p).forEach(d => {
+      const w = pesoDirector[d] || 0;
+      if (w > 0) {
+        puntaje += w;
+        if (w > mejorPeso) { mejorPeso = w; mejorRazon = "Por el director " + d; }
+      }
+    });
+    generosDe(p).forEach(g => {
+      const w = pesoGenero[g] || 0;
+      if (w > 0) {
+        puntaje += w;
+        if (w > mejorPeso) { mejorPeso = w; mejorRazon = "Género: " + g; }
+      }
+    });
+
+    if (puntaje > 0) candidatas.push({ p, puntaje, razon: mejorRazon });
+  });
+
+  candidatas.sort((a, b) => b.puntaje - a.puntaje || String(a.p.titulo).localeCompare(String(b.p.titulo), "es"));
+  return candidatas.slice(0, 6);
+}
+
+function renderRecomendaciones() {
+  const sec = $("recomendaciones");
+  if (hayFiltros() || pestana !== "catalogo") {
+    sec.style.display = "none";
+    return;
+  }
+  const recs = calcularRecomendaciones();
+  if (!recs.length) {
+    sec.style.display = "none";
+    return;
+  }
+  sec.style.display = "block";
+  $("recomCarrusel").innerHTML = recs.map(r => {
+    const idx = peliculas.indexOf(r.p);
+    const img = (r.p.portada && !datosLimitados())
+      ? '<img src="' + esc(r.p.portada) + '" alt="">'
+      : '<div class="sinportada-mini">🎬</div>';
+    return '<div class="dest" data-idx="' + idx + '">' + img +
+      '<div class="dest-titulo">' + esc(r.p.titulo) + '</div>' +
+      '<div class="dest-anio">' + esc(r.p["año"]) + '</div>' +
+      '<div class="dest-razon">' + esc(r.razon) + '</div></div>';
+  }).join("");
 }
 
 /* ---------- Paleta de 3 colores del póster ---------- */
@@ -1401,6 +1476,7 @@ function pintar() {
 
   const { vistas, pendientes } = contarEstados();
   $("destacados").style.display = hayFiltros() ? "none" : "block";
+  renderRecomendaciones();
   actualizarAhora();
   actualizarAvisoEstancados();
   revisarSalud();
@@ -1458,6 +1534,7 @@ function pintarPestana() {
   contador.textContent = titulo + ": " + items.length + (items.length === 1 ? " título" : " títulos");
   chips.innerHTML = "";
   $("ahora").style.display = "none";
+  $("recomendaciones").style.display = "none";
   $("avisoEstancados").style.display = "none";
   $("destacados").style.display = "none";
   $("salud").classList.add("oculto");
@@ -1841,6 +1918,14 @@ window.addEventListener("load", () => {
   });
 
   $("carrusel").addEventListener("click", e => {
+    const d = e.target.closest("[data-idx]");
+    if (d) {
+      desdeAleatorio = false;
+      abrirDetalle(peliculas[Number(d.dataset.idx)]);
+    }
+  });
+
+  $("recomCarrusel").addEventListener("click", e => {
     const d = e.target.closest("[data-idx]");
     if (d) {
       desdeAleatorio = false;
