@@ -17,6 +17,7 @@
     --tema-bg:rgba(0,113,227,.1); --tema-texto:#0071e3;
     --sombra:0 2px 10px rgba(0,0,0,.06); --error:#c00; --estrella:#ffb800;
     --ease:cubic-bezier(.2,.8,.2,1);
+    --acento-rgb:0,113,227;
   }
   body.oscuro {
     --fondo:#000000; --tarjeta:#1c1c1e; --texto:#f5f5f7; --gris:#a1a1a6;
@@ -110,6 +111,8 @@
   @keyframes fundo { from { opacity:0; } to { opacity:1; } }
   @keyframes crecer { from { opacity:0; transform:scale(.92) translateY(10px); } to { opacity:1; transform:scale(1) translateY(0); } }
   .ventana { background:var(--tarjeta); color:var(--texto); border-radius:18px; padding:24px; max-width:560px; width:100%; max-height:90vh; overflow:auto; position:relative; }
+  /* La ficha toma el tono del póster; si no hay tono, usa el azul por defecto */
+  #modal .ventana { background:linear-gradient(180deg, rgba(var(--acento-rgb), .32), var(--tarjeta) 45%); transition:background .4s ease; }
   .ventana h2 { margin:0 0 6px; font-size:22px; }
   .cerrar { position:absolute; top:12px; right:14px; background:none; border:none; font-size:26px; cursor:pointer; color:var(--gris); transition:transform .2s var(--ease); }
   .cerrar:hover { transform:rotate(90deg); }
@@ -127,7 +130,6 @@
   .trailer-caja iframe { position:absolute; inset:0; width:100%; height:100%; border:0; }
   .trailer-vacio { font-size:13px; color:var(--gris); }
 
-  /* Estadísticas */
   .stats-resumen { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin:16px 0; }
   .stat { background:var(--boton-suave); border-radius:14px; padding:12px 8px; text-align:center; }
   .stat b { display:block; font-size:22px; }
@@ -249,6 +251,7 @@ let vistaLista = false;
 let agrupado = false;
 let desdeAleatorio = false;
 let detalleActual = null;
+const colorCache = new Map();
 
 let ubicacion = { lat: 21.16, lon: -86.85 };
 
@@ -289,6 +292,61 @@ const ordenes = {
   antiguas: (a, b) => (Number(a["año"]) || 0) - (Number(b["año"]) || 0),
   duracion: (a, b) => minutos(b) - minutos(a)
 };
+
+/* ---------- Color dominante del póster ---------- */
+// Lee la portada en un lienzo pequeño y promedia los colores más frecuentes,
+// descartando negros, blancos y grises. Devuelve "r, g, b" o "" si no hay color útil.
+function colorDePoster(url) {
+  if (colorCache.has(url)) return Promise.resolve(colorCache.get(url));
+  return new Promise(resolve => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      try {
+        const w = 48;
+        const h = Math.max(1, Math.round(w * img.height / img.width));
+        const c = document.createElement("canvas");
+        c.width = w; c.height = h;
+        const ctx = c.getContext("2d");
+        ctx.drawImage(img, 0, 0, w, h);
+        const datos = ctx.getImageData(0, 0, w, h).data;
+
+        const cubos = {};
+        for (let i = 0; i < datos.length; i += 4) {
+          const r = datos[i], g = datos[i + 1], b = datos[i + 2];
+          const max = Math.max(r, g, b), min = Math.min(r, g, b);
+          if (max < 40 || min > 215) continue;
+          if (max - min < 25) continue;
+          const clave = (r >> 4) + "," + (g >> 4) + "," + (b >> 4);
+          const cubo = cubos[clave] || (cubos[clave] = { n: 0, r: 0, g: 0, b: 0 });
+          cubo.n++; cubo.r += r; cubo.g += g; cubo.b += b;
+        }
+        const mejor = Object.values(cubos).sort((x, y) => y.n - x.n)[0];
+        const rgb = mejor
+          ? [Math.round(mejor.r / mejor.n), Math.round(mejor.g / mejor.n), Math.round(mejor.b / mejor.n)].join(", ")
+          : "";
+        colorCache.set(url, rgb);
+        resolve(rgb);
+      } catch (e) {
+        // El servidor de la imagen no permite leer sus colores: se usa el azul por defecto
+        colorCache.set(url, "");
+        resolve("");
+      }
+    };
+    img.onerror = () => resolve("");
+    img.src = url;
+  });
+}
+
+function aplicarColorPoster(p) {
+  const caja = document.querySelector("#modal .ventana");
+  if (!caja) return;
+  caja.style.removeProperty("--acento-rgb");
+  if (!p.portada) return;
+  colorDePoster(p.portada).then(rgb => {
+    if (rgb && detalleActual === p) caja.style.setProperty("--acento-rgb", rgb);
+  });
+}
 
 /* ---------- Marcas personales en la carpeta privada de Drive ---------- */
 function marcasLocales() {
@@ -815,6 +873,7 @@ function abrirDetalle(p) {
     ? '<button class="pildora destacado" id="otraSugerencia">🎲 Otra sugerencia</button>'
     : '';
   $("modal").classList.add("abierto");
+  aplicarColorPoster(p);
 }
 
 function cerrarDetalle() {
