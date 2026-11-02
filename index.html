@@ -808,18 +808,31 @@ function actualizarResumenSemana() {
 function calcularRecomendaciones() {
   const pesoGenero = {}, pesoDirector = {};
   const fuentesGenero = {}, fuentesDirector = {};
+  const restaGenero = {}, restaDirector = {};
+  const fuentesRestaGenero = {}, fuentesRestaDirector = {};
 
   peliculas.forEach(p => {
     const s = estadoDe(p);
-    if (s.estrellas < 4) return;
-    generosDe(p).forEach(g => {
-      pesoGenero[g] = (pesoGenero[g] || 0) + 1;
-      (fuentesGenero[g] = fuentesGenero[g] || []).push({ titulo: p.titulo, estrellas: s.estrellas });
-    });
-    directoresDe(p).forEach(d => {
-      pesoDirector[d] = (pesoDirector[d] || 0) + 2;
-      (fuentesDirector[d] = fuentesDirector[d] || []).push({ titulo: p.titulo, estrellas: s.estrellas });
-    });
+    if (s.estrellas >= 4) {
+      generosDe(p).forEach(g => {
+        pesoGenero[g] = (pesoGenero[g] || 0) + 1;
+        (fuentesGenero[g] = fuentesGenero[g] || []).push({ titulo: p.titulo, estrellas: s.estrellas });
+      });
+      directoresDe(p).forEach(d => {
+        pesoDirector[d] = (pesoDirector[d] || 0) + 2;
+        (fuentesDirector[d] = fuentesDirector[d] || []).push({ titulo: p.titulo, estrellas: s.estrellas });
+      });
+    }
+    if ((marcas[p.titulo] || {}).descartada) {
+      generosDe(p).forEach(g => {
+        restaGenero[g] = (restaGenero[g] || 0) + 1;
+        (fuentesRestaGenero[g] = fuentesRestaGenero[g] || []).push({ titulo: p.titulo });
+      });
+      directoresDe(p).forEach(d => {
+        restaDirector[d] = (restaDirector[d] || 0) + 2;
+        (fuentesRestaDirector[d] = fuentesRestaDirector[d] || []).push({ titulo: p.titulo });
+      });
+    }
   });
 
   if (!Object.keys(pesoGenero).length && !Object.keys(pesoDirector).length) return [];
@@ -835,18 +848,28 @@ function calcularRecomendaciones() {
 
     directoresDe(p).forEach(d => {
       const w = pesoDirector[d] || 0;
+      const r = restaDirector[d] || 0;
       if (w > 0) {
         puntaje += w;
         desglose.push({ etiqueta: "Director " + d, puntos: w, fuentes: fuentesDirector[d] });
         if (w > mejorPeso) { mejorPeso = w; mejorRazon = "Por el director " + d; }
       }
+      if (r > 0) {
+        puntaje -= r;
+        desglose.push({ etiqueta: "Director " + d, puntos: -r, fuentes: fuentesRestaDirector[d] });
+      }
     });
     generosDe(p).forEach(g => {
       const w = pesoGenero[g] || 0;
+      const r = restaGenero[g] || 0;
       if (w > 0) {
         puntaje += w;
         desglose.push({ etiqueta: "Género " + g, puntos: w, fuentes: fuentesGenero[g] });
         if (w > mejorPeso) { mejorPeso = w; mejorRazon = "Género: " + g; }
+      }
+      if (r > 0) {
+        puntaje -= r;
+        desglose.push({ etiqueta: "Género " + g, puntos: -r, fuentes: fuentesRestaGenero[g] });
       }
     });
 
@@ -857,9 +880,15 @@ function calcularRecomendaciones() {
   return candidatas.slice(0, 6);
 }
 
-// Convierte el desglose real en líneas legibles: punto total y la película de mayor calificación que lo originó
+// Convierte el desglose real en líneas legibles: positivos con la película de mayor calificación; negativos con la descartada
 function lineasPorQue(desglose) {
   return desglose.map(d => {
+    if (d.puntos < 0) {
+      const f = d.fuentes[0];
+      const otras = d.fuentes.length - 1;
+      return d.etiqueta + " (" + d.puntos + ", por descartada: " + f.titulo +
+        (otras > 0 ? " y " + otras + " más" : "") + ")";
+    }
     const fuentes = d.fuentes.slice().sort((a, b) => b.estrellas - a.estrellas);
     const mejor = fuentes[0];
     const otras = fuentes.length - 1;
