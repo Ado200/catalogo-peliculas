@@ -40,6 +40,13 @@
   .boton-login { background:var(--azul); color:#fff; border:none; padding:14px 28px; font-size:16px; cursor:pointer; border-radius:999px; transition:transform .15s var(--ease); }
   .boton-login:active { transform:scale(.96); }
 
+  /* CAMBIO: panel de filtros avanzados */
+  .panel-avanzados { display:none; max-width:900px; margin:14px auto 0; padding:16px; background:var(--tarjeta); border-radius:18px; box-shadow:var(--sombra); grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:12px; text-align:left; }
+  .panel-avanzados.abierto { display:grid; animation:aparecer .3s var(--ease) both; }
+  .campo label { display:block; font-size:12px; color:var(--gris); margin-bottom:4px; }
+  .campo select { width:100%; }
+  .filtros.acciones { margin-top:12px; }
+
   #calido { position:fixed; inset:0; pointer-events:none; z-index:9; background:#ff9a3c; mix-blend-mode:multiply; opacity:0; transition:opacity 60s linear; }
 
   #chips { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-top:12px; min-height:4px; }
@@ -160,18 +167,10 @@
   <h1>Mi catálogo de películas</h1>
   <input id="buscar" type="search" list="sugerencias" placeholder="Busca por título, director o actor">
   <datalist id="sugerencias"></datalist>
+
+  <!-- CAMBIO: solo se ven Género y Estado; el resto va en el panel -->
   <div class="filtros">
-    <select id="tipo"><option value="">Películas y series</option></select>
     <select id="genero"><option value="">Todos los géneros</option></select>
-    <select id="tema"><option value="">Todos los temas</option></select>
-    <select id="anio"><option value="">Todos los años</option></select>
-    <select id="pais"><option value="">Todos los países</option></select>
-    <select id="duracion">
-      <option value="">Cualquier duración</option>
-      <option value="corta">Menos de 1 h 30 min</option>
-      <option value="media">De 1 h 30 a 2 h</option>
-      <option value="larga">Más de 2 h</option>
-    </select>
     <select id="estado">
       <option value="">Todas las películas</option>
       <option value="vista">Vistas</option>
@@ -179,24 +178,50 @@
       <option value="pendiente">Pendientes</option>
       <option value="favoritas">Favoritas (4 o 5★)</option>
     </select>
-    <select id="orden">
-      <option value="titulo">Ordenar: A a Z</option>
-      <option value="recientes">Ordenar: más recientes</option>
-      <option value="antiguas">Ordenar: más antiguas</option>
-      <option value="duracion">Ordenar: más largas</option>
-    </select>
-    <select id="tema-modo" title="Tema de la página">
-      <option value="sistema">Tema: automático del sistema</option>
-      <option value="sol">Tema: amanecer y atardecer</option>
-      <option value="hora">Tema: 19:00 a 7:00 oscuro</option>
-      <option value="claro">Tema: siempre claro</option>
-      <option value="oscuro">Tema: siempre oscuro</option>
-    </select>
-    <select id="vista-modo" title="Protección de la vista">
-      <option value="auto">Protección: automática y gradual</option>
-      <option value="siempre">Protección: siempre activa</option>
-      <option value="apagada">Protección: apagada</option>
-    </select>
+    <button id="toggleAvanzados" class="pildora">⚙ Filtros avanzados</button>
+  </div>
+
+  <!-- CAMBIO: panel de filtros avanzados y ajustes -->
+  <div id="panelAvanzados" class="panel-avanzados">
+    <div class="campo"><label for="tipo">Tipo</label>
+      <select id="tipo"><option value="">Películas y series</option></select></div>
+    <div class="campo"><label for="tema">Tema</label>
+      <select id="tema"><option value="">Todos los temas</option></select></div>
+    <div class="campo"><label for="anio">Año</label>
+      <select id="anio"><option value="">Todos los años</option></select></div>
+    <div class="campo"><label for="pais">País</label>
+      <select id="pais"><option value="">Todos los países</option></select></div>
+    <div class="campo"><label for="duracion">Duración</label>
+      <select id="duracion">
+        <option value="">Cualquier duración</option>
+        <option value="corta">Menos de 1 h 30 min</option>
+        <option value="media">De 1 h 30 a 2 h</option>
+        <option value="larga">Más de 2 h</option>
+      </select></div>
+    <div class="campo"><label for="orden">Orden</label>
+      <select id="orden">
+        <option value="titulo">A a Z</option>
+        <option value="recientes">Más recientes</option>
+        <option value="antiguas">Más antiguas</option>
+        <option value="duracion">Más largas</option>
+      </select></div>
+    <div class="campo"><label for="tema-modo">Tema de la página</label>
+      <select id="tema-modo">
+        <option value="sistema">Automático del sistema</option>
+        <option value="sol">Amanecer y atardecer</option>
+        <option value="hora">19:00 a 7:00 oscuro</option>
+        <option value="claro">Siempre claro</option>
+        <option value="oscuro">Siempre oscuro</option>
+      </select></div>
+    <div class="campo"><label for="vista-modo">Protección de la vista</label>
+      <select id="vista-modo">
+        <option value="auto">Automática y gradual</option>
+        <option value="siempre">Siempre activa</option>
+        <option value="apagada">Apagada</option>
+      </select></div>
+  </div>
+
+  <div class="filtros acciones">
     <button id="aleatorio" class="pildora destacado">🎲 Aleatorio</button>
     <button id="estadisticas" class="pildora">📊 Estadísticas</button>
     <button id="guardarPaletas" class="pildora">🎨 Guardar paletas</button>
@@ -204,7 +229,7 @@
     <button id="agrupar" class="pildora">Agrupar por tema</button>
     <button id="limpiar" class="pildora">Limpiar</button>
     <button id="borrarMarcas" class="pildora">🗑 Borrar mis marcas</button>
-    <button id="exportar" class="pildora">⬇ Exportar CSV</button> <!-- CAMBIO -->
+    <button id="exportar" class="pildora">⬇ Exportar CSV</button>
   </div>
   <div id="chips"></div>
   <div id="contador"></div>
@@ -262,6 +287,8 @@ const $ = id => document.getElementById(id);
 const lista = $("lista"), buscar = $("buscar"), contador = $("contador"), chips = $("chips");
 const sel = { tipo:$("tipo"), genero:$("genero"), tema:$("tema"), anio:$("anio"), pais:$("pais"), duracion:$("duracion"), estado:$("estado") };
 const etiquetas = { tipo:"Tipo", genero:"Género", tema:"Tema", anio:"Año", pais:"País", duracion:"Duración", estado:"Estado" };
+// CAMBIO: filtros que están dentro del panel avanzado
+const AVANZADOS = ["tipo", "tema", "anio", "pais", "duracion"];
 
 function esc(x) {
   return String(x == null ? "" : x).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -323,8 +350,8 @@ function paletaDePoster(url) {
           const r = datos[i], g = datos[i + 1], b = datos[i + 2];
           const max = Math.max(r, g, b), min = Math.min(r, g, b);
           // LÍMITES RELAJADOS
-          if (max < 15 || min > 240) continue; 
-          if (max - min < 10) continue; 
+          if (max < 15 || min > 240) continue;
+          if (max - min < 10) continue;
           total++;
           const clave = (r >> 4) + "," + (g >> 4) + "," + (b >> 4);
           const cubo = cubos[clave] || (cubos[clave] = { n: 0, r: 0, g: 0, b: 0 });
@@ -342,7 +369,7 @@ function paletaDePoster(url) {
           // Distancia reducida para aceptar tonos más similares
           if (elegidos.every(e => distancia(e, g.rgb) > 40)) elegidos.push(g.rgb);
         }
-        
+
         // Respaldo para pósters en blanco y negro
         if (elegidos.length === 0) elegidos.push([100, 100, 100], [60, 60, 60], [30, 30, 30]);
 
@@ -833,6 +860,14 @@ function hayFiltros() {
   return buscar.value.trim() !== "" || Object.values(sel).some(s => s.value !== "");
 }
 
+// CAMBIO: cuenta cuántos filtros avanzados están activos y actualiza el botón
+function actualizarBotonAvanzados() {
+  const n = AVANZADOS.filter(k => sel[k].value).length;
+  const boton = $("toggleAvanzados");
+  boton.textContent = "⚙ Filtros avanzados" + (n ? " (" + n + ")" : "");
+  boton.classList.toggle("destacado", n > 0);
+}
+
 function textoOpcion(select) {
   const opt = select.options[select.selectedIndex];
   return opt ? opt.text.replace(/\s*\(\d+\)$/, "") : select.value;
@@ -896,6 +931,7 @@ function pintar() {
 
   const { vistas, pendientes } = contarEstados();
   $("destacados").style.display = hayFiltros() ? "none" : "block";
+  actualizarBotonAvanzados();
   renderChips();
   contador.textContent = visibles.length + " de " + peliculas.length + " títulos · " +
     vistas + " vistas · " + pendientes + " pendientes";
@@ -1107,6 +1143,11 @@ window.addEventListener("load", () => {
     tokenClient.requestAccessToken();
   });
 
+  // CAMBIO: abre y cierra el panel de filtros avanzados
+  $("toggleAvanzados").addEventListener("click", () => {
+    $("panelAvanzados").classList.toggle("abierto");
+  });
+
   $("tema-modo").addEventListener("change", () => {
     try { localStorage.setItem("tema_modo", $("tema-modo").value); } catch (e) {}
     actualizarTema();
@@ -1235,7 +1276,7 @@ async function borrarMisMarcas() {
 
 $("borrarMarcas").addEventListener("click", borrarMisMarcas);
 
-// CAMBIO: exporta el catálogo y tus marcas personales a un archivo CSV
+// Exporta el catálogo y tus marcas personales a un archivo CSV
 function exportarCSV() {
   const columnas = ["titulo", "tipo", "año", "duracion", "pais", "director", "genero", "reparto", "temas", "link", "vista", "pendiente", "estrellas"];
 
@@ -1269,7 +1310,7 @@ function exportarCSV() {
   setEstado("CSV exportado: " + peliculas.length + " títulos.");
 }
 
-$("exportar").addEventListener("click", exportarCSV); // CAMBIO
+$("exportar").addEventListener("click", exportarCSV);
 
 /* ---------- Deslizar a la derecha para marcar pendiente (celular) ---------- */
 let swipe = null;
