@@ -856,7 +856,11 @@ function renderAgrupado() {
   if (sinTema.length) bloques.push({ nombre: "Sin tema", items: sinTema });
 
   return bloques.map(b => {
-    const cuerpo = b.items.map((p, k) => vistaLista ? filaHtml(p, k) : tarjeta(p, k)).join("");
+    // CAMBIO: el índice debe ser la posición en "visibles", no en el grupo
+    const cuerpo = b.items.map(p => {
+      const i = visibles.indexOf(p);
+      return vistaLista ? filaHtml(p, i) : tarjeta(p, i);
+    }).join("");
     return '<section class="grupo"><h3>' + esc(b.nombre) + ' (' + b.items.length + ')</h3>' +
       '<div class="grupo-items">' + cuerpo + '</div></section>';
   }).join("");
@@ -1194,6 +1198,57 @@ window.addEventListener("load", () => {
     $("orden").value = "titulo";
     pintar();
   });
+});
+
+/* ---------- CAMBIO: deslizar a la derecha para marcar pendiente (celular) ---------- */
+let swipe = null;
+
+function reiniciarTarjeta(el) {
+  if (!el) return;
+  el.style.transition = "transform .25s var(--ease)";
+  el.style.transform = "";
+}
+
+lista.addEventListener("touchstart", e => {
+  const card = e.target.closest("[data-i]");
+  if (!card || e.target.closest("a, button, select, input")) { swipe = null; return; }
+  const t = e.touches[0];
+  swipe = { el: card, i: Number(card.dataset.i), x: t.clientX, y: t.clientY, dx: 0, activo: false };
+}, { passive: true });
+
+lista.addEventListener("touchmove", e => {
+  if (!swipe) return;
+  const t = e.touches[0];
+  const dx = t.clientX - swipe.x;
+  const dy = t.clientY - swipe.y;
+  if (!swipe.activo) {
+    // Si el movimiento es mayormente vertical, es scroll: no hacemos nada
+    if (Math.abs(dy) > Math.abs(dx)) { reiniciarTarjeta(swipe.el); swipe = null; return; }
+    if (Math.abs(dx) < 12) return;
+    swipe.activo = true;
+  }
+  // Solo mostramos movimiento hacia la derecha
+  swipe.dx = Math.max(0, dx);
+  swipe.el.style.transition = "none";
+  swipe.el.style.transform = "translateX(" + Math.min(120, swipe.dx) + "px)";
+}, { passive: true });
+
+lista.addEventListener("touchend", () => {
+  if (!swipe) return;
+  const s = swipe;
+  swipe = null;
+  reiniciarTarjeta(s.el);
+  if (!s.activo || s.dx < 90) return;
+  const p = visibles[s.i];
+  if (!p) return;
+  const pendienteActual = estadoDe(p).pendiente;
+  cambiarEstado(p.titulo, { pendiente: !pendienteActual, vista: false });
+  refrescarTodo();
+});
+
+lista.addEventListener("touchcancel", () => {
+  if (swipe) reiniciarTarjeta(swipe.el);
+  swipe = null;
 });
 </script>
 </body>
