@@ -437,6 +437,7 @@
 
 <section id="cena" class="destacados solo-catalogo" style="display:none"></section>
 <section id="estaSemana" class="destacados solo-catalogo" style="display:none"></section>
+<section id="pregunta" class="destacados solo-catalogo" style="display:none"></section>
 <section id="duelo" class="destacados solo-catalogo" style="display:none"></section>
 <section id="mapaGustos" class="destacados solo-catalogo" style="display:none"></section>
 <section id="sagas" class="destacados solo-catalogo" style="display:none"></section>
@@ -1125,6 +1126,111 @@ function renderMapaGustos() {
     data: { labels: directores.map(x => x[0]), datasets: [{ label: "Películas", data: directores.map(x => x[1]), backgroundColor: c.paleta[1], borderRadius: 6 }] },
     options: { indexAxis: "y", plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, ticks: { precision: 0 } } } }
   }));
+}
+
+/* ---------- Pregunta del día: una pregunta sobre una vista; la respuesta va en marcas[titulo].preguntas ---------- */
+const PREGUNTAS = [
+  "¿Qué escena de «{título}» recuerdas mejor?",
+  "¿Qué personaje te quedó más en la cabeza de «{título}»?",
+  "¿Te gustaría volver a ver «{título}» en otro momento?",
+  "¿Qué habrías cambiado de «{título}»?",
+  "¿Con qué frase o diálogo te quedaste de «{título}»?"
+];
+
+function preguntaDelDia() {
+  const hoy = hoyLocalISO();
+  const pd = marcas.__preguntaDia || null;
+  if (pd && pd.fecha === hoy) {
+    const m = marcas[pd.titulo] || {};
+    if (m.vista && !m.descartada) return pd;
+  }
+  const recientes = ((pd && pd.recientes) || []).filter(r => r.f >= diaISODesde(6));
+  const vistas = peliculas.filter(p => estadoDe(p).vista && !(marcas[p.titulo] || {}).descartada);
+  if (!vistas.length) return null;
+  let cand = vistas.filter(p => !recientes.some(r => r.t === p.titulo));
+  if (!cand.length) cand = vistas;
+  const elegida = cand[Math.floor(Math.random() * cand.length)];
+  const nuevo = {
+    fecha: hoy,
+    titulo: elegida.titulo,
+    idx: Math.floor(Math.random() * PREGUNTAS.length),
+    recientes: recientes.concat([{ t: elegida.titulo, f: hoy }]).slice(-10),
+    omitida: pd && pd.fecha === hoy ? pd.omitida : undefined
+  };
+  marcas.__preguntaDia = nuevo;
+  programarGuardado();
+  return nuevo;
+}
+
+function textoPregunta(pd) {
+  return PREGUNTAS[pd.idx].replace("{título}", pd.titulo);
+}
+
+function renderPregunta() {
+  const sec = $("pregunta");
+  if (!peliculas.length || hayFiltros() || pestana !== "catalogo") {
+    sec.style.display = "none";
+    return;
+  }
+  const hoy = hoyLocalISO();
+  const pd = preguntaDelDia();
+  if (!pd || pd.omitida === hoy) {
+    sec.style.display = "none";
+    return;
+  }
+  const p = peliculas.find(x => x.titulo === pd.titulo);
+  if (!p) {
+    sec.style.display = "none";
+    return;
+  }
+  const entrada = ((marcas[p.titulo] || {}).preguntas || []).find(e => e.f === hoy);
+  const pregunta = textoPregunta(pd);
+  const cuerpo = entrada
+    ? '<p class="resumen-titulo">' + esc(pregunta) + '</p>' +
+      '<p class="meta">Respondida hoy</p>' +
+      '<p class="nota-corta">' + esc(entrada.r) + '</p>'
+    : '<p class="resumen-titulo">' + esc(pregunta) + '</p>' +
+      '<textarea id="preguntaTexto" maxlength="500" placeholder="Escribe tu respuesta" style="width:100%;min-height:70px;padding:10px;font:inherit;border:1px solid var(--borde);border-radius:12px;background:var(--tarjeta);color:var(--texto);margin-top:8px"></textarea>' +
+      '<div class="meta" id="preguntaContador">0/500</div>' +
+      '<div class="insignias" style="margin-top:8px">' +
+        '<button class="pildora destacado" id="preguntaGuardar" data-titulo="' + esc(p.titulo) + '">Guardar</button>' +
+        '<button class="pildora" id="preguntaOmitir">Hoy no</button>' +
+      '</div>';
+  sec.innerHTML = '<div class="actividad-card"><h3>Pregunta del día</h3>' + cuerpo + '</div>';
+  sec.style.display = "block";
+}
+
+function guardarRespuestaDia(titulo) {
+  const texto = ($("preguntaTexto") ? $("preguntaTexto").value : "").trim().slice(0, 500);
+  if (!texto) { setEstado("Escribe una respuesta antes de guardar."); return; }
+  const pd = preguntaDelDia();
+  if (!pd) return;
+  const hoy = hoyLocalISO();
+  const m = marcas[titulo] || {};
+  const lista = (m.preguntas || []).filter(e => e.f !== hoy)
+    .concat([{ f: hoy, p: textoPregunta(pd), r: texto }]);
+  marcas[titulo] = Object.assign({}, m, { preguntas: lista });
+  programarGuardado();
+  setEstado("Respuesta guardada.");
+  refrescarTodo();
+}
+
+function omitirPreguntaHoy() {
+  const pd = preguntaDelDia();
+  if (!pd) return;
+  marcas.__preguntaDia = Object.assign({}, pd, { omitida: hoyLocalISO() });
+  programarGuardado();
+  refrescarTodo();
+}
+
+function preguntasFichaHtml(p) {
+  const lista = (marcas[p.titulo] || {}).preguntas || [];
+  if (!lista.length) return "";
+  return '<details class="historial"><summary>Mis respuestas (' + lista.length + ')</summary><ul>' +
+    lista.slice().sort((a, b) => b.f.localeCompare(a.f)).map(e =>
+      '<li>' + esc(e.f.split("-").reverse().join("/")) + ' · ' + esc(e.p) + '<br>' + esc(e.r) + '</li>'
+    ).join("") +
+    '</ul></details>';
 }
 
 function htmlCalendario() {
@@ -2157,6 +2263,10 @@ document.addEventListener("change", e => {
   }
 });
 
+document.addEventListener("input", e => {
+  if (e.target.id === "preguntaTexto") $("preguntaContador").textContent = e.target.value.length + "/500";
+});
+
 /* ---------- Fechas ---------- */
 function fechaValida(s) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return false;
@@ -2995,6 +3105,7 @@ function pintar() {
   renderActividad();
   renderCena();
   renderEstaSemana();
+  renderPregunta();
   renderDuelo();
   renderMapaGustos();
   renderSagas();
@@ -3029,6 +3140,7 @@ function pintarPestana() {
   $("ahora").style.display = "none";
   $("estaSemana").style.display = "none";
   $("duelo").style.display = "none";
+  $("pregunta").style.display = "none";
   $("mapaGustos").style.display = "none";
   destruirMapa();
   $("recomendaciones").style.display = "none";
@@ -3214,6 +3326,7 @@ function abrirDetalle(p) {
     controlesHtml(p) +
     siguienteHtml(p) +
     historialHtml(p) +
+    preguntasFichaHtml(p) +
     '<p class="sinopsis">' + esc(p.sinopsis) + '</p>' +
     '<div class="nota-bloque"><label for="notaTexto">Mi nota</label>' +
       '<textarea id="notaTexto" placeholder="Escribe lo que te pareció. Usa #etiquetas para encontrarla después.">' + esc(notaActual) + '</textarea>' +
@@ -3600,6 +3713,8 @@ window.addEventListener("load", () => {
     if (decision) { accionDecidir(decision.dataset.decidir, decision.dataset.clave); return; }
 
     if (e.target.id === "avisoFechaCerrar") { cerrarRecordatorio(); return; }
+    if (e.target.id === "preguntaGuardar") { guardarRespuestaDia(e.target.dataset.titulo); return; }
+    if (e.target.id === "preguntaOmitir") { omitirPreguntaHoy(); return; }
     if (e.target.id === "avisoCerrar") {
       avisoCerrado = true;
       firmaAvisoCerrado = listaEstancadas().map(x => x.p.titulo + x.tipo).join("|");
