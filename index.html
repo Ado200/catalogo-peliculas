@@ -423,7 +423,6 @@
   /* AJUSTE BARRA SUPERIOR: tarjeta flotante con margen; al bajar se reduce a una píldora con solo el buscador */
   #app > header { top:10px; margin:10px 12px 0; padding:14px 16px 12px; border:1px solid var(--borde); border-radius:28px; box-shadow:var(--sombra); }
   body.barra-compacta #app > header { margin:8px 12px 0; padding:6px 8px; border-radius:999px; }
-  body.barra-compacta #app > header h1,
   body.barra-compacta #app > header .segmentado,
   body.barra-compacta #app > header #contador,
   body.barra-compacta #app > header #estadoGuardado { display:none !important; }
@@ -4472,7 +4471,6 @@ zonaClas.addEventListener("touchcancel", () => {
   const panel = document.getElementById("panelVidrio");
   if (!header || !rango || !valor || !btn || !panel) return;
 
-  // Igual que el boceto: la opacidad y el desenfoque del vidrio dependen del valor elegido
   function aplicarVidrio(v) {
     const n = Math.min(95, Math.max(40, Math.round(Number(v)) || 72));
     document.documentElement.style.setProperty("--opacidad", (n / 100).toFixed(2));
@@ -4493,17 +4491,20 @@ zonaClas.addEventListener("touchcancel", () => {
     btn.setAttribute("aria-expanded", String(abierto));
   });
 
-  let compacta = false, ultimoY = window.scrollY, anclaY = 0, ignorarHasta = 0, pendiente = false;
+  // Reglas:
+  // - Se compacta solo al bajar, pasando 180 px (así siempre hay espacio para compensar el salto).
+  // - Se expande solo al llegar arriba (y <= 20). Nunca mientras se sube, para no pelear con el scroll.
+  // - La compensación del scroll solo se aplica al compactar, que es cuando el contenido sube.
+  const UMBRAL_COMPACTA = 180;
+  let compacta = false, ultimoY = window.scrollY, ignorarHasta = 0, pendiente = false;
 
-  // Al compactar, corrige el scroll para que el contenido no salte
   function cambiarEstado(v, y) {
     if (compacta === v) return;
     compacta = v;
-    anclaY = y;
     const antes = header.offsetHeight;
     document.body.classList.toggle("barra-compacta", v);
     const despues = header.offsetHeight;
-    if (y > 0 && despues !== antes) {
+    if (v && y > 0 && despues !== antes) {
       ignorarHasta = performance.now() + 200;
       window.scrollBy(0, despues - antes);
     }
@@ -4517,8 +4518,8 @@ zonaClas.addEventListener("touchcancel", () => {
       if (performance.now() < ignorarHasta) return;
       const y = window.scrollY;
       if (!compacta) {
-        if (y > 60 && y > ultimoY) cambiarEstado(true, y);
-      } else if (y <= 20 || y < anclaY - 80) {
+        if (y > UMBRAL_COMPACTA && y > ultimoY) cambiarEstado(true, y);
+      } else if (y <= 20) {
         cambiarEstado(false, y);
       }
       ultimoY = y;
