@@ -2071,7 +2071,7 @@ function paletaDePoster(url) {
       }
     };
     img.onerror = () => resolve([]);
-    img.src = PROXY_IMG + encodeURIComponent(String(url));
+    img.src = "https://tmdb-proxy.240300696.workers.dev/?url=" + encodeURIComponent(String(url));
   });
 }
 
