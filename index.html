@@ -431,6 +431,8 @@
 
 <section id="cena" class="destacados solo-catalogo" style="display:none"></section>
 <section id="estaSemana" class="destacados solo-catalogo" style="display:none"></section>
+<section id="duelo" class="destacados solo-catalogo" style="display:none"></section>
+<section id="mapaGustos" class="destacados solo-catalogo" style="display:none"></section>
 <section id="sagas" class="destacados solo-catalogo" style="display:none"></section>
 <section id="actores" class="destacados solo-catalogo" style="display:none"></section>
 <section id="ahora" class="destacados solo-catalogo" style="display:none">
@@ -1011,6 +1013,112 @@ function renderEstaSemana() {
     : '<p class="meta">No hay planes con alguien para los próximos 7 días.</p>';
   sec.innerHTML = '<div class="actividad-card"><h3>Esta semana</h3>' + cuerpo + '</div>';
   sec.style.display = "block";
+}
+
+/* ---------- Duelo de películas: elige una de dos pendientes ---------- */
+let parDuelo = null;
+
+function elegirPar() {
+  const pend = peliculas.filter(p => {
+    const s = estadoDe(p);
+    return s.pendiente && !s.conAlguien;
+  });
+  if (pend.length < 2) return null;
+  const a = pend[Math.floor(Math.random() * pend.length)];
+  let b = a;
+  while (b === a) b = pend[Math.floor(Math.random() * pend.length)];
+  return [a, b];
+}
+
+function renderDuelo() {
+  const sec = $("duelo");
+  if (!peliculas.length || hayFiltros() || pestana !== "catalogo") {
+    sec.style.display = "none";
+    return;
+  }
+  if (!parDuelo || !parDuelo.every(p => estadoDe(p).pendiente && !estadoDe(p).conAlguien)) {
+    parDuelo = elegirPar();
+  }
+  if (!parDuelo) {
+    sec.style.display = "none";
+    return;
+  }
+  const [a, b] = parDuelo;
+  const tarjeta = p =>
+    '<button class="pildora destacado" data-duelo-elige="' + esc(p.titulo) + '" style="flex:1;padding:14px;">' +
+      esc(p.titulo) + '<br><span style="font-size:12px;opacity:.8">' + esc(p["año"]) + ' · ' + esc(p.duracion) + '</span>' +
+    '</button>';
+  sec.innerHTML =
+    '<div class="actividad-card"><h3>Duelo</h3>' +
+      '<p class="meta">Elige cuál ver primero. La otra se queda en pendientes.</p>' +
+      '<div style="display:flex;gap:10px;align-items:stretch;flex-wrap:wrap">' +
+        tarjeta(a) + '<span style="align-self:center;color:var(--gris)">vs</span>' + tarjeta(b) +
+      '</div>' +
+      '<button class="pildora" data-duelo-otro="1" style="margin-top:10px">Otro duelo</button>' +
+    '</div>';
+  sec.style.display = "block";
+}
+
+function elegirEnDuelo(titulo) {
+  const previo = marcas[titulo] || {};
+  const nuevo = Object.assign({}, previo, { pendienteElegidaDesde: hoyLocalISO() });
+  marcas[titulo] = nuevo;
+  programarGuardado();
+  parDuelo = null;
+  setEstado("Elegida en el duelo: «" + titulo + "».");
+  refrescarTodo();
+}
+
+/* ---------- Mapa de gustos: géneros y directores de tus favoritas (4 o 5★) ---------- */
+let chartsMapa = [];
+
+function destruirMapa() {
+  chartsMapa.forEach(c => c.destroy());
+  chartsMapa = [];
+}
+
+function topConteo(items, n) {
+  const conteo = {};
+  items.forEach(x => { conteo[x] = (conteo[x] || 0) + 1; });
+  return Object.entries(conteo).sort((a, b) => b[1] - a[1]).slice(0, n);
+}
+
+function renderMapaGustos() {
+  const sec = $("mapaGustos");
+  destruirMapa();
+  if (!peliculas.length || hayFiltros() || pestana !== "catalogo") {
+    sec.style.display = "none";
+    return;
+  }
+  const favoritas = peliculas.filter(p => estadoDe(p).estrellas >= 4);
+  if (favoritas.length < 2 || typeof Chart === "undefined") {
+    sec.style.display = "none";
+    return;
+  }
+  const generos = topConteo(favoritas.flatMap(generosDe), 6);
+  const directores = topConteo(favoritas.flatMap(directoresDe), 5);
+  const c = coloresGrafica();
+
+  sec.innerHTML =
+    '<div class="actividad-card"><h3>Mapa de gustos</h3>' +
+      '<p class="meta">Según tus ' + favoritas.length + ' películas con 4 o 5★.</p>' +
+      '<div class="graficas-dos">' +
+        '<div class="grafica-caja"><h3>Géneros</h3><canvas id="gMapaGen"></canvas></div>' +
+        '<div class="grafica-caja"><h3>Directores</h3><canvas id="gMapaDir"></canvas></div>' +
+      '</div>' +
+    '</div>';
+  sec.style.display = "block";
+
+  chartsMapa.push(new Chart($("gMapaGen"), {
+    type: "bar",
+    data: { labels: generos.map(x => x[0]), datasets: [{ label: "Películas", data: generos.map(x => x[1]), backgroundColor: c.paleta[0], borderRadius: 6 }] },
+    options: { indexAxis: "y", plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, ticks: { precision: 0 } } } }
+  }));
+  chartsMapa.push(new Chart($("gMapaDir"), {
+    type: "bar",
+    data: { labels: directores.map(x => x[0]), datasets: [{ label: "Películas", data: directores.map(x => x[1]), backgroundColor: c.paleta[1], borderRadius: 6 }] },
+    options: { indexAxis: "y", plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, ticks: { precision: 0 } } } }
+  }));
 }
 
 function htmlCalendario() {
@@ -2829,6 +2937,8 @@ function pintar() {
   renderActividad();
   renderCena();
   renderEstaSemana();
+  renderDuelo();
+  renderMapaGustos();
   renderSagas();
   renderActores();
   revisarSalud();
@@ -2860,6 +2970,9 @@ function pintarPestana() {
   $("salud").classList.add("oculto");
   $("ahora").style.display = "none";
   $("estaSemana").style.display = "none";
+  $("duelo").style.display = "none";
+  $("mapaGustos").style.display = "none";
+  destruirMapa();
   $("recomendaciones").style.display = "none";
   chips.innerHTML = "";
 
@@ -3465,6 +3578,9 @@ window.addEventListener("load", () => {
       if (p) { desdeAleatorio = false; abrirDetalle(p); }
       return;
     }
+    const elegidaDuelo = e.target.closest("[data-duelo-elige]");
+    if (elegidaDuelo) { elegirEnDuelo(elegidaDuelo.dataset.dueloElige); return; }
+    if (e.target.closest("[data-duelo-otro]")) { parDuelo = null; renderDuelo(); return; }
     const botonSaga = e.target.closest("[data-saga-pend]");
     if (botonSaga) { marcarSagaPendiente(botonSaga.dataset.sagaPend); return; }
     const botonSiguiente = e.target.closest("[data-siguiente]");
