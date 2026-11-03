@@ -341,8 +341,15 @@
   }
   .tarjeta.amplia .portada { aspect-ratio:2/3; object-fit:cover; width:100%; }
   .tarjeta.amplia .sinportada { aspect-ratio:2/3; display:flex; align-items:center; justify-content:center; border-radius:12px; background:var(--boton-suave); }
-  .tarjeta.amplia .sinopsis { margin:8px 0 0; font-size:13px; color:var(--gris); }
+  .tarjeta.amplia { display:flex; flex-direction:column; }
+  .tarjeta.amplia .sinopsis { margin:8px 0 0; font-size:13px; color:var(--gris); flex:1; }
   .clamp-2 { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .que-ver { max-width:900px; margin:20px auto 0; padding:0 20px; }
+  .que-ver .destacados { margin:0; padding:0; max-width:none; }
+  .que-ver .tabs-ver { display:flex; gap:8px; justify-content:center; margin-bottom:10px; }
+  .que-ver .tabs-ver .pildora.activa-ver { background:var(--azul); color:#fff; }
+  .que-ver.solo-ahora #cena { display:none !important; }
+  .que-ver.solo-noche #ahora { display:none !important; }
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation:none !important; transition:none !important; }
   }
@@ -471,14 +478,21 @@
   <div id="avisoLista" class="aviso-lista"></div>
 </div>
 
+<div id="queVer" class="que-ver solo-catalogo" style="display:none">
+  <div class="tabs-ver">
+    <button class="pildora" data-ver="ahora">Esta hora</button>
+    <button class="pildora" data-ver="noche">Esta noche</button>
+  </div>
 <section id="ahora" class="destacados solo-catalogo" style="display:none">
   <h3>Para esta hora</h3>
   <p id="ahoraTexto" class="meta"></p>
   <div id="ahoraCaja"></div>
 </section>
 <section id="cena" class="destacados solo-catalogo" style="display:none"></section>
+</div>
 <section id="estaSemana" class="destacados solo-catalogo" style="display:none"></section>
 <section id="pregunta" class="destacados solo-catalogo" style="display:none"></section>
+<section id="bienvenida" class="destacados solo-catalogo" style="display:none"></section>
 <section id="duelo" class="destacados solo-catalogo" style="display:none"></section>
 <section id="resumenSemana" class="destacados solo-catalogo" style="display:none"></section>
 <section id="actividad" class="destacados solo-catalogo" style="display:none"></section>
@@ -1272,6 +1286,42 @@ function preguntasFichaHtml(p) {
       '<li>' + esc(e.f.split("-").reverse().join("/")) + ' · ' + esc(e.p) + '<br>' + esc(e.r) + '</li>'
     ).join("") +
     '</ul></details>';
+}
+
+// Guía para cuando todavía no hay marcas: explica lo básico y se oculta solo.
+function renderBienvenida() {
+  const sec = $("bienvenida");
+  const hayMarcas = Object.keys(marcas).some(k => !k.startsWith("__") && marcas[k] && Object.keys(marcas[k]).length);
+  if (!peliculas.length || hayMarcas || hayFiltros() || pestana !== "catalogo") {
+    sec.style.display = "none";
+    return;
+  }
+  sec.innerHTML = '<div class="actividad-card"><h3>Empieza aquí</h3>' +
+    '<p class="meta">Toca una película para abrir su ficha y marcarla como vista, pendiente o calificarla.</p>' +
+    '<p class="meta">En el celular, desliza una tarjeta a la izquierda para marcarla como vista, o a la derecha para ponerla en pendientes. Puedes deshacerlo en seis segundos.</p>' +
+    '<p class="meta">En computadora, pasa el cursor sobre una tarjeta para ver los botones rápidos.</p>' +
+    '</div>';
+  sec.style.display = "block";
+}
+
+// «Qué ver ahora»: una pestaña a la vez (hora o noche); si una no tiene contenido, se usa la otra
+let verActual = "ahora";
+
+function ajustarQueVer() {
+  const w = $("queVer");
+  const vAh = $("ahora").style.display !== "none";
+  const vCe = $("cena").style.display !== "none";
+  if (!vAh && !vCe) { w.style.display = "none"; return; }
+  if (verActual === "ahora" && !vAh) verActual = "noche";
+  if (verActual === "noche" && !vCe) verActual = "ahora";
+  w.style.display = "block";
+  w.classList.toggle("solo-ahora", verActual === "ahora");
+  w.classList.toggle("solo-noche", verActual === "noche");
+  w.querySelectorAll("[data-ver]").forEach(b => {
+    const visible = b.dataset.ver === "ahora" ? vAh : vCe;
+    b.style.display = visible ? "" : "none";
+    b.classList.toggle("activa-ver", b.dataset.ver === verActual);
+  });
 }
 
 function htmlCalendario() {
@@ -2720,6 +2770,18 @@ function pedirUbicacion() {
   );
 }
 
+// Búsqueda: «género: Terror» o «año: 2026» filtran; cualquier otro texto busca como antes
+function coincideBusqueda(p, f) {
+  const g = norm(f).trim();
+  const gen = g.match(/^genero:\s*(.+)$/);
+  if (gen) return generosDe(p).some(x => norm(x) === gen[1].trim());
+  const anio = g.match(/^ano:\s*(\d{4})$/);
+  if (anio) return String(p["año"]) === anio[1];
+  const m = marcas[p.titulo] || {};
+  const texto = [p.titulo, p.director, p.reparto, m.nota || "", m.conQuien || ""].join(" ").toLowerCase();
+  return texto.includes(f);
+}
+
 function llenarSugerencias() {
   const nombres = new Set();
   peliculas.forEach(p => {
@@ -2727,7 +2789,13 @@ function llenarSugerencias() {
     personasDe(p).forEach(n => nombres.add(n));
   });
   const dl = $("sugerencias");
-  dl.innerHTML = [...nombres].sort((a, b) => a.localeCompare(b, "es"))
+  const extras = [];
+  [...new Set(peliculas.flatMap(generosDe))].sort((a, b) => a.localeCompare(b, "es"))
+    .forEach(g => extras.push("género: " + g));
+  [...new Set(peliculas.map(p => String(p["año"] || "")).filter(Boolean))].sort((a, b) => b.localeCompare(a))
+    .forEach(a => extras.push("año: " + a));
+  dl.innerHTML = extras.map(x => '<option value="' + esc(x) + '"></option>').join("") +
+    [...nombres].sort((a, b) => a.localeCompare(b, "es"))
     .map(n => '<option value="' + esc(n) + '"></option>').join("");
 }
 
@@ -3205,7 +3273,7 @@ function pintar() {
   visibles = peliculas.filter(p => {
     const m = marcas[p.titulo] || {};
     const texto = [p.titulo, p.director, p.reparto, m.nota || "", m.conQuien || ""].join(" ").toLowerCase();
-    return texto.includes(f) &&
+    return coincideBusqueda(p, f) &&
       (!sel.tipo.value || p.tipo === sel.tipo.value) &&
       (!sel.genero.value || generosDe(p).includes(sel.genero.value)) &&
       (!sel.tema.value || temasDe(p).includes(sel.tema.value)) &&
@@ -3227,6 +3295,7 @@ function pintar() {
   renderCena();
   renderEstaSemana();
   renderPregunta();
+  renderBienvenida();
   renderDuelo();
   renderMapaGustos();
   renderSagas();
@@ -3238,6 +3307,7 @@ function pintar() {
   contador.textContent = visibles.length + " de " + peliculas.length + " títulos · " +
     vistas + " vistas · " + pendientes + " pendientes" + (datosLimitados() ? " · modo ahorro" : "");
 
+  ajustarQueVer();
   if (!visibles.length) {
     lista.innerHTML = '<p class="vacio">No encontré nada con esos criterios.</p>';
     return;
@@ -3259,9 +3329,11 @@ function pintarPestana() {
   $("destacados").style.display = "none";
   $("salud").classList.add("oculto");
   $("ahora").style.display = "none";
+  $("queVer").style.display = "none";
   $("estaSemana").style.display = "none";
   $("duelo").style.display = "none";
   $("pregunta").style.display = "none";
+  $("bienvenida").style.display = "none";
   $("mapaGustos").style.display = "none";
   destruirMapa();
   $("recomendaciones").style.display = "none";
@@ -3501,6 +3573,7 @@ function refrescarTodo() {
 
 function cambiarPestana(nombre) {
   pestana = nombre;
+  setEstado("");
   try { localStorage.setItem("pestana_activa", nombre); } catch (e) {}
   document.querySelectorAll("#tabbar button").forEach(b => b.classList.toggle("activa", b.dataset.tab === nombre));
   document.body.classList.toggle("solo-lista", nombre !== "catalogo");
@@ -3834,6 +3907,8 @@ window.addEventListener("load", () => {
     if (decision) { accionDecidir(decision.dataset.decidir, decision.dataset.clave); return; }
 
     if (e.target.id === "avisoFechaCerrar") { cerrarRecordatorio(); return; }
+    const tabVer = e.target.closest("[data-ver]");
+    if (tabVer) { verActual = tabVer.dataset.ver; ajustarQueVer(); return; }
     if (e.target.id === "preguntaGuardar") { guardarRespuestaDia(e.target.dataset.titulo); return; }
     if (e.target.id === "preguntaOmitir") { omitirPreguntaHoy(); return; }
     if (e.target.id === "avisoCerrar") {
