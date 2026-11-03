@@ -324,13 +324,25 @@
   .acciones-panel { grid-column:1/-1; display:flex; flex-wrap:wrap; gap:8px; justify-content:flex-end; align-items:flex-end; }
   .acciones-rapidas { display:none; flex-wrap:wrap; gap:4px; margin-top:8px; align-items:center; }
   @media (min-width:900px) and (hover:hover) {
-    .tarjeta.compacta:hover .acciones-rapidas, .tarjeta.compacta:focus-within .acciones-rapidas { display:flex; }
+    .tarjeta:hover .acciones-rapidas, .tarjeta:focus-within .acciones-rapidas { display:flex; }
   }
   .acciones-rapidas .chipc { padding:3px 8px; font-size:12px; }
   .acciones-rapidas .estrella { font-size:15px; padding:0; }
   button:focus-visible, select:focus-visible, input:focus-visible, textarea:focus-visible, a:focus-visible {
     outline:2px solid var(--azul); outline-offset:2px;
   }
+  .desc-fila .mini-portada { width:44px; height:66px; }
+  @media (max-width:600px) {
+    h1 { font-size:22px; margin-bottom:12px; }
+    header { padding:20px 14px 8px; }
+    .pildora, .chipc { min-height:40px; }
+    .barra-acciones { gap:6px; }
+    .tarjeta.compacta { padding:8px 10px; gap:10px; }
+  }
+  .tarjeta.amplia .portada { aspect-ratio:2/3; object-fit:cover; width:100%; }
+  .tarjeta.amplia .sinportada { aspect-ratio:2/3; display:flex; align-items:center; justify-content:center; border-radius:12px; background:var(--boton-suave); }
+  .tarjeta.amplia .sinopsis { margin:8px 0 0; font-size:13px; color:var(--gris); }
+  .clamp-2 { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation:none !important; transition:none !important; }
   }
@@ -356,7 +368,7 @@
   <div class="barra-acciones solo-catalogo">
     <button id="toggleAvanzados" class="pildora">⚙ Filtros</button>
     <button id="aleatorio" class="pildora destacado">🎲 Aleatorio</button>
-    <button id="vista" class="pildora">Ver como lista</button>
+    <button id="vista" class="pildora">Vista compacta</button>
     <button id="agrupar" class="pildora">Agrupar por tema</button>
     <button id="toggleMas" class="pildora">⋯ Más</button>
   </div>
@@ -2328,6 +2340,10 @@ document.addEventListener("click", e => {
   if (e.target.id === "toggleMas") $("panelMas").classList.toggle("abierto");
 });
 
+vistaLista = modoGuardado("vista_tarjetas", "amplia") === "compacta";
+document.body.classList.toggle("lista", vistaLista);
+$("vista").textContent = vistaLista ? "Vista amplia" : "Vista compacta";
+
 /* ---------- Fechas ---------- */
 function fechaValida(s) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return false;
@@ -2734,7 +2750,39 @@ function pastillasHtml(p) {
 function retraso(i) { return "--retraso:" + Math.min(i * 40, 400) + "ms"; }
 
 // Tarjeta compacta: portada pequeña, título, año/duración e insignias. Al tocarla se abre la ficha.
+// Vista amplia (por defecto): portada grande, sinopsis y acciones al pasar el cursor
+function tarjetaAmplia(p, i, extra) {
+  const s = estadoDe(p);
+  const k = esc(p.titulo);
+  const insignias = [];
+  if (s.vista) insignias.push("✓ Vista");
+  else if (s.pendiente) insignias.push("⏳ Pendiente");
+  if (s.estrellas) insignias.push("★ " + s.estrellas);
+  if (s.conAlguien) insignias.push("👥");
+  const portada = (p.portada && !datosLimitados())
+    ? '<img class="portada" src="' + esc(p.portada) + '" alt="">'
+    : '<div class="sinportada">🎬</div>';
+  return '<article class="tarjeta amplia animar" style="' + retraso(i) + '" data-i="' + i + '">' + portada +
+    '<h2>' + esc(p.titulo) + '</h2>' +
+    '<div class="meta">' + esc(p["año"]) + ' · ' + esc(p.duracion) + (p.pais ? ' · ' + esc(p.pais) : '') + '</div>' +
+    (insignias.length ? '<div class="mini-insignias">' + insignias.map(t => '<span class="badge">' + esc(t) + '</span>').join("") + '</div>' : '') +
+    '<p class="sinopsis clamp-2">' + esc(p.sinopsis) + '</p>' +
+    '<div class="acciones-rapidas">' +
+      '<button class="chipc' + (s.vista ? ' activo' : '') + '" data-accion="vista" data-clave="' + k + '">' + (s.vista ? '✓ Vista' : 'Vista') + '</button>' +
+      '<button class="chipc' + (s.pendiente ? ' activo' : '') + '" data-accion="pendiente" data-clave="' + k + '">' + (s.pendiente ? '⏳' : 'Pendiente') + '</button>' +
+      [1, 2, 3, 4, 5].map(n => '<button class="estrella' + (n <= s.estrellas ? ' on' : '') + '" data-accion="estrella" data-clave="' + k + '" data-n="' + n + '" aria-label="Calificar con ' + n + (n === 1 ? ' estrella' : ' estrellas') + '">★</button>').join("") +
+    '</div>' +
+    (extra || '') +
+    '</article>';
+}
+
+// Elige la vista: amplia (por defecto) o compacta
 function tarjeta(p, i) {
+  return vistaLista ? tarjetaCompacta(p, i) : tarjetaAmplia(p, i);
+}
+
+// Vista compacta: fila con portada pequeña
+function tarjetaCompacta(p, i) {
   const s = estadoDe(p);
   const insignias = [];
   if (s.vista) insignias.push("✓ Vista");
@@ -2757,11 +2805,12 @@ function tarjeta(p, i) {
 }
 
 function filaHtml(p, i) {
-  return tarjeta(p, i);
+  return tarjetaCompacta(p, i);
 }
 
 // Misma tarjeta compacta que Catálogo; "extra" agrega lo propio de cada pestaña (nota, fechas, etc.)
 function filaPestana(p, i, extra) {
+  if (!vistaLista) return tarjetaAmplia(p, i, extra);
   const s = estadoDe(p);
   const insignias = [];
   if (s.vista) insignias.push("✓ Vista");
@@ -3105,6 +3154,7 @@ function renderPestanaDescartadas() {
       return '<div class="desc-fila" data-fila-desc="' + k + '"' +
         (visiblesDesc.includes(p) ? '' : ' style="display:none"') + '>' +
         '<input type="checkbox" data-sel="' + k + '"' + (seleccionDesc.has(p.titulo) ? ' checked' : '') + '>' +
+        ((p.portada && !datosLimitados()) ? '<img class="mini-portada" src="' + esc(p.portada) + '" alt="">' : '<div class="mini-portada mini-sinportada">🎬</div>') +
         '<div class="info-fila"><h2>' + esc(p.titulo) + '</h2>' +
         '<div class="meta">' + esc(p["año"]) + ' · ' + cuando + '</div></div>' +
         '<button class="chipc" data-restaurar-una="' + k + '">↩ Restaurar</button>' +
@@ -3902,7 +3952,8 @@ window.addEventListener("load", () => {
   $("vista").addEventListener("click", () => {
     vistaLista = !vistaLista;
     document.body.classList.toggle("lista", vistaLista);
-    $("vista").textContent = vistaLista ? "Ver con portadas" : "Ver como lista";
+    $("vista").textContent = vistaLista ? "Vista amplia" : "Vista compacta";
+    try { localStorage.setItem("vista_tarjetas", vistaLista ? "compacta" : "amplia"); } catch (e) {}
     pintar();
   });
 
