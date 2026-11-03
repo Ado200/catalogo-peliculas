@@ -655,6 +655,9 @@
 
   <div id="panelMas" class="panel-mas">
     <div class="grupo-menu">
+      <button id="verGuia" class="pildora destacado">❔ Guía de uso</button>
+    </div>
+    <div class="grupo-menu">
       <span class="grupo-titulo">Ver</span>
       <button id="vista" class="pildora">Vista compacta</button>
       <button id="agrupar" class="pildora">Agrupar por tema</button>
@@ -5175,6 +5178,21 @@ function syncMarcarCambios() {
   });
 }
 
+// Cuenta los cambios de este dispositivo que todavía no están en Drive
+function syncContarPendientes() {
+  let n = 0;
+  new Set([...Object.keys(marcas), ...Object.keys(syncBase)]).forEach(k => {
+    if (k.startsWith("__")) return;
+    if (!syncIguales(marcas[k], syncBase[k])) n++;
+  });
+  return n;
+}
+
+function mensajeSinConexion() {
+  const n = syncContarPendientes();
+  return "Sin conexión: " + (n ? n + (n === 1 ? " cambio" : " cambios") + " por subir" : "todo guardado en este dispositivo") + ".";
+}
+
 // Mezcla película por película: usa la base común para saber qué cambió de cada lado
 function syncMezclar(local, remota, base) {
   const res = {};
@@ -5253,8 +5271,16 @@ async function syncSubir(id, datos) {
 async function syncTodo() {
   if (!accessToken) return;
   if (syncEnCurso) { syncOtraVez = true; return; }
+  if (navigator.onLine === false) {
+    syncMarcarCambios();
+    syncPendiente = syncContarPendientes() > 0;
+    syncGuardarLocal();
+    setEstado(mensajeSinConexion());
+    return;
+  }
   syncEnCurso = true;
   clearTimeout(syncReintento);
+  if (syncContarPendientes() > 0) setEstado("Guardando…");
   try {
     syncMarcarCambios();
     const { ids, combinado } = await syncLeerTodos();
@@ -5277,18 +5303,30 @@ async function syncTodo() {
     syncGuardarLocal();
     if (cambio && peliculas.length) refrescarTodo();
     const hora = new Date().toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" });
-    setEstado(syncPendiente ? "Hay cambios nuevos por subir…" : "Guardado en tu Drive · " + hora);
+    setEstado((syncPendiente ? "Hay cambios nuevos por subir…" : "Guardado en tu Drive · " + hora) + avisoIds());
   } catch (e) {
     syncPendiente = !syncIguales(marcas, syncBase);
     syncGuardarLocal();
     setEstado(navigator.onLine === false
-      ? "Sin conexión: tus cambios se guardan en este dispositivo y se suben al volver la señal."
+      ? mensajeSinConexion()
       : "No se pudo subir ahora. Reintentaré en 30 segundos.");
     syncReintento = setTimeout(syncTodo, 30000);
   } finally {
     syncEnCurso = false;
     if (syncOtraVez) { syncOtraVez = false; syncTodo(); }
   }
+}
+
+// Avisa en la barra de estado si hay marcas que ya no coinciden con ninguna fila de la hoja
+function avisoIds() {
+  if (!peliculas.length) return "";
+  const ids = new Set(peliculas.map(idDe));
+  const huerfanas = Object.keys(marcas).filter(k => !k.startsWith("__") && marcas[k] && !ids.has(k)).length;
+  const sinId = peliculas.filter(p => !/^\d+$/.test(String(p.tmdb_id || "").trim())).length;
+  let t = "";
+  if (huerfanas) t += " · " + huerfanas + (huerfanas === 1 ? " marca sin película en la hoja" : " marcas sin película en la hoja");
+  if (sinId) t += " · " + sinId + (sinId === 1 ? " película sin tmdb_id" : " películas sin tmdb_id");
+  return t;
 }
 
 // Identidad estable de cada película: su tmdb_id; si no tiene, una versión normalizada del título
@@ -5365,6 +5403,7 @@ async function cargarMarcas() {
   syncPendiente = !!(local && local.pendiente);
   if (!syncUid) setEstado("No pude confirmar tu cuenta; no se guarda copia local en este dispositivo.");
   await syncTodo();
+  mostrarGuiaSiEsNueva();
 }
 
 // Borra todos los marcas.json y los respaldos semanales de tu Drive
@@ -5387,7 +5426,7 @@ function syncAlVolver() {
 document.addEventListener("visibilitychange", syncAlVolver);
 window.addEventListener("focus", syncAlVolver);
 window.addEventListener("online", () => { setEstado("Conexión recuperada. Sincronizando…"); syncTodo(); });
-window.addEventListener("offline", () => setEstado("Sin conexión. Tus cambios se guardan aquí y se suben después."));
+window.addEventListener("offline", () => setEstado(mensajeSinConexion()));
 setInterval(() => { if (peliculas.length) syncTodo(); }, 300000);
 
 // Cuando la hoja ya cargó: reconcilia las marcas por id y sincroniza una vez
@@ -5409,5 +5448,81 @@ function salirDeEsteDispositivo() {
 document.getElementById("salirDispositivo").addEventListener("click", salirDeEsteDispositivo);
 </script>
 
+
+<style>
+  #guia { position:fixed; inset:0; z-index:50; display:none; align-items:center; justify-content:center; padding:16px; background:rgba(0,0,0,.45); }
+  #guia.abierta { display:flex; }
+  #guia .caja { background:var(--tarjeta); color:var(--texto); width:min(560px,100%); max-height:88vh; display:flex; flex-direction:column; border-radius:var(--radio-grande); box-shadow:var(--sombra); }
+  #guia .cab { padding:18px 20px 8px; display:flex; justify-content:space-between; align-items:center; }
+  #guia .cab h2 { margin:0; font-size:20px; }
+  #guia .cab button { background:none; border:none; font-size:24px; color:var(--gris); cursor:pointer; }
+  #guia .cuerpo { overflow-y:auto; padding:4px 20px 12px; font-size:14px; line-height:1.5; }
+  #guia h3 { margin:16px 0 4px; font-size:15px; color:var(--azul); }
+  #guia p { margin:0 0 6px; }
+  #guia .pie { padding:12px 20px 18px; display:flex; justify-content:space-between; align-items:center; gap:10px; border-top:1px solid var(--borde); }
+  #guia .pie label { font-size:13px; color:var(--gris); display:flex; align-items:center; gap:6px; }
+</style>
+<div id="guia" role="dialog" aria-modal="true" aria-labelledby="guiaTitulo">
+  <div class="caja">
+    <div class="cab">
+      <h2 id="guiaTitulo">Cómo usar tu catálogo</h2>
+      <button id="guiaCerrar" aria-label="Cerrar">×</button>
+    </div>
+    <div class="cuerpo">
+      <p>Tu catálogo guarda tus películas en una hoja de Google y tus marcas (vistas, pendientes, estrellas y notas) en tu Drive. Aquí va lo esencial.</p>
+
+      <h3>🏠 Inicio</h3>
+      <p>Lo primero que ves. Tiene <b>Qué ver</b> (una sugerencia según la hora o la noche), <b>Esta semana</b> (planes con alguien en los próximos 7 días), <b>Pregunta</b> y <b>Recomendaciones</b> basadas en lo que ya calificaste.</p>
+
+      <h3>🎬 Películas</h3>
+      <p>Toda la lista. Usa la barra de búsqueda y el botón de filtros para buscar por género, director, año, duración y más. Dentro de esta pestaña están <b>Estrenos</b>, <b>Sagas</b> y <b>Actores</b>, y el <b>Duelo</b>, que te obliga a elegir entre dos pendientes.</p>
+
+      <h3>📝 Notas</h3>
+      <p>Las películas que tienes en tu cabeza: escribe ideas, recuerdos o por qué quieres verlas.</p>
+
+      <h3>⏳ Pendientes</h3>
+      <p>Lo que quieres ver. Desde aquí puedes pasar una película a vista cuando la termines.</p>
+
+      <h3>✓ Vistas</h3>
+      <p>Lo que ya viste, con tu calificación de estrellas, tu racha de calificaciones de la semana, el <b>mapa de gustos</b> (géneros y directores de tus favoritas) y tu resumen.</p>
+
+      <h3>Cada película</h3>
+      <p>Toca una película para abrir su ficha: puedes marcarla como vista o pendiente, ponerle estrellas, anotar con quién la viste y escribir una nota.</p>
+
+      <h3>⋯ Más</h3>
+      <p><b>Exportar CSV</b> descarga tu lista. <b>Respaldar</b> y <b>Restaurar</b> guardan y recuperan tus marcas. <b>Borrar mis marcas</b> elimina todo y no se puede deshacer. Aquí también está el tema de la página y el modo ahorro de datos.</p>
+
+      <h3>Tus datos se guardan solos</h3>
+      <p>Cada cambio se guarda en tu Drive. Si no hay señal, se queda en este dispositivo y se sube cuando vuelve. El aviso de la parte de arriba te dice si todo está guardado o cuántos cambios faltan por subir.</p>
+    </div>
+    <div class="pie">
+      <button id="guiaEntendido" class="pildora destacado">Entendido</button>
+    </div>
+  </div>
+</div>
+<script>
+(function () {
+  const guia = document.getElementById("guia");
+
+  function abrirGuia() { guia.classList.add("abierta"); }
+  function cerrarGuia() {
+    guia.classList.remove("abierta");
+    if (marcas.__guia !== 1) {
+      marcas.__guia = 1;   // se guarda en las marcas de la cuenta, así vale en todos sus dispositivos
+      programarGuardado();
+    }
+  }
+
+  // Se llama cuando las marcas de la cuenta ya cargaron
+  window.mostrarGuiaSiEsNueva = function () {
+    if (marcas.__guia !== 1) abrirGuia();
+  };
+
+  document.getElementById("guiaCerrar").addEventListener("click", cerrarGuia);
+  document.getElementById("guiaEntendido").addEventListener("click", cerrarGuia);
+  guia.addEventListener("click", e => { if (e.target === guia) cerrarGuia(); });
+  document.getElementById("verGuia").addEventListener("click", abrirGuia);
+})();
+</script>
 </body>
 </html>
