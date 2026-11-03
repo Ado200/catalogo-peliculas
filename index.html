@@ -112,6 +112,13 @@
   .saga-fila:first-of-type { border-top:none; }
   .saga-barra { height:8px; border-radius:999px; background:var(--boton-suave); overflow:hidden; margin:6px 0; }
   .saga-barra > div { height:100%; background:var(--azul); border-radius:999px; }
+  .saga-lista { list-style:none; margin:10px 0; padding:0; display:flex; flex-direction:column; gap:4px; }
+  .saga-lista li { display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:12px; cursor:pointer; font-size:14px; transition:background .2s; }
+  .saga-lista li:hover { background:var(--boton-suave); }
+  .saga-num { flex:0 0 26px; height:26px; border-radius:50%; background:var(--tema-bg); color:var(--tema-texto); display:grid; place-items:center; font-size:12px; font-weight:600; }
+  .saga-titulo { flex:1; min-width:0; }
+  .saga-titulo small { color:var(--gris); }
+  .saga-estado { font-size:12px; color:var(--gris); white-space:nowrap; }
   .cal-card { max-width:900px; margin:0 auto 14px; background:var(--tarjeta); border-radius:var(--radio-grande); box-shadow:var(--sombra); padding:14px; }
   .cal-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
   .cal-semana, .cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:4px; }
@@ -527,6 +534,18 @@
   .login-icono { animation:flotarIcono 4s ease-in-out infinite; }
   @keyframes flotarIcono { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-4px); } }
   @media (prefers-reduced-motion: reduce) { .login-icono { animation:none; } }
+  .panel-mas { flex-direction:column; align-items:stretch; }
+  .grupo-menu { display:flex; flex-wrap:wrap; gap:8px; align-items:center; width:100%; }
+  .grupo-titulo { flex-basis:100%; font-size:12px; color:var(--gris); font-weight:600; text-transform:uppercase; letter-spacing:.4px; margin-top:6px; }
+  .grupo-menu .campo { flex:1 1 220px; }
+  .grupo-menu .campo select { width:100%; }
+  .grupo-peligro { padding-top:12px; border-top:1px solid var(--borde); }
+  #borrarMarcas { color:var(--error); }
+  .nota-peligro { flex-basis:100%; margin:0; font-size:12px; color:var(--gris); line-height:1.4; }
+  .fila-preset { display:flex; gap:6px; align-items:center; }
+  .fila-preset select { flex:1; min-width:0; }
+  .ajuste-vidrio { flex:1 1 220px; font-size:13px; color:var(--gris); display:flex; flex-direction:column; gap:6px; }
+  .ajuste-vidrio input { width:100%; accent-color:var(--azul); }
 </style>
 </head>
 <body>
@@ -557,14 +576,13 @@
     <h1>Películas</h1>
     <div class="botones-barra">
     <button type="button" class="boton-circular" id="aleatorio" aria-label="Sugerir una película al azar" title="Aleatorio">🎲</button>
-    <button type="button" class="boton-circular" id="btnVidrio" aria-label="Ajustar transparencia" aria-expanded="false">◐</button>    <button type="button" class="boton-circular" id="toggleAvanzados" aria-label="Filtros avanzados">⚙</button>
+    <button type="button" class="boton-circular" id="toggleAvanzados" aria-label="Filtros avanzados">⚙</button>
     <button type="button" class="boton-circular" id="toggleMas" aria-label="Más opciones" aria-expanded="false">⋯</button>
     </div>
   </div>
   <div id="selectorZona" class="segmentado selector-zona" role="group" aria-label="Secciones" style="display:none"></div>
   <div class="colapsable">
     <div class="buscar"><span aria-hidden="true">⌕</span><input id="buscar" type="search" list="sugerencias" placeholder="Busca por título, director o actor"><datalist id="sugerencias"></datalist><button id="voz" class="boton-voz" title="Buscar por voz" aria-label="Buscar por voz" hidden>🎤</button></div>
-    <div class="ajustes" id="panelVidrio"><label for="vidrioAlfa">Transparencia del vidrio <span id="vidrioAlfaValor">72</span>%</label><input type="range" id="vidrioAlfa" min="40" max="95" step="1" value="72" aria-label="Transparencia del vidrio"></div>
   <div class="segmentado solo-catalogo" data-zona="lista" role="group" aria-label="Filtrar películas">
        <button type="button" data-seg="" class="activa">Todas</button>
     <button type="button" data-seg="sin_ver">Sin ver</button>
@@ -605,6 +623,35 @@
         <option value="antiguas">Más antiguas</option>
         <option value="duracion">Más largas</option>
       </select></div>
+    <div class="acciones-panel">
+      <div class="campo"><label for="presetsSel">Mis filtros</label>
+        <div class="fila-preset"><select id="presetsSel"><option value="">Filtros guardados…</option></select>
+        <button id="presetBorrar" class="pildora" title="Borrar el filtro seleccionado" aria-label="Borrar el filtro seleccionado">🗑</button></div></div>
+      <button id="presetGuardar" class="pildora">Guardar filtro</button>
+      <button id="limpiar" class="pildora">Limpiar</button>
+    </div>
+  </div>
+
+  <div id="panelMas" class="panel-mas">
+    <div class="grupo-menu">
+      <span class="grupo-titulo">Ver</span>
+      <button id="vista" class="pildora">Vista compacta</button>
+      <button id="agrupar" class="pildora">Agrupar por tema</button>
+    </div>
+    <div class="grupo-menu">
+      <span class="grupo-titulo">Herramientas</span>
+      <button id="clasificar" class="pildora destacado">⚡ Clasificar</button>
+      <button id="estadisticas" class="pildora">📊 Estadísticas</button>
+    </div>
+    <div class="grupo-menu">
+      <span class="grupo-titulo">Datos</span>
+      <button id="exportar" class="pildora">⬇ Exportar CSV</button>
+      <button id="respaldarMarcas" class="pildora">⬇ Respaldar</button>
+      <button id="restaurarMarcas" class="pildora">⬆ Restaurar</button>
+      <button id="guardarPaletas" class="pildora">🎨 Guardar paletas</button>
+    </div>
+    <div class="grupo-menu">
+      <span class="grupo-titulo">Ajustes</span>
     <div class="campo"><label for="tema-modo">Tema de la página</label>
       <select id="tema-modo">
         <option value="sistema">Automático del sistema</option>
@@ -625,26 +672,14 @@
         <option value="ahorro">Siempre ahorro</option>
         <option value="normal">Siempre normal</option>
       </select></div>
-    <div class="acciones-panel">
-      <div class="campo"><label for="presetsSel">Mis filtros</label>
-        <select id="presetsSel"><option value="">Filtros guardados…</option></select></div>
-      <button id="presetGuardar" class="pildora">Guardar filtros</button>
-      <button id="presetBorrar" class="pildora">Borrar filtros</button>
-      <button id="limpiar" class="pildora">Limpiar</button>
+      <div class="ajuste-vidrio" id="ajusteVidrio"><label for="vidrioAlfa">Transparencia del vidrio <span id="vidrioAlfaValor">72</span>%</label><input type="range" id="vidrioAlfa" min="40" max="95" step="1" value="72" aria-label="Transparencia del vidrio"></div>
     </div>
-  </div>
-
-  <div id="panelMas" class="panel-mas">
-  <button id="vista" class="pildora">Vista compacta</button>
-  <button id="agrupar" class="pildora">Agrupar por tema</button>
-    <button id="clasificar" class="pildora destacado">⚡ Clasificar</button>
-    <button id="estadisticas" class="pildora">📊 Estadísticas</button>
-    <button id="guardarPaletas" class="pildora">🎨 Guardar paletas</button>
-    <button id="exportar" class="pildora">⬇ Exportar CSV</button>
-    <button id="salirDispositivo" class="pildora">🚪 Salir y borrar datos de este dispositivo</button>
-    <button id="respaldarMarcas" class="pildora">⬇ Respaldar</button>
-    <button id="restaurarMarcas" class="pildora">⬆ Restaurar</button>
-    <button id="borrarMarcas" class="pildora">🗑 Borrar mis marcas</button>
+    <div class="grupo-menu grupo-peligro">
+      <span class="grupo-titulo">Cuenta</span>
+      <button id="salirDispositivo" class="pildora">🚪 Salir de este dispositivo</button>
+      <button id="borrarMarcas" class="pildora">🗑 Borrar mis marcas</button>
+      <p class="nota-peligro">Borrar elimina tus marcas y los respaldos semanales de tu Drive. Los archivos que descargaste a tu computadora no se borran.</p>
+    </div>
     <input type="file" id="archivoRestaurar" accept="application/json,.json" hidden>
   </div>
 
@@ -1547,6 +1582,33 @@ function sagasAgrupadas() {
     .sort((a, b) => (b.vistas / b.total) - (a.vistas / a.total) || a.nombre.localeCompare(b.nombre, "es"));
 }
 
+// Número de orden dentro de la saga (columna opcional "saga_orden"); null si no está escrito
+function numeroOrdenSaga(p) {
+  const t = String(p.saga_orden ?? "").trim();
+  if (!t) return null;
+  const n = Number(t.replace(",", "."));
+  return isFinite(n) ? n : null;
+}
+
+// Orden de visualización: saga_orden si existe; si no, año de estreno; luego título
+function ordenEnSaga(a, b) {
+  const oa = numeroOrdenSaga(a), ob = numeroOrdenSaga(b);
+  if (oa !== null && ob !== null && oa !== ob) return oa - ob;
+  if (oa !== null && ob === null) return -1;
+  if (oa === null && ob !== null) return 1;
+  const ya = Number(a["año"]) || 9999, yb = Number(b["año"]) || 9999;
+  if (ya !== yb) return ya - yb;
+  return String(a.titulo).localeCompare(String(b.titulo), "es");
+}
+
+function etiquetaEstadoSaga(p) {
+  const s = estadoDe(p);
+  if (s.vista) return "✓ Vista";
+  if (s.pendiente) return "⏳ Pendiente";
+  if ((marcas[p.titulo] || {}).descartada) return "Descartada";
+  return "Sin ver";
+}
+
 function marcarSagaPendiente(nombre) {
   const grupo = sagasAgrupadas().find(g => g.nombre === nombre);
   if (!grupo) return;
@@ -1576,9 +1638,19 @@ function renderSagas() {
   sec.innerHTML = '<div class="actividad-card"><h3>Sagas</h3>' +
     grupos.map(g => {
       const pct = Math.round(g.vistas / g.total * 100);
+      const peliculasEnOrden = [...g.lista].sort(ordenEnSaga);
+      const items = peliculasEnOrden.map((p, i) => {
+        const n = numeroOrdenSaga(p);
+        return '<li data-idx="' + peliculas.indexOf(p) + '">' +
+          '<span class="saga-num">' + esc(n !== null ? n : i + 1) + '</span>' +
+          '<span class="saga-titulo">' + esc(p.titulo) + ' <small>' + esc(p["año"] || "") + '</small></span>' +
+          '<span class="saga-estado">' + esc(etiquetaEstadoSaga(p)) + '</span>' +
+        '</li>';
+      }).join("");
       return '<div class="saga-fila">' +
         '<div class="resumen-top"><b>' + esc(g.nombre) + '</b><span class="meta">' + g.vistas + ' de ' + g.total + ' vistas</span></div>' +
         '<div class="saga-barra"><div style="width:' + pct + '%"></div></div>' +
+        '<ol class="saga-lista">' + items + '</ol>' +
         (g.pendientesPosibles ? '<button class="pildora" data-saga-pend="' + esc(g.nombre) + '">Marcar las que faltan como pendientes</button>' : '') +
       '</div>';
     }).join("") +
@@ -2482,13 +2554,14 @@ function leerPliegues() {
 
 function aplicarPliegues() {
   const o = leerPliegues();
-  document.querySelectorAll("section[id]").forEach(s => s.classList.toggle("plegado", !!o[s.id]));
+  document.querySelectorAll("section[id]").forEach(s => s.classList.toggle("plegado", s.id !== "sagas" && !!o[s.id]));
 }
 
 document.addEventListener("click", e => {
   const h = e.target.closest ? e.target.closest("section[id] h3") : null;
   if (!h) return;
   const s = h.closest("section[id]");
+  if (s.id === "sagas") return;
   s.classList.toggle("plegado");
   const o = leerPliegues();
   o[s.id] = s.classList.contains("plegado");
@@ -4097,6 +4170,14 @@ window.addEventListener("load", () => {
     }
   });
 
+  $("sagas").addEventListener("click", e => {
+    const d = e.target.closest("[data-idx]");
+    if (d && peliculas[Number(d.dataset.idx)]) {
+      desdeAleatorio = false;
+      abrirDetalle(peliculas[Number(d.dataset.idx)]);
+    }
+  });
+
   $("carrusel").addEventListener("click", e => {
     const d = e.target.closest("[data-idx]");
     if (d) {
@@ -4567,9 +4648,7 @@ zonaClas.addEventListener("touchcancel", () => {
   const header = document.querySelector("#app > header");
   const rango = document.getElementById("vidrioAlfa");
   const valor = document.getElementById("vidrioAlfaValor");
-  const btn = document.getElementById("btnVidrio");
-  const panel = document.getElementById("panelVidrio");
-  if (!header || !rango || !valor || !btn || !panel) return;
+  if (!header || !rango || !valor) return;
 
   function aplicarVidrio(v) {
     const n = Math.min(95, Math.max(40, Math.round(Number(v)) || 72));
@@ -4586,10 +4665,6 @@ zonaClas.addEventListener("touchcancel", () => {
     try { localStorage.setItem("vidrio_alfa", String(n)); } catch (e) {}
   });
 
-  btn.addEventListener("click", () => {
-    const abierto = panel.classList.toggle("abierto");
-    btn.setAttribute("aria-expanded", String(abierto));
-  });
 
   // Reglas:
   // - Se compacta solo al bajar, pasando 180 px (así siempre hay espacio para compensar el salto).
