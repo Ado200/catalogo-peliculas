@@ -355,6 +355,25 @@
   .que-ver.solo-noche #ahora { display:none !important; }
   .tarjeta.rapida-abierta .acciones-rapidas { display:flex !important; }
 
+  /* FASE 2: barra superior con vidrio */
+  #app > header { position:sticky; top:0; z-index:7; background:rgba(242,242,247,var(--vidrio-a,.72)); transition:padding .45s var(--ease); }
+  body.oscuro #app > header { background:rgba(0,0,0,var(--vidrio-a,.72)); }
+  @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+    #app > header { -webkit-backdrop-filter:saturate(180%) blur(20px); backdrop-filter:saturate(180%) blur(20px); }
+  }
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    #app > header { background:var(--fondo) !important; }
+  }
+  #app > header h1 { transition:font-size .45s var(--ease), margin .45s var(--ease); }
+  body.barra-compacta #app > header { padding:10px 14px 8px; }
+  body.barra-compacta #app > header h1 { font-size:18px; margin:0 0 8px; }
+  body.barra-compacta #app > header .barra-acciones,
+  body.barra-compacta #app > header #panelAvanzados,
+  body.barra-compacta #app > header #panelMas,
+  body.barra-compacta #app > header #chips { display:none !important; }
+  .control-vidrio { display:flex; flex-direction:column; gap:4px; font-size:13px; color:var(--gris); align-items:flex-start; width:100%; }
+  #vidrioAlfa { width:100%; max-width:260px; accent-color:var(--azul); }
+
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation:none !important; transition:none !important; }
   }
@@ -459,6 +478,7 @@
     <button id="respaldarMarcas" class="pildora">⬆ Respaldar marcas</button>
     <button id="restaurarMarcas" class="pildora">⬇ Restaurar marcas</button>
     <button id="borrarMarcas" class="pildora">🗑 Borrar mis marcas</button>
+    <div class="control-vidrio"><label for="vidrioAlfa">Transparencia de la barra: <span id="vidrioAlfaValor">72</span> %</label><input type="range" id="vidrioAlfa" min="40" max="95" step="1" value="72" aria-label="Transparencia de la barra superior"></div>
     <input type="file" id="respaldoArchivo" accept="application/json,.json" hidden>
     <input type="file" id="archivoRestaurar" accept="application/json,.json" hidden>
   </div>
@@ -4350,6 +4370,56 @@ zonaClas.addEventListener("touchcancel", () => {
       mensaje("No pude iniciar el micrófono. Intenta de nuevo.");
     }
   });
+})();
+</script>
+<script>
+(function () {
+  const header = document.querySelector("#app > header");
+  const rango = document.getElementById("vidrioAlfa");
+  const valor = document.getElementById("vidrioAlfaValor");
+  if (!header || !rango || !valor) return;
+
+  function aplicarVidrio(v) {
+    const n = Math.min(95, Math.max(40, Math.round(Number(v)) || 72));
+    document.documentElement.style.setProperty("--vidrio-a", (n / 100).toFixed(2));
+    rango.value = n;
+    valor.textContent = n;
+    return n;
+  }
+
+  aplicarVidrio(modoGuardado("vidrio_alfa", "72"));
+
+  rango.addEventListener("input", () => {
+    const n = aplicarVidrio(rango.value);
+    try { localStorage.setItem("vidrio_alfa", String(n)); } catch (e) {}
+  });
+
+  let ultimoY = window.scrollY;
+  let pendiente = false;
+
+  // Compacta sin mover el contenido: compensa el cambio de altura con el scroll
+  function setCompacta(v) {
+    if (document.body.classList.contains("barra-compacta") === v) return;
+    const antes = header.offsetHeight;
+    document.body.classList.toggle("barra-compacta", v);
+    const despues = header.offsetHeight;
+    if (window.scrollY > 0) window.scrollBy(0, despues - antes);
+  }
+
+  function alDesplazar() {
+    if (pendiente) return;
+    pendiente = true;
+    requestAnimationFrame(() => {
+      pendiente = false;
+      const y = window.scrollY;
+      if (y <= 4) setCompacta(false);
+      else if (y > ultimoY && y > 60) setCompacta(true);
+      else if (y < ultimoY) setCompacta(false);
+      ultimoY = y;
+    });
+  }
+
+  window.addEventListener("scroll", alDesplazar, { passive: true });
 })();
 </script>
 </body>
