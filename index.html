@@ -350,6 +350,8 @@
   .que-ver .tabs-ver .pildora.activa-ver { background:var(--azul); color:#fff; }
   .que-ver.solo-ahora #cena { display:none !important; }
   .que-ver.solo-noche #ahora { display:none !important; }
+  .tarjeta.rapida-abierta .acciones-rapidas { display:flex !important; }
+
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation:none !important; transition:none !important; }
   }
@@ -2394,6 +2396,21 @@ vistaLista = modoGuardado("vista_tarjetas", "amplia") === "compacta";
 document.body.classList.toggle("lista", vistaLista);
 $("vista").textContent = vistaLista ? "Vista amplia" : "Vista compacta";
 
+// Toque largo en celular: muestra las acciones rápidas de la tarjeta (se cierran al tocar fuera)
+let suprimirClic = false;
+
+function abrirRapida(card) {
+  document.querySelectorAll(".rapida-abierta").forEach(x => x.classList.remove("rapida-abierta"));
+  card.classList.add("rapida-abierta");
+  if (navigator.vibrate) navigator.vibrate(15);
+}
+
+document.addEventListener("click", e => {
+  if (!e.target.closest || !e.target.closest(".rapida-abierta")) {
+    document.querySelectorAll(".rapida-abierta").forEach(x => x.classList.remove("rapida-abierta"));
+  }
+});
+
 /* ---------- Fechas ---------- */
 function fechaValida(s) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return false;
@@ -3814,6 +3831,7 @@ window.addEventListener("load", () => {
 
   // Un solo listener delegado para toda la lista: Descartadas primero, luego tarjetas
   lista.addEventListener("click", e => {
+    if (suprimirClic) { suprimirClic = false; return; }
     if (e.target.id === "selTodasDesc") {
       document.querySelectorAll("[data-fila-desc]").forEach(fila => {
         if (fila.style.display === "none") return;
@@ -4169,7 +4187,12 @@ lista.addEventListener("touchstart", e => {
   const card = e.target.closest("[data-i]");
   if (!card || e.target.closest("a, button, select, input")) { swipe = null; return; }
   const t = e.touches[0];
-  swipe = { el: card, i: Number(card.dataset.i), x: t.clientX, y: t.clientY, dx: 0, activo: false };
+  swipe = { el: card, i: Number(card.dataset.i), x: t.clientX, y: t.clientY, dx: 0, activo: false, lp: false, timer: null };
+  swipe.timer = setTimeout(() => {
+    if (!swipe) return;
+    swipe.lp = true;
+    abrirRapida(card);
+  }, 500);
 }, { passive: true });
 
 lista.addEventListener("touchmove", e => {
@@ -4177,6 +4200,8 @@ lista.addEventListener("touchmove", e => {
   const t = e.touches[0];
   const dx = t.clientX - swipe.x;
   const dy = t.clientY - swipe.y;
+  if (Math.abs(dx) > 12 || Math.abs(dy) > 12) clearTimeout(swipe.timer);
+  if (swipe.lp) return;
   if (!swipe.activo) {
     if (Math.abs(dy) > Math.abs(dx)) { reiniciarTarjeta(swipe.el); swipe = null; return; }
     if (Math.abs(dx) < 12) return;
@@ -4194,6 +4219,12 @@ lista.addEventListener("touchend", () => {
   swipe = null;
   reiniciarTarjeta(s.el);
   delete s.el.dataset.swipe;
+  clearTimeout(s.timer);
+  if (s.lp) {
+    suprimirClic = true;
+    setTimeout(() => { suprimirClic = false; }, 400);
+    return;
+  }
   if (!s.activo) return;
   const p = visibles[s.i];
   if (!p) return;
@@ -4206,7 +4237,7 @@ lista.addEventListener("touchend", () => {
 });
 
 lista.addEventListener("touchcancel", () => {
-  if (swipe) { reiniciarTarjeta(swipe.el); delete swipe.el.dataset.swipe; }
+  if (swipe) { clearTimeout(swipe.timer); reiniciarTarjeta(swipe.el); delete swipe.el.dataset.swipe; }
   swipe = null;
 });
 
