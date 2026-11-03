@@ -5003,8 +5003,11 @@ zonaClas.addEventListener("touchcancel", () => {
     buscar.value = s.buscar || "";
     $("orden").value = s.orden || "titulo";
     CAMPOS.forEach(k => { sel[k].value = s[k] || ""; });
+    // Con filtros activos, la portada se oculta: muestra la lista para que se vean los resultados
+    if (hayFiltros()) { zonaPeli = "lista"; aplicarEstadoTabs(); }
     sel.estado.dispatchEvent(new Event("input"));
-    requestAnimationFrame(() => window.scrollTo(0, s.y || 0));
+    // Siempre se empieza arriba, en el menú principal
+    requestAnimationFrame(() => window.scrollTo(0, 0));
   }
 
   // Cuando la hoja ya cargó: restaura la sesión y revisa el respaldo una vez
