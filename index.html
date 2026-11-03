@@ -382,6 +382,15 @@
   .control-vidrio { display:flex; flex-direction:column; gap:4px; font-size:13px; color:var(--gris); align-items:flex-start; width:100%; }
   #vidrioAlfa { width:100%; max-width:260px; accent-color:var(--azul); }
 
+  /* FASE 4: ficha como hoja flotante */
+  .hoja-tirador { display:none; width:40px; height:5px; border-radius:999px; background:var(--borde); margin:-6px auto 12px; }
+  @media (max-width: 899px) {
+    #modal { align-items:flex-end; padding:0; }
+    #modal.abierto .ventana { max-width:none; width:100%; max-height:92vh; border-radius:28px 28px 0 0; padding-bottom:calc(24px + env(safe-area-inset-bottom, 0px)); animation:subirHoja .35s var(--ease) both; }
+    .hoja-tirador { display:block; }
+  }
+  @keyframes subirHoja { from { translate:0 100%; } to { translate:0 0; } }
+
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation:none !important; transition:none !important; }
   }
@@ -4442,6 +4451,76 @@ zonaClas.addEventListener("touchcancel", () => {
   }
 
   window.addEventListener("scroll", alDesplazar, { passive: true });
+})();
+</script>
+<script>
+(function () {
+  const modal = document.getElementById("modal");
+  const ventana = modal.querySelector(".ventana");
+
+  const tirador = document.createElement("div");
+  tirador.className = "hoja-tirador";
+  tirador.setAttribute("aria-hidden", "true");
+  ventana.insertBefore(tirador, ventana.firstChild);
+
+  // Escape cierra la ficha
+  document.addEventListener("keydown", e => {
+    if (e.key === "Escape" && modal.classList.contains("abierto")) cerrarDetalle();
+  });
+
+  // Deslizar hacia abajo cierra la hoja (solo cuando el contenido está arriba del todo)
+  let inicio = null, dy = 0, arrastrando = false;
+
+  function reiniciar() {
+    inicio = null;
+    arrastrando = false;
+    dy = 0;
+  }
+
+  ventana.addEventListener("touchstart", e => {
+    if (ventana.scrollTop > 0 || e.target.closest("textarea, input, select, iframe")) { reiniciar(); return; }
+    inicio = e.touches[0].clientY;
+    arrastrando = false;
+    dy = 0;
+  }, { passive: true });
+
+  ventana.addEventListener("touchmove", e => {
+    if (inicio === null) return;
+    const d = e.touches[0].clientY - inicio;
+    if (!arrastrando) {
+      if (d < 8) return;
+      arrastrando = true;
+      ventana.style.transition = "none";
+    }
+    if (e.cancelable) e.preventDefault();
+    dy = Math.max(0, d);
+    ventana.style.transform = "translateY(" + (dy * 0.9) + "px)";
+  }, { passive: false });
+
+  ventana.addEventListener("touchend", () => {
+    if (inicio === null) return;
+    const cerrar = arrastrando && dy > 110;
+    const estabaArrastrando = arrastrando;
+    reiniciar();
+    if (!estabaArrastrando) return;
+    ventana.style.transition = "transform .3s var(--ease)";
+    if (cerrar) {
+      ventana.style.transform = "translateY(100%)";
+      setTimeout(() => {
+        cerrarDetalle();
+        ventana.style.transform = "";
+        ventana.style.transition = "";
+      }, 260);
+    } else {
+      ventana.style.transform = "";
+    }
+  });
+
+  ventana.addEventListener("touchcancel", () => {
+    reiniciar();
+    ventana.style.transition = "transform .3s var(--ease)";
+    ventana.style.transform = "";
+  });
 })();
 </script>
 </body>
