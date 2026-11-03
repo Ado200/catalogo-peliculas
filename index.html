@@ -401,7 +401,7 @@
   .esqueleto { min-height:300px; border-radius:var(--radio); background:linear-gradient(90deg, var(--boton-suave) 25%, var(--tarjeta) 50%, var(--boton-suave) 75%); background-size:200% 100%; animation:brillo 1.4s linear infinite; }
   body.lista .esqueleto { min-height:110px; }
   @keyframes brillo { from { background-position:200% 0; } to { background-position:-200% 0; } }
-  .lote-sentinela { height:1px; }
+  .lote-sentinela { grid-column:1/-1; text-align:center; padding:8px 0; }
   #ahoraCaja { transition:opacity .25s var(--ease); }
   #app section[id].aparece { animation:aparecer .5s var(--ease) both; }
 
@@ -420,6 +420,44 @@
     body.oscuro { --borde:rgba(235,235,245,.4); --gris:#c7c7cc; }
   }
 
+  /* AJUSTE BARRA SUPERIOR: tarjeta flotante con margen; al bajar se reduce a una píldora con solo el buscador */
+  #app > header { top:10px; margin:10px 12px 0; padding:14px 16px 12px; border:1px solid var(--borde); border-radius:28px; box-shadow:var(--sombra); }
+  body.barra-compacta #app > header { margin:8px 12px 0; padding:6px 8px; border-radius:999px; }
+  body.barra-compacta #app > header h1,
+  body.barra-compacta #app > header .segmentado,
+  body.barra-compacta #app > header #contador,
+  body.barra-compacta #app > header #estadoGuardado { display:none !important; }
+  body.barra-compacta #app > header #buscar { padding:10px 16px; font-size:15px; }
+  body.barra-compacta #app > header #voz { margin-top:0; padding:8px 12px; }
+
+  /* REDISEÑO DE LA BARRA: igual al boceto */
+  :root { --tinte:255,255,255; --opacidad:.72; --desenfoque:22px; }
+  body.oscuro { --tinte:28,28,30; }
+  #app > header { position:sticky; top:calc(10px + env(safe-area-inset-top,0px)); z-index:7; margin:10px 10px 0; padding:14px 16px 12px; border-radius:var(--radio-grande); border:1px solid rgba(255,255,255,.35); background:rgba(var(--tinte),var(--opacidad)); -webkit-backdrop-filter:saturate(180%) blur(var(--desenfoque)); backdrop-filter:saturate(180%) blur(var(--desenfoque)); box-shadow:var(--sombra); text-align:left; transition:padding .45s var(--ease); }
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    #app > header { background:var(--tarjeta) !important; }
+  }
+  #app > header .fila-titulo { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+  #app > header h1 { font-size:30px; font-weight:700; letter-spacing:-.5px; margin:0; text-align:left; transition:font-size .45s var(--ease); }
+  #app > header #btnVidrio { width:36px; height:36px; border-radius:50%; border:0; padding:0; background:rgba(118,118,128,.18); color:var(--texto); font-size:17px; cursor:pointer; display:grid; place-items:center; flex-shrink:0; }
+  #app > header .buscar { display:flex; align-items:center; gap:8px; margin-top:12px; background:rgba(118,118,128,.14); border-radius:999px; padding:9px 14px; }
+  #app > header .buscar > span { color:var(--gris); font-size:17px; }
+  #app > header #buscar { flex:1; min-width:0; width:auto; border:0; background:transparent; padding:0; font-size:17px; color:var(--texto); box-shadow:none; outline:none; }
+  #app > header #buscar:focus { border:0; box-shadow:none; }
+  #app > header #buscar::placeholder { color:var(--gris); }
+  #app > header #voz { margin-top:0; padding:2px 6px; font-size:16px; background:transparent; }
+  #app > header #panelVidrio { display:none; margin-top:12px; padding:12px 14px; border-radius:var(--radio); background:rgba(118,118,128,.12); }
+  #app > header #panelVidrio.abierto { display:block; animation:aparecer .35s var(--ease) both; }
+  #app > header #panelVidrio label { display:flex; justify-content:space-between; font-size:14px; color:var(--gris); margin-bottom:8px; }
+  #app > header #vidrioAlfa { width:100%; max-width:none; accent-color:var(--azul); }
+  #app > header .segmentado { display:flex; width:auto; margin:12px 0 0; padding:2px; gap:0; border-radius:10px; background:rgba(118,118,128,.14); }
+  #app > header .segmentado button { flex:1; border:0; background:transparent; font-size:13px; font-weight:600; color:var(--texto); padding:7px 0; border-radius:8px; cursor:pointer; transition:background .3s var(--ease), box-shadow .3s var(--ease); }
+  #app > header .segmentado button.activa { background:var(--tarjeta); box-shadow:0 1px 3px rgba(0,0,0,.14); }
+  #app > header .barra-acciones { justify-content:flex-start; gap:8px; margin-top:12px; }
+  body.barra-compacta #app > header { padding:10px 16px; }
+  body.barra-compacta #app > header h1 { font-size:20px; }
+  body.barra-compacta #app > header .colapsable { display:none; }
+
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation:none !important; transition:none !important; }
   }
@@ -437,11 +475,13 @@
 
 <div id="app">
 <header>
-  <h1>Mi catálogo de películas</h1>
-  <input id="buscar" type="search" list="sugerencias" placeholder="Busca por título, director o actor">
-  <datalist id="sugerencias"></datalist>
-  <button id="voz" class="boton-voz" title="Buscar por voz" aria-label="Buscar por voz" hidden>🎤</button>
-
+  <div class="fila-titulo">
+    <h1>Mi catálogo de películas</h1>
+    <button type="button" class="boton-circular" id="btnVidrio" aria-label="Ajustar transparencia" aria-expanded="false">◐</button>
+  </div>
+  <div class="colapsable">
+    <div class="buscar"><span aria-hidden="true">⌕</span><input id="buscar" type="search" list="sugerencias" placeholder="Busca por título, director o actor"><datalist id="sugerencias"></datalist><button id="voz" class="boton-voz" title="Buscar por voz" aria-label="Buscar por voz" hidden>🎤</button></div>
+    <div class="ajustes" id="panelVidrio"><label for="vidrioAlfa">Transparencia del vidrio <span id="vidrioAlfaValor">72</span>%</label><input type="range" id="vidrioAlfa" min="40" max="95" step="1" value="72" aria-label="Transparencia del vidrio"></div>
   <div class="segmentado solo-catalogo" role="group" aria-label="Filtrar películas">
     <button type="button" data-seg="" class="activa">Todas</button>
     <button type="button" data-seg="pendiente">Pendientes</button>
@@ -529,7 +569,6 @@
     <button id="respaldarMarcas" class="pildora">⬆ Respaldar marcas</button>
     <button id="restaurarMarcas" class="pildora">⬇ Restaurar marcas</button>
     <button id="borrarMarcas" class="pildora">🗑 Borrar mis marcas</button>
-    <div class="control-vidrio"><label for="vidrioAlfa">Transparencia de la barra: <span id="vidrioAlfaValor">72</span> %</label><input type="range" id="vidrioAlfa" min="40" max="95" step="1" value="72" aria-label="Transparencia de la barra superior"></div>
     <input type="file" id="respaldoArchivo" accept="application/json,.json" hidden>
     <input type="file" id="archivoRestaurar" accept="application/json,.json" hidden>
   </div>
@@ -537,6 +576,7 @@
   <div id="chips" class="solo-catalogo"></div>
   <div id="contador"></div>
   <div id="estadoGuardado"></div>
+  </div>
 </header>
 
 <div id="avisoFecha" class="aviso-estancados solo-catalogo" style="display:none">
@@ -4428,16 +4468,19 @@ zonaClas.addEventListener("touchcancel", () => {
   const header = document.querySelector("#app > header");
   const rango = document.getElementById("vidrioAlfa");
   const valor = document.getElementById("vidrioAlfaValor");
-  if (!header || !rango || !valor) return;
+  const btn = document.getElementById("btnVidrio");
+  const panel = document.getElementById("panelVidrio");
+  if (!header || !rango || !valor || !btn || !panel) return;
 
+  // Igual que el boceto: la opacidad y el desenfoque del vidrio dependen del valor elegido
   function aplicarVidrio(v) {
     const n = Math.min(95, Math.max(40, Math.round(Number(v)) || 72));
-    document.documentElement.style.setProperty("--vidrio-a", (n / 100).toFixed(2));
+    document.documentElement.style.setProperty("--opacidad", (n / 100).toFixed(2));
+    document.documentElement.style.setProperty("--desenfoque", Math.round(n * 0.3) + "px");
     rango.value = n;
     valor.textContent = n;
     return n;
   }
-
   aplicarVidrio(modoGuardado("vidrio_alfa", "72"));
 
   rango.addEventListener("input", () => {
@@ -4445,15 +4488,14 @@ zonaClas.addEventListener("touchcancel", () => {
     try { localStorage.setItem("vidrio_alfa", String(n)); } catch (e) {}
   });
 
-  const compactaPorDefecto = false;
-  let compacta = compactaPorDefecto;
-  let ultimoY = window.scrollY;
-  let anclaY = 0;
-  let ignorarHasta = 0;
-  let pendiente = false;
+  btn.addEventListener("click", () => {
+    const abierto = panel.classList.toggle("abierto");
+    btn.setAttribute("aria-expanded", String(abierto));
+  });
 
-  // Al compactar, corrige el scroll para que el contenido no salte.
-  // Ignora los eventos de scroll que provoca esa corrección.
+  let compacta = false, ultimoY = window.scrollY, anclaY = 0, ignorarHasta = 0, pendiente = false;
+
+  // Al compactar, corrige el scroll para que el contenido no salte
   function cambiarEstado(v, y) {
     if (compacta === v) return;
     compacta = v;
@@ -4476,9 +4518,8 @@ zonaClas.addEventListener("touchcancel", () => {
       const y = window.scrollY;
       if (!compacta) {
         if (y > 60 && y > ultimoY) cambiarEstado(true, y);
-      } else {
-        // Histéresis: solo se expande al subir un tramo claro o al volver arriba
-        if (y <= 4 || y < anclaY - 80) cambiarEstado(false, y);
+      } else if (y <= 20 || y < anclaY - 80) {
+        cambiarEstado(false, y);
       }
       ultimoY = y;
     });
@@ -4613,33 +4654,53 @@ zonaClas.addEventListener("touchcancel", () => {
 (function () {
   const LOTE = 24;
   const lista = document.getElementById("lista");
-  const reducir = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  // ---------- 1. Carga por lotes: solo se muestran 24 tarjetas; el resto son esqueletos ----------
-  let cola = [];
+  let cola = [];          // HTML de las tarjetas aún no cargadas, en orden
+  let mostradas = LOTE;   // cuántas tarjetas reales hay en pantalla
+  let firmaAnterior = "";
+
   const observerMut = new MutationObserver(() => preparar());
   const observerLote = new IntersectionObserver(entradas => {
-    if (entradas.some(e => e.isIntersecting)) cargarSiguiente();
+    if (entradas.some(e => e.isIntersecting)) cargarSiguiente(false);
   }, { rootMargin: "400px 0px" });
 
   function pausar() { observerMut.disconnect(); }
   function reanudar() { observerMut.observe(lista, { childList: true }); }
 
-  function terminar() {
+  function quitarSentinela() {
     observerLote.disconnect();
     const s = document.getElementById("sentinelaLote");
     if (s) s.remove();
+  }
+
+  function terminar() {
+    quitarSentinela();
     cola = [];
   }
 
-  function preparar() {
-    // Solo el catálogo normal; agrupado, notas, pendientes, etc. se muestran completos
-    if (pestana !== "catalogo" || agrupado) { pausar(); terminar(); reanudar(); return; }
-    const hijos = [...lista.children].filter(el => el.hasAttribute("data-i"));
-    if (hijos.length <= LOTE) { terminar(); return; }
+  // Cambia la firma cuando cambia la búsqueda, los filtros, el orden o la pestaña.
+  // Si solo cambia una marca, se conserva cuántas tarjetas ya estaban cargadas.
+  function firma() {
+    return [buscar.value, ...Object.values(sel).map(s => s.value), $("orden").value, pestana, agrupado].join("|");
+  }
 
+  function actualizarBoton() {
+    const b = document.getElementById("cargarTodas");
+    const quedan = lista.querySelectorAll(".esqueleto").length;
+    if (b) b.textContent = "Cargar las " + quedan + " restantes";
+  }
+
+  function preparar() {
     pausar();
-    const resto = hijos.slice(LOTE);
+    if (pestana !== "catalogo" || agrupado) { terminar(); reanudar(); return; }
+
+    const hijos = [...lista.children].filter(el => el.hasAttribute("data-i"));
+    const f = firma();
+    if (f !== firmaAnterior) { mostradas = LOTE; firmaAnterior = f; }
+
+    if (hijos.length <= mostradas) { terminar(); reanudar(); return; }
+
+    const resto = hijos.slice(mostradas);
     cola = resto.map(el => el.outerHTML);
     resto.forEach((el, k) => {
       const s = document.createElement("div");
@@ -4648,76 +4709,47 @@ zonaClas.addEventListener("touchcancel", () => {
       s.setAttribute("aria-hidden", "true");
       el.replaceWith(s);
     });
+
+    quitarSentinela();
     const sent = document.createElement("div");
     sent.id = "sentinelaLote";
     sent.className = "lote-sentinela";
+    sent.innerHTML = '<button type="button" class="pildora" id="cargarTodas"></button>';
     lista.appendChild(sent);
+    actualizarBoton();
     reanudar();
-
-    observerLote.disconnect();
     observerLote.observe(sent);
   }
 
-  function cargarSiguiente() {
-    const pendientes = [...lista.querySelectorAll(".esqueleto")].slice(0, LOTE);
-    if (!pendientes.length) { terminar(); return; }
+  function cargarSiguiente(todas) {
+    const sk = [...lista.querySelectorAll(".esqueleto")];
+    if (!sk.length) { terminar(); return; }
 
     pausar();
-    pendientes.forEach(s => {
+    const grupo = todas ? sk : sk.slice(0, LOTE);
+    grupo.forEach(s => {
       const k = Number(s.dataset.n);
       const plantilla = document.createElement("template");
       plantilla.innerHTML = cola[k];
       const tarjeta = plantilla.content.firstElementChild;
       if (tarjeta) s.replaceWith(tarjeta); else s.remove();
     });
-    reanudar();
+    mostradas += grupo.length;
 
-    if (!lista.querySelector(".esqueleto")) { terminar(); return; }
-    // Vuelve a observar el sentinela para que, si sigue visible, cargue el siguiente lote
+    if (!lista.querySelector(".esqueleto")) { terminar(); reanudar(); return; }
+
+    actualizarBoton();
+    reanudar();
     const sent = document.getElementById("sentinelaLote");
     if (sent) { observerLote.unobserve(sent); observerLote.observe(sent); }
   }
 
-  observerMut.observe(lista, { childList: true });
+  // Botón de respaldo: carga todas las restantes de una vez
+  document.addEventListener("click", e => {
+    if (e.target.closest && e.target.closest("#cargarTodas")) cargarSiguiente(true);
+  });
 
-  // ---------- 2. Sugerencia que rota cada 6 s (solo presentación; la regla de hora y día no cambia) ----------
-  let timerRot = null;
-
-  function programarRotacion() {
-    clearTimeout(timerRot);
-    timerRot = setTimeout(rotar, 6000);
-  }
-
-  function rotar() {
-    const sec = document.getElementById("ahora");
-    const caja = document.getElementById("ahoraCaja");
-    if (!document.hidden && sec && sec.style.display !== "none" && sugeridaActual && caja) {
-      const cambiar = () => {
-        nuevaSugerencia(sugeridaActual);
-        caja.style.opacity = "1";
-      };
-      if (reducir) cambiar();
-      else { caja.style.opacity = "0"; setTimeout(cambiar, 250); }
-    }
-    programarRotacion();
-  }
-
-  const seccionAhora = document.getElementById("ahora");
-  if (seccionAhora) {
-    seccionAhora.addEventListener("pointerdown", programarRotacion);
-  }
-  programarRotacion();
-
-  // ---------- 3. Secciones que aparecen al entrar en pantalla ----------
-  const observerSec = new IntersectionObserver(entradas => {
-    entradas.forEach(en => {
-      if (en.isIntersecting) {
-        en.target.classList.add("aparece");
-        observerSec.unobserve(en.target);
-      }
-    });
-  }, { threshold: 0.05 });
-  document.querySelectorAll("#app section[id]").forEach(s => observerSec.observe(s));
+  reanudar();
 })();
 </script>
 <script>
