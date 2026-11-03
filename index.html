@@ -13,8 +13,8 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
   :root {
-    --fondo:#f2f2f7; --tarjeta:#ffffff; --texto:#1c1c1e; --gris:#8e8e93;
-    --azul:#0a84ff; --borde:rgba(60,60,67,.14); --boton-suave:#e5e5ea;
+    --fondo:#f2f2f7; --tarjeta:#ffffff; --texto:#1c1c1e; --gris:#6e6e73;
+    --azul:#0071e3; --borde:rgba(60,60,67,.14); --boton-suave:#e5e5ea;
     --tema-bg:rgba(10,132,255,.12); --tema-texto:#0a84ff;
     --sombra:0 1px 2px rgba(0,0,0,.04), 0 10px 30px rgba(0,0,0,.08);
     --error:#ff453a; --estrella:#ffcc00;
@@ -396,6 +396,29 @@
   .segmentado button { border:none; background:none; color:var(--texto); padding:7px 16px; font-size:14px; border-radius:999px; cursor:pointer; transition:background .2s, color .2s, box-shadow .2s; }
   .segmentado button.activa { background:var(--tarjeta); box-shadow:var(--sombra); font-weight:600; }
   .segmentado button:focus-visible { outline:2px solid var(--azul); outline-offset:2px; }
+
+  /* FASE 6: carga por lotes, sugerencia rotativa y secciones que aparecen */
+  .esqueleto { min-height:300px; border-radius:var(--radio); background:linear-gradient(90deg, var(--boton-suave) 25%, var(--tarjeta) 50%, var(--boton-suave) 75%); background-size:200% 100%; animation:brillo 1.4s linear infinite; }
+  body.lista .esqueleto { min-height:110px; }
+  @keyframes brillo { from { background-position:200% 0; } to { background-position:-200% 0; } }
+  .lote-sentinela { height:1px; }
+  #ahoraCaja { transition:opacity .25s var(--ease); }
+  #app section[id].aparece { animation:aparecer .5s var(--ease) both; }
+
+  /* FASE 7: accesibilidad y contraste */
+  /* Texto sobre azul en modo oscuro: negro, para contraste suficiente */
+  body.oscuro .pildora.destacado, body.oscuro .chip, body.oscuro .chipc.activo,
+  body.oscuro .boton, body.oscuro .boton-login, body.oscuro .etiqueta.activa,
+  body.oscuro .que-ver .tabs-ver .pildora.activa-ver, body.oscuro .chip span { color:#000; }
+  body.oscuro .chipc.activo { border-color:var(--azul); }
+  .tarjeta[tabindex]:focus-visible, .dest[tabindex]:focus-visible, .fila[tabindex]:focus-visible {
+    outline:2px solid var(--azul); outline-offset:3px;
+  }
+  .cerrar:focus-visible { outline:2px solid var(--azul); outline-offset:2px; border-radius:50%; }
+  @media (prefers-contrast: more) {
+    :root { --borde:rgba(60,60,67,.45); --gris:#515157; }
+    body.oscuro { --borde:rgba(235,235,245,.4); --gris:#c7c7cc; }
+  }
 
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation:none !important; transition:none !important; }
@@ -4584,6 +4607,172 @@ zonaClas.addEventListener("touchcancel", () => {
     const etiqueta = s.tipo === "vista" ? "marcada como vista" : "puesta en pendientes";
     mostrarDeshacer("«" + s.titulo + "» " + etiqueta + ".", [{ titulo: s.titulo, previo: s.previo }]);
   });
+})();
+</script>
+<script>
+(function () {
+  const LOTE = 24;
+  const lista = document.getElementById("lista");
+  const reducir = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // ---------- 1. Carga por lotes: solo se muestran 24 tarjetas; el resto son esqueletos ----------
+  let cola = [];
+  const observerMut = new MutationObserver(() => preparar());
+  const observerLote = new IntersectionObserver(entradas => {
+    if (entradas.some(e => e.isIntersecting)) cargarSiguiente();
+  }, { rootMargin: "400px 0px" });
+
+  function pausar() { observerMut.disconnect(); }
+  function reanudar() { observerMut.observe(lista, { childList: true }); }
+
+  function terminar() {
+    observerLote.disconnect();
+    const s = document.getElementById("sentinelaLote");
+    if (s) s.remove();
+    cola = [];
+  }
+
+  function preparar() {
+    // Solo el catálogo normal; agrupado, notas, pendientes, etc. se muestran completos
+    if (pestana !== "catalogo" || agrupado) { pausar(); terminar(); reanudar(); return; }
+    const hijos = [...lista.children].filter(el => el.hasAttribute("data-i"));
+    if (hijos.length <= LOTE) { terminar(); return; }
+
+    pausar();
+    const resto = hijos.slice(LOTE);
+    cola = resto.map(el => el.outerHTML);
+    resto.forEach((el, k) => {
+      const s = document.createElement("div");
+      s.className = "esqueleto";
+      s.dataset.n = String(k);
+      s.setAttribute("aria-hidden", "true");
+      el.replaceWith(s);
+    });
+    const sent = document.createElement("div");
+    sent.id = "sentinelaLote";
+    sent.className = "lote-sentinela";
+    lista.appendChild(sent);
+    reanudar();
+
+    observerLote.disconnect();
+    observerLote.observe(sent);
+  }
+
+  function cargarSiguiente() {
+    const pendientes = [...lista.querySelectorAll(".esqueleto")].slice(0, LOTE);
+    if (!pendientes.length) { terminar(); return; }
+
+    pausar();
+    pendientes.forEach(s => {
+      const k = Number(s.dataset.n);
+      const plantilla = document.createElement("template");
+      plantilla.innerHTML = cola[k];
+      const tarjeta = plantilla.content.firstElementChild;
+      if (tarjeta) s.replaceWith(tarjeta); else s.remove();
+    });
+    reanudar();
+
+    if (!lista.querySelector(".esqueleto")) { terminar(); return; }
+    // Vuelve a observar el sentinela para que, si sigue visible, cargue el siguiente lote
+    const sent = document.getElementById("sentinelaLote");
+    if (sent) { observerLote.unobserve(sent); observerLote.observe(sent); }
+  }
+
+  observerMut.observe(lista, { childList: true });
+
+  // ---------- 2. Sugerencia que rota cada 6 s (solo presentación; la regla de hora y día no cambia) ----------
+  let timerRot = null;
+
+  function programarRotacion() {
+    clearTimeout(timerRot);
+    timerRot = setTimeout(rotar, 6000);
+  }
+
+  function rotar() {
+    const sec = document.getElementById("ahora");
+    const caja = document.getElementById("ahoraCaja");
+    if (!document.hidden && sec && sec.style.display !== "none" && sugeridaActual && caja) {
+      const cambiar = () => {
+        nuevaSugerencia(sugeridaActual);
+        caja.style.opacity = "1";
+      };
+      if (reducir) cambiar();
+      else { caja.style.opacity = "0"; setTimeout(cambiar, 250); }
+    }
+    programarRotacion();
+  }
+
+  const seccionAhora = document.getElementById("ahora");
+  if (seccionAhora) {
+    seccionAhora.addEventListener("pointerdown", programarRotacion);
+  }
+  programarRotacion();
+
+  // ---------- 3. Secciones que aparecen al entrar en pantalla ----------
+  const observerSec = new IntersectionObserver(entradas => {
+    entradas.forEach(en => {
+      if (en.isIntersecting) {
+        en.target.classList.add("aparece");
+        observerSec.unobserve(en.target);
+      }
+    });
+  }, { threshold: 0.05 });
+  document.querySelectorAll("#app section[id]").forEach(s => observerSec.observe(s));
+})();
+</script>
+<script>
+(function () {
+  // 1. Tarjetas y carrusel accesibles con teclado
+  function hacerEnfocables(raiz) {
+    raiz.querySelectorAll("[data-i]:not([tabindex]), [data-idx]:not([tabindex])").forEach(el => {
+      el.setAttribute("tabindex", "0");
+      el.setAttribute("role", "button");
+      if (!el.getAttribute("aria-label")) {
+        const t = el.querySelector("h2, .dest-titulo");
+        if (t) el.setAttribute("aria-label", t.textContent.trim());
+      }
+    });
+  }
+  hacerEnfocables(document);
+  const obsEnfocables = new MutationObserver(() => hacerEnfocables(document));
+  obsEnfocables.observe(document.getElementById("app"), { childList: true, subtree: true });
+
+  // Enter o Espacio abren la ficha cuando la tarjeta misma tiene el foco
+  document.addEventListener("keydown", e => {
+    if (e.key !== "Enter" && e.key !== " ") return;
+    const t = e.target;
+    if (!t.matches || !t.matches("[data-i][tabindex], [data-idx][tabindex]")) return;
+    e.preventDefault();
+    t.click();
+  });
+
+  // 2. Foco al abrir la ficha y regreso al elemento anterior al cerrar
+  const modal = document.getElementById("modal");
+  let elementoPrevio = null;
+  new MutationObserver(() => {
+    if (modal.classList.contains("abierto")) {
+      if (!elementoPrevio) {
+        elementoPrevio = document.activeElement;
+        const cerrar = document.getElementById("cerrarModal");
+        if (cerrar) cerrar.focus({ preventScroll: true });
+      }
+    } else if (elementoPrevio) {
+      const previo = elementoPrevio;
+      elementoPrevio = null;
+      if (previo && previo.isConnected && previo.focus) previo.focus({ preventScroll: true });
+    }
+  }).observe(modal, { attributes: true, attributeFilter: ["class"] });
+
+  // 3. Foco visible en controles del encabezado y barra inferior (ya cubierto por CSS global; aquí se asegura el aria-pressed del segmentado)
+  document.querySelectorAll("#tabbar button").forEach(b => {
+    b.setAttribute("aria-label", b.textContent.trim());
+    b.setAttribute("aria-current", b.classList.contains("activa") ? "page" : "false");
+  });
+  new MutationObserver(() => {
+    document.querySelectorAll("#tabbar button").forEach(b => {
+      b.setAttribute("aria-current", b.classList.contains("activa") ? "page" : "false");
+    });
+  }).observe(document.getElementById("tabbar"), { attributes: true, subtree: true, attributeFilter: ["class"] });
 })();
 </script>
 </body>
