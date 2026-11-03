@@ -2071,7 +2071,7 @@ function paletaDePoster(url) {
       }
     };
     img.onerror = () => resolve([]);
-    img.src = url;
+    img.src = PROXY_IMG + encodeURIComponent(String(url));
   });
 }
 
