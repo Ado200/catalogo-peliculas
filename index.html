@@ -570,6 +570,25 @@
   .panel-mas.abierto, .panel-avanzados.abierto { animation:subirHoja .3s var(--ease) both; }
   @keyframes subirHoja { from { transform:translateY(100%); } to { transform:translateY(0); } }
   @media (prefers-reduced-motion: reduce) { .panel-mas.abierto, .panel-avanzados.abierto { animation:none; } }
+
+  /* Menú "Más": una sola columna vertical, flotando bajo el botón ⋯, sin barra horizontal */
+  #app > header #panelMas.abierto,
+  #panelMas.abierto {
+    display:flex !important;
+    position:absolute !important; top:calc(100% + 8px) !important; right:16px !important; left:auto !important; bottom:auto !important;
+    z-index:30 !important;
+    width:min(320px, calc(100vw - 32px)) !important; max-width:min(320px, calc(100vw - 32px)) !important; margin:0 !important;
+    max-height:70vh !important; max-height:70dvh !important;
+    flex-direction:column !important; flex-wrap:nowrap !important; align-items:stretch !important; justify-content:flex-start !important;
+    overflow-x:hidden !important; overflow-y:auto !important;
+    padding:14px !important; gap:10px !important;
+    border-radius:var(--radio-grande) !important;
+    box-shadow:0 10px 40px rgba(0,0,0,.18) !important;
+    background:var(--tarjeta) !important;
+  }
+  #panelMas .grupo-menu { width:100%; display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+  #panelMas .grupo-menu .campo { width:100%; }
+  #panelMas .grupo-menu .campo select { width:100%; }
 </style>
 </head>
 <body>
