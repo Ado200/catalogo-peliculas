@@ -300,6 +300,9 @@
   .clas-botones { display:flex; gap:10px; justify-content:center; padding:14px 0 20px; flex-wrap:wrap; }
   .clas-ayuda { text-align:center; font-size:12px; color:var(--gris); padding-bottom:12px; }
 
+  .tarjeta[data-swipe], .fila[data-swipe] { position:relative; }
+  [data-swipe="vista"]::after { content:"VISTA"; position:absolute; top:14px; right:16px; font-weight:700; font-size:14px; color:#1f9d55; letter-spacing:.5px; pointer-events:none; }
+  [data-swipe="pendiente"]::after { content:"PENDIENTE"; position:absolute; top:14px; left:16px; font-weight:700; font-size:14px; color:var(--azul); letter-spacing:.5px; pointer-events:none; }
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation:none !important; transition:none !important; }
   }
@@ -413,7 +416,10 @@
 </div>
 
 <div id="avisoFecha" class="aviso-estancados solo-catalogo" style="display:none">
-  <span id="avisoFechaTexto"></span>
+  <div class="aviso-cabecera">
+    <span id="avisoFechaTexto"></span>
+    <button id="avisoFechaCerrar" class="cerrar-aviso" title="Cerrar recordatorio">×</button>
+  </div>
 </div>
 
 <section id="resumenSemana" class="destacados solo-catalogo" style="display:none"></section>
@@ -1441,6 +1447,37 @@ function insigniasDeActividad() {
   ];
 }
 
+/* ---------- Racha de calificaciones: películas calificadas esta semana (lunes a hoy) ---------- */
+// Usa el historial. Cada película cuenta una vez, con su última acción de la semana.
+// Si la última acción fue quitar la calificación, no cuenta.
+function calificacionesDeSemana() {
+  const hoy = hoyLocalISO();
+  const inicio = inicioSemanaISO(hoy);
+  const salida = [];
+  peliculas.forEach(p => {
+    const h = (marcas[p.titulo] || {}).historial || [];
+    const evs = h.filter(e => e.f >= inicio && e.f <= hoy &&
+      (String(e.a).indexOf("calificada") === 0 || e.a === "sin calificación"));
+    if (!evs.length) return;
+    const ultimo = evs[evs.length - 1];
+    if (ultimo.a === "sin calificación") return;
+    salida.push({ p, estrellas: Number(String(ultimo.a).replace("calificada ", "").replace("★", "")) });
+  });
+  return salida;
+}
+
+function textoCalificaciones() {
+  const cal = calificacionesDeSemana();
+  if (!cal.length) return "Aún no calificas películas esta semana.";
+  const n = cal.length;
+  let texto = "Calificaste " + n + (n === 1 ? " película" : " películas") + " esta semana";
+  if (n >= 3) {
+    const prom = cal.reduce((a, x) => a + x.estrellas, 0) / n;
+    texto += " · promedio " + prom.toFixed(1) + "★";
+  }
+  return texto + ".";
+}
+
 function renderActividad() {
   const sec = $("actividad");
   const hayFiltrosAct = hayFiltros();
@@ -1450,10 +1487,12 @@ function renderActividad() {
   }
   const racha = rachaSemanas();
   const insignias = insigniasDeActividad();
+  const lineaCal = textoCalificaciones();
   sec.innerHTML =
     '<div class="actividad-card">' +
       '<h3>Tu actividad</h3>' +
       '<p class="racha">Racha: <b>' + racha + '</b> ' + (racha === 1 ? 'semana' : 'semanas') + ' seguidas con alguna vista</p>' +
+      '<p class="meta">' + esc(lineaCal) + '</p>' +
       '<div class="insignias">' +
         insigniasDeActividad().map(i =>
           '<span class="insignia' + (i.ok ? '' : ' bloq') + '">' + (i.ok ? '🏅 ' : '🔒 ') + esc(i.t) + '</span>'
@@ -2142,29 +2181,48 @@ function lineaFechaConAlguien(p) {
   return '<div class="meta" style="margin-top:6px">📅 ' + esc(m.conFecha) + ' · ' + cuando + '</div>';
 }
 
+// Recordatorio: planes con alguien hoy, mañana o pasado mañana. "×" lo oculta por hoy.
+function recordatoriosActivos() {
+  const hoy = hoyLocalISO();
+  const cerrados = leerJSON("recordatorio_cerrados", []);
+  const salida = [];
+  peliculas.forEach(p => {
+    const m = marcas[p.titulo] || {};
+    if (!m.conAlguien || !m.conFecha) return;
+    const d = diasHasta(m.conFecha);
+    if (d < 0 || d > 2) return;
+    if (cerrados.includes(p.titulo + "|" + m.conFecha + "|" + hoy)) return;
+    salida.push({ p, m, d });
+  });
+  return salida;
+}
+
 function actualizarAvisoFecha() {
   const aviso = $("avisoFecha");
   if (hayFiltros() || pestana !== "catalogo") {
     aviso.style.display = "none";
     return;
   }
-  const cercanas = peliculas.map(p => {
-    const m = marcas[p.titulo] || {};
-    if (!m.conAlguien || !m.conFecha) return null;
-    const d = diasHasta(m.conFecha);
-    if (d !== 0 && d !== 1) return null;
-    return { p, d, quien: m.conQuien };
-  }).filter(Boolean);
-
-  if (!cercanas.length) {
+  const items = recordatoriosActivos();
+  if (!items.length) {
     aviso.style.display = "none";
     return;
   }
-  const partes = cercanas.map(x =>
-    x.p.titulo + (x.quien ? " con " + x.quien : "") + (x.d === 0 ? " (hoy)" : " (mañana)")
-  );
-  $("avisoFechaTexto").textContent = "📅 Planeado para pronto: " + partes.join(", ") + ".";
-  aviso.style.display = "flex";
+  const etiquetas = ["Hoy", "Mañana", "Pasado mañana"];
+  const lineas = [0, 1, 2]
+    .map(d => ({ d, nombres: items.filter(x => x.d === d).map(x => x.p.titulo + (x.m.conQuien ? " con " + x.m.conQuien : "")) }))
+    .filter(g => g.nombres.length)
+    .map(g => etiquetas[g.d] + ": " + g.nombres.join(" · "));
+  $("avisoFechaTexto").innerHTML = lineas.map(esc).join("<br>");
+  aviso.style.display = "block";
+}
+
+function cerrarRecordatorio() {
+  const hoy = hoyLocalISO();
+  const previos = leerJSON("recordatorio_cerrados", []).filter(k => k.endsWith("|" + hoy));
+  const nuevos = recordatoriosActivos().map(({ p, m }) => p.titulo + "|" + m.conFecha + "|" + hoy);
+  guardarJSON("recordatorio_cerrados", previos.concat(nuevos));
+  actualizarAvisoFecha();
 }
 
 function diasPendiente(p) {
@@ -2753,7 +2811,7 @@ function deshacerUltimoDescarte() {
   $("avisoDeshacer").hidden = true;
   programarGuardado();
   refrescarTodo();
-  setEstado("Descarte deshecho.");
+  setEstado("Cambio deshecho.");
 }
 
 function accionDecidir(accion, titulo) {
@@ -3541,6 +3599,7 @@ window.addEventListener("load", () => {
     const decision = e.target.closest("[data-decidir]");
     if (decision) { accionDecidir(decision.dataset.decidir, decision.dataset.clave); return; }
 
+    if (e.target.id === "avisoFechaCerrar") { cerrarRecordatorio(); return; }
     if (e.target.id === "avisoCerrar") {
       avisoCerrado = true;
       firmaAvisoCerrado = listaEstancadas().map(x => x.p.titulo + x.tipo).join("|");
@@ -3774,6 +3833,19 @@ $("respaldoArchivo").addEventListener("change", importarRespaldo);
 
 let swipe = null;
 
+// Gesto a la izquierda: marca como vista. Nunca desmarca; se puede deshacer con el aviso.
+function marcarVistaGesto(p) {
+  if (estadoDe(p).vista) {
+    setEstado("Ya está en tus vistas.");
+    refrescarTodo();
+    return;
+  }
+  const previo = marcas[p.titulo] ? Object.assign({}, marcas[p.titulo]) : null;
+  cambiarEstado(p.titulo, { vista: true, pendiente: false, vistaDesde: hoyLocalISO() });
+  mostrarDeshacer("«" + p.titulo + "» marcada como vista.", [{ titulo: p.titulo, previo }]);
+  refrescarTodo();
+}
+
 function reiniciarTarjeta(el) {
   if (!el) return;
   el.style.transition = "transform .25s var(--ease)";
@@ -3797,9 +3869,10 @@ lista.addEventListener("touchmove", e => {
     if (Math.abs(dx) < 12) return;
     swipe.activo = true;
   }
-  swipe.dx = Math.max(0, dx);
+  swipe.dx = dx;
   swipe.el.style.transition = "none";
-  swipe.el.style.transform = "translateX(" + Math.min(120, swipe.dx) + "px)";
+  swipe.el.style.transform = "translateX(" + Math.max(-120, Math.min(120, dx)) + "px)";
+  swipe.el.dataset.swipe = dx <= -30 ? "vista" : (dx >= 30 ? "pendiente" : "");
 }, { passive: true });
 
 lista.addEventListener("touchend", () => {
@@ -3807,16 +3880,20 @@ lista.addEventListener("touchend", () => {
   const s = swipe;
   swipe = null;
   reiniciarTarjeta(s.el);
-  if (!s.activo || s.dx < 90) return;
+  delete s.el.dataset.swipe;
+  if (!s.activo) return;
   const p = visibles[s.i];
   if (!p) return;
-  const pendienteActual = estadoDe(p).pendiente;
-  cambiarEstado(p.titulo, { pendiente: !pendienteActual, vista: false });
-  refrescarTodo();
+  if (s.dx <= -90) { marcarVistaGesto(p); return; }
+  if (s.dx >= 90) {
+    const pendienteActual = estadoDe(p).pendiente;
+    cambiarEstado(p.titulo, { pendiente: !pendienteActual, vista: false });
+    refrescarTodo();
+  }
 });
 
 lista.addEventListener("touchcancel", () => {
-  if (swipe) reiniciarTarjeta(swipe.el);
+  if (swipe) { reiniciarTarjeta(swipe.el); delete swipe.el.dataset.swipe; }
   swipe = null;
 });
 
