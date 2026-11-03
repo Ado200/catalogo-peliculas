@@ -136,7 +136,7 @@
   .carrusel .dest-anio { font-size:12px; color:var(--gris); }
   .carrusel .dest-razon { font-size:11px; color:var(--tema-texto); margin-top:2px; line-height:1.3; }
   .carrusel .porque-btn { margin-top:6px; font-size:11px; padding:4px 10px; }
-  .carrusel .porque-lista { margin:6px 0 0; padding-left:16px; font-size:11px; color:var(--gris); line-height:1.4; cursor:default; }
+  .carrusel .porque-lista { margin:6px 0 0; font-size:11px; color:var(--gris); line-height:1.4; cursor:default; }
   .carrusel .porque-lista li { margin-bottom:3px; }
 
   .ahora-card { display:flex; gap:14px; align-items:center; background:var(--tarjeta); border-radius:18px; padding:14px; box-shadow:var(--sombra); max-width:560px; }
@@ -430,6 +430,7 @@
 </section>
 
 <section id="cena" class="destacados solo-catalogo" style="display:none"></section>
+<section id="estaSemana" class="destacados solo-catalogo" style="display:none"></section>
 <section id="sagas" class="destacados solo-catalogo" style="display:none"></section>
 <section id="actores" class="destacados solo-catalogo" style="display:none"></section>
 <section id="ahora" class="destacados solo-catalogo" style="display:none">
@@ -973,6 +974,45 @@ function desplazarMes(ym, delta) {
   return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0");
 }
 
+/* ---------- Modo esta semana: planes con alguien en los próximos 7 días ---------- */
+function planesProximos7Dias() {
+  const hoy = hoyLocalISO();
+  const limite = sumarDiasISO(hoy, 7);
+  return peliculas
+    .map(p => ({ p, m: marcas[p.titulo] || {} }))
+    .filter(({ m }) => m.conAlguien && m.conFecha && m.conFecha >= hoy && m.conFecha <= limite)
+    .sort((a, b) => a.m.conFecha.localeCompare(b.m.conFecha));
+}
+
+function etiquetaDia(iso) {
+  const d = diasHasta(iso);
+  if (d === 0) return "hoy";
+  if (d === 1) return "mañana";
+  const dias = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
+  const [y, m, dd] = iso.split("-").map(Number);
+  return dias[new Date(y, m - 1, dd).getDay()];
+}
+
+function renderEstaSemana() {
+  const sec = $("estaSemana");
+  if (!peliculas.length || hayFiltros() || pestana !== "catalogo") {
+    sec.style.display = "none";
+    return;
+  }
+  const planes = planesProximos7Dias();
+  const cuerpo = planes.length
+    ? planes.map(({ p, m }) =>
+        '<div class="dest-fila">' +
+          '<div><b>' + esc(p.titulo) + '</b>' +
+          '<div class="meta">' + esc(etiquetaDia(m.conFecha)) + ' · ' + esc(m.conFecha) +
+          (m.conQuien ? ' · con ' + esc(m.conQuien) : '') + '</div></div>' +
+        '</div>'
+      ).join("")
+    : '<p class="meta">No hay planes con alguien para los próximos 7 días.</p>';
+  sec.innerHTML = '<div class="actividad-card"><h3>Esta semana</h3>' + cuerpo + '</div>';
+  sec.style.display = "block";
+}
+
 function htmlCalendario() {
   const hoyISO = hoyLocalISO();
   if (!mesCalendario) mesCalendario = hoyISO.slice(0, 7);
@@ -1416,21 +1456,36 @@ function calcularRecomendaciones() {
   return candidatas.slice(0, 6);
 }
 
-// Convierte el desglose real en líneas legibles: positivos con la película de mayor calificación; negativos con la descartada
-function lineasPorQue(desglose) {
-  return desglose.map(d => {
-    if (d.puntos < 0) {
-      const f = d.fuentes[0];
-      const otras = d.fuentes.length - 1;
-      return d.etiqueta + " (" + d.puntos + ", por descartada: " + f.titulo +
-        (otras > 0 ? " y " + otras + " más" : "") + ")";
-    }
-    const fuentes = d.fuentes.slice().sort((a, b) => b.estrellas - a.estrellas);
-    const mejor = fuentes[0];
-    const otras = fuentes.length - 1;
-    return d.etiqueta + " (+" + d.puntos + ", por tu " + mejor.estrellas + "★ en " + mejor.titulo +
-      (otras > 0 ? " y " + otras + " más" : "") + ")";
-  });
+// Convierte el desglose en una frase corta y legible
+function fraseRecomendacion(r) {
+  const positivos = r.desglose.filter(d => d.puntos > 0);
+  const negativos = r.desglose.filter(d => d.puntos < 0);
+
+  if (!positivos.length) {
+    return "Tiene géneros o directores que descartaste antes.";
+  }
+
+  // Los directores pesan más, así que tienen prioridad
+  const dir = positivos.find(d => d.etiqueta.startsWith("Director "));
+  const base = dir || positivos[0];
+  const nombre = base.etiqueta.replace(/^(Director|Género) /, "");
+
+  const titulos = base.fuentes
+    .slice()
+    .sort((a, b) => b.estrellas - a.estrellas)
+    .map(f => "«" + f.titulo + "»");
+
+  let lista;
+  if (titulos.length === 1) lista = titulos[0];
+  else if (titulos.length === 2) lista = titulos[0] + " y " + titulos[1];
+  else lista = titulos[0] + " y " + titulos[1] + " y " + (titulos.length - 2) + " más";
+
+  let frase = dir
+    ? "Porque te gustó " + lista + ", dirigida por " + nombre
+    : "Porque te gustaron " + lista + ", que comparten el género " + nombre;
+
+  if (negativos.length) frase += ". Ojo: hay algo parecido a lo que descartaste";
+  return frase + ".";
 }
 
 function renderRecomendaciones() {
@@ -1452,7 +1507,7 @@ function renderRecomendaciones() {
       : '<div class="sinportada-mini">🎬</div>';
     const abierto = porQueAbiertos.has(r.p.titulo);
     const detalle = abierto
-      ? '<ul class="porque-lista">' + lineasPorQue(r.desglose).map(l => '<li>' + esc(l) + '</li>').join("") + '</ul>'
+      ? '<p class="porque-lista">' + esc(fraseRecomendacion(r)) + '</p>'
       : '';
     return '<div class="dest" data-idx="' + idx + '">' + img +
       '<div class="dest-titulo">' + esc(r.p.titulo) + '</div>' +
@@ -2773,6 +2828,7 @@ function pintar() {
   actualizarResumenSemana();
   renderActividad();
   renderCena();
+  renderEstaSemana();
   renderSagas();
   renderActores();
   revisarSalud();
@@ -2803,6 +2859,7 @@ function pintarPestana() {
   $("destacados").style.display = "none";
   $("salud").classList.add("oculto");
   $("ahora").style.display = "none";
+  $("estaSemana").style.display = "none";
   $("recomendaciones").style.display = "none";
   chips.innerHTML = "";
 
