@@ -546,6 +546,20 @@
   .fila-preset select { flex:1; min-width:0; }
   .ajuste-vidrio { flex:1 1 220px; font-size:13px; color:var(--gris); display:flex; flex-direction:column; gap:6px; }
   .ajuste-vidrio input { width:100%; accent-color:var(--azul); }
+  /* Paneles de ⚙ y ⋯: hoja inferior con scroll propio, fuera de la barra */
+  #velo { display:none; position:fixed; inset:0; z-index:29; background:rgba(0,0,0,.28); }
+  body.panel-abierto #velo { display:block; }
+  .panel-mas, .panel-avanzados {
+    position:fixed; left:0; right:0; bottom:0; top:auto;
+    width:100%; max-width:600px; margin:0 auto; max-height:72vh; max-height:72dvh;
+    overflow-y:auto; -webkit-overflow-scrolling:touch; overscroll-behavior:contain;
+    z-index:30; border-radius:var(--radio-grande) var(--radio-grande) 0 0;
+    padding:18px 16px calc(18px + env(safe-area-inset-bottom, 0px));
+    box-shadow:0 -12px 40px rgba(0,0,0,.25); background:var(--tarjeta);
+  }
+  .panel-mas.abierto, .panel-avanzados.abierto { animation:subirHoja .3s var(--ease) both; }
+  @keyframes subirHoja { from { transform:translateY(100%); } to { transform:translateY(0); } }
+  @media (prefers-reduced-motion: reduce) { .panel-mas.abierto, .panel-avanzados.abierto { animation:none; } }
 </style>
 </head>
 <body>
@@ -588,6 +602,13 @@
     <button type="button" data-seg="sin_ver">Sin ver</button>
     <button type="button" data-seg="favoritas">Favoritas</button>
   </div>
+  <div id="chips" class="solo-catalogo" data-zona="lista"></div>
+  <div id="contador" data-zona="lista"></div>
+  <div id="estadoGuardado"></div>
+  </div>
+</header>
+
+<div id="velo" aria-hidden="true"></div>
   <div id="panelAvanzados" class="panel-avanzados" data-zona="lista">
     <div class="campo"><label for="genero">Género</label>
       <select id="genero"><option value="">Todos los géneros</option></select></div>
@@ -683,11 +704,6 @@
     <input type="file" id="archivoRestaurar" accept="application/json,.json" hidden>
   </div>
 
-  <div id="chips" class="solo-catalogo" data-zona="lista"></div>
-  <div id="contador" data-zona="lista"></div>
-  <div id="estadoGuardado"></div>
-  </div>
-</header>
 
 <div id="avisoFecha" class="aviso-estancados solo-catalogo" data-zona="inicio" style="display:none">
   <div class="aviso-cabecera">
@@ -2571,7 +2587,7 @@ document.addEventListener("click", e => {
 aplicarPliegues();
 
 document.addEventListener("click", e => {
-  if (e.target.id === "toggleMas") $("panelMas").classList.toggle("abierto");
+  if (e.target.closest && e.target.closest("#toggleMas")) alternarPanel("panelMas");
 });
 
 vistaLista = modoGuardado("vista_tarjetas", "amplia") === "compacta";
@@ -3804,10 +3820,31 @@ function guardarTab() {
   try { localStorage.setItem("pestana_activa", v); } catch (e) {}
 }
 
+// Paneles del encabezado (⚙ filtros y ⋯ menú): se muestran como hoja inferior y solo uno a la vez
+function cerrarPaneles() {
+  document.getElementById("panelMas").classList.remove("abierto");
+  document.getElementById("panelAvanzados").classList.remove("abierto");
+  document.body.classList.remove("panel-abierto");
+}
+
+function alternarPanel(id) {
+  const el = document.getElementById(id);
+  const abrir = !el.classList.contains("abierto");
+  cerrarPaneles();
+  if (abrir) {
+    el.classList.add("abierto");
+    el.scrollTop = 0;
+    document.body.classList.add("panel-abierto");
+  }
+}
+
+document.getElementById("velo").addEventListener("click", cerrarPaneles);
+document.addEventListener("keydown", e => { if (e.key === "Escape") cerrarPaneles(); });
+
 function limpiarFiltros() {
   buscar.value = "";
   Object.values(sel).forEach(s => s.value = "");
-  $("panelAvanzados").classList.remove("abierto");
+  cerrarPaneles();
 }
 
 // Muestra solo los bloques de la zona actual, marca la pestaña y el selector interno
@@ -4071,7 +4108,7 @@ window.addEventListener("load", () => {
 
   $("toggleAvanzados").addEventListener("click", () => {
     if (pestana === "catalogo" && zonaPeli === "inicio") { zonaPeli = "lista"; aplicarEstadoTabs(); pintar(); }
-    $("panelAvanzados").classList.toggle("abierto");
+    alternarPanel("panelAvanzados");
   });
 
   $("tema-modo").addEventListener("change", () => {
@@ -4996,7 +5033,7 @@ zonaClas.addEventListener("touchcancel", () => {
   // Descartadas ahora está en el menú ⋯
   document.addEventListener("click", e => {
     if (!e.target.closest || !e.target.closest("#verDescartadas")) return;
-    document.getElementById("panelMas").classList.remove("abierto");
+    cerrarPaneles();
     cambiarPestana("descartadas");
   });
 
