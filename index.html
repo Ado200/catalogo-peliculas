@@ -391,6 +391,12 @@
   }
   @keyframes subirHoja { from { translate:0 100%; } to { translate:0 0; } }
 
+  /* FASE 5: selector segmentado */
+  .segmentado { display:inline-flex; gap:2px; padding:3px; margin:12px auto 0; background:var(--boton-suave); border-radius:999px; }
+  .segmentado button { border:none; background:none; color:var(--texto); padding:7px 16px; font-size:14px; border-radius:999px; cursor:pointer; transition:background .2s, color .2s, box-shadow .2s; }
+  .segmentado button.activa { background:var(--tarjeta); box-shadow:var(--sombra); font-weight:600; }
+  .segmentado button:focus-visible { outline:2px solid var(--azul); outline-offset:2px; }
+
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation:none !important; transition:none !important; }
   }
@@ -413,6 +419,11 @@
   <datalist id="sugerencias"></datalist>
   <button id="voz" class="boton-voz" title="Buscar por voz" aria-label="Buscar por voz" hidden>🎤</button>
 
+  <div class="segmentado solo-catalogo" role="group" aria-label="Filtrar películas">
+    <button type="button" data-seg="" class="activa">Todas</button>
+    <button type="button" data-seg="pendiente">Pendientes</button>
+    <button type="button" data-seg="vista">Vistas</button>
+  </div>
   <div class="barra-acciones solo-catalogo">
     <button id="toggleAvanzados" class="pildora">⚙ Filtros</button>
     <button id="aleatorio" class="pildora destacado">🎲 Aleatorio</button>
@@ -4520,6 +4531,58 @@ zonaClas.addEventListener("touchcancel", () => {
     reiniciar();
     ventana.style.transition = "transform .3s var(--ease)";
     ventana.style.transform = "";
+  });
+})();
+</script>
+<script>
+(function () {
+  const estado = document.getElementById("estado");
+  const botones = document.querySelectorAll(".segmentado button");
+  if (!estado || !botones.length) return;
+
+  function sincronizar() {
+    botones.forEach(b => {
+      const activa = b.dataset.seg === estado.value;
+      b.classList.toggle("activa", activa);
+      b.setAttribute("aria-pressed", activa ? "true" : "false");
+    });
+  }
+
+  botones.forEach(b => {
+    b.addEventListener("click", () => {
+      estado.value = b.dataset.seg;
+      estado.dispatchEvent(new Event("input"));
+      sincronizar();
+    });
+  });
+
+  // Mantiene el selector sincronizado con los demás controles (panel, chips, Limpiar)
+  estado.addEventListener("input", sincronizar);
+  document.addEventListener("click", () => setTimeout(sincronizar, 0));
+  sincronizar();
+
+  // Aviso «Deshacer» para Vista y Pendiente desde los botones de la tarjeta o la ficha
+  let snap = null;
+  document.addEventListener("click", e => {
+    const b = e.target.closest('[data-accion="pendiente"], [data-accion="vista"]');
+    if (!b) { snap = null; return; }
+    const t = b.dataset.clave;
+    snap = {
+      titulo: t,
+      tipo: b.dataset.accion,
+      previo: marcas[t] ? Object.assign({}, marcas[t]) : null
+    };
+  }, true);
+
+  document.addEventListener("click", () => {
+    if (!snap) return;
+    const s = snap;
+    snap = null;
+    const antes = JSON.stringify(s.previo);
+    const despues = JSON.stringify(marcas[s.titulo] || null);
+    if (antes === despues) return;
+    const etiqueta = s.tipo === "vista" ? "marcada como vista" : "puesta en pendientes";
+    mostrarDeshacer("«" + s.titulo + "» " + etiqueta + ".", [{ titulo: s.titulo, previo: s.previo }]);
   });
 })();
 </script>
