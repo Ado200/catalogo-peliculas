@@ -339,6 +339,8 @@
   .barra-acciones { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-top:14px; }
   .panel-mas { display:none; max-width:900px; margin:12px auto 0; padding:14px; background:var(--tarjeta); border-radius:var(--radio-grande); box-shadow:var(--sombra); flex-wrap:wrap; gap:8px; justify-content:center; }
   .panel-mas.abierto { display:flex; animation:aparecer .3s var(--ease) both; }
+  #panelMas { box-sizing:border-box; max-width:min(900px, calc(100vw - 24px)); overflow-x:hidden; }
+  #panelMas .grupo-menu { min-width:0; }
   .acciones-panel { grid-column:1/-1; display:flex; flex-wrap:wrap; gap:8px; justify-content:flex-end; align-items:flex-end; }
   .acciones-rapidas { display:none; flex-wrap:wrap; gap:4px; margin-top:8px; align-items:center; }
   @media (min-width:900px) and (hover:hover) {
@@ -655,9 +657,6 @@
 
   <div id="panelMas" class="panel-mas">
     <div class="grupo-menu">
-      <button id="verGuia" class="pildora destacado">❔ Guía de uso</button>
-    </div>
-    <div class="grupo-menu">
       <span class="grupo-titulo">Ver</span>
       <button id="vista" class="pildora">Vista compacta</button>
       <button id="agrupar" class="pildora">Agrupar por tema</button>
@@ -666,6 +665,10 @@
       <span class="grupo-titulo">Herramientas</span>
       <button id="clasificar" class="pildora destacado">⚡ Clasificar</button>
       <button id="estadisticas" class="pildora">📊 Estadísticas</button>
+    </div>
+    <div class="grupo-menu">
+      <span class="grupo-titulo">Ayuda</span>
+      <button id="verGuia" class="pildora">Cómo usar la app</button>
     </div>
     <div class="grupo-menu">
       <span class="grupo-titulo">Datos</span>
@@ -5450,50 +5453,69 @@ document.getElementById("salirDispositivo").addEventListener("click", salirDeEst
 
 
 <style>
-  #guia { position:fixed; inset:0; z-index:50; display:none; align-items:center; justify-content:center; padding:16px; background:rgba(0,0,0,.45); }
-  #guia.abierta { display:flex; }
-  #guia .caja { background:var(--tarjeta); color:var(--texto); width:min(560px,100%); max-height:88vh; display:flex; flex-direction:column; border-radius:var(--radio-grande); box-shadow:var(--sombra); }
-  #guia .cab { padding:18px 20px 8px; display:flex; justify-content:space-between; align-items:center; }
-  #guia .cab h2 { margin:0; font-size:20px; }
-  #guia .cab button { background:none; border:none; font-size:24px; color:var(--gris); cursor:pointer; }
-  #guia .cuerpo { overflow-y:auto; padding:4px 20px 12px; font-size:14px; line-height:1.5; }
-  #guia h3 { margin:16px 0 4px; font-size:15px; color:var(--azul); }
-  #guia p { margin:0 0 6px; }
-  #guia .pie { padding:12px 20px 18px; display:flex; justify-content:space-between; align-items:center; gap:10px; border-top:1px solid var(--borde); }
-  #guia .pie label { font-size:13px; color:var(--gris); display:flex; align-items:center; gap:6px; }
+  #guia { position:fixed; inset:0; z-index:50; display:none; align-items:center; justify-content:center; padding:16px; background:rgba(0,0,0,.4); }
+  #guia.abierta { display:flex; animation:aparecer .25s var(--ease) both; }
+  #guia .caja { background:var(--tarjeta); color:var(--texto); width:min(520px,100%); max-height:86vh; display:flex; flex-direction:column; border-radius:var(--radio-grande); box-shadow:var(--sombra); overflow:hidden; }
+  #guia .cab { padding:20px 22px 12px; display:flex; justify-content:space-between; align-items:center; gap:12px; }
+  #guia .cab h2 { margin:0; font-size:20px; font-weight:700; letter-spacing:-.2px; }
+  #guia .cerrar { width:34px; height:34px; border-radius:50%; border:none; background:var(--boton-suave); color:var(--texto); font-size:20px; line-height:1; cursor:pointer; display:grid; place-items:center; }
+  #guia .cuerpo { overflow-y:auto; padding:0 22px 8px; font-size:14px; line-height:1.55; color:var(--texto); }
+  #guia .intro { color:var(--gris); margin:0 0 6px; }
+  #guia .seccion { padding:12px 0; border-top:1px solid var(--borde); }
+  #guia .seccion h3 { margin:0 0 4px; font-size:15px; font-weight:600; }
+  #guia .seccion p { margin:0; color:var(--texto); }
+  #guia .seccion p b { font-weight:600; }
+  #guia .pie { padding:14px 22px 18px; display:flex; justify-content:flex-end; border-top:1px solid var(--borde); }
+  #guia .pie .pildora { padding:10px 22px; }
 </style>
 <div id="guia" role="dialog" aria-modal="true" aria-labelledby="guiaTitulo">
   <div class="caja">
     <div class="cab">
       <h2 id="guiaTitulo">Cómo usar tu catálogo</h2>
-      <button id="guiaCerrar" aria-label="Cerrar">×</button>
+      <button id="guiaCerrar" class="cerrar" aria-label="Cerrar">×</button>
     </div>
     <div class="cuerpo">
-      <p>Tu catálogo guarda tus películas en una hoja de Google y tus marcas (vistas, pendientes, estrellas y notas) en tu Drive. Aquí va lo esencial.</p>
+      <p class="intro">Tu lista vive en una hoja de Google. Tus marcas (vistas, pendientes, estrellas y notas) se guardan en tu Drive.</p>
 
-      <h3>🏠 Inicio</h3>
-      <p>Lo primero que ves. Tiene <b>Qué ver</b> (una sugerencia según la hora o la noche), <b>Esta semana</b> (planes con alguien en los próximos 7 días), <b>Pregunta</b> y <b>Recomendaciones</b> basadas en lo que ya calificaste.</p>
+      <div class="seccion">
+        <h3>🏠 Inicio</h3>
+        <p><b>Qué ver</b> te sugiere algo según la hora o la noche. <b>Esta semana</b> muestra tus planes con alguien. <b>Recomendaciones</b> se basan en lo que ya calificaste.</p>
+      </div>
 
-      <h3>🎬 Películas</h3>
-      <p>Toda la lista. Usa la barra de búsqueda y el botón de filtros para buscar por género, director, año, duración y más. Dentro de esta pestaña están <b>Estrenos</b>, <b>Sagas</b> y <b>Actores</b>, y el <b>Duelo</b>, que te obliga a elegir entre dos pendientes.</p>
+      <div class="seccion">
+        <h3>🎬 Películas</h3>
+        <p>Toda la lista, con buscador y filtros por género, año, duración y más. Dentro están <b>Estrenos</b>, <b>Sagas</b>, <b>Actores</b> y <b>Duelo</b>, para elegir entre dos pendientes.</p>
+      </div>
 
-      <h3>📝 Notas</h3>
-      <p>Las películas que tienes en tu cabeza: escribe ideas, recuerdos o por qué quieres verlas.</p>
+      <div class="seccion">
+        <h3>📝 Notas</h3>
+        <p>Ideas o recuerdos sobre películas que quieres ver o que ya viste.</p>
+      </div>
 
-      <h3>⏳ Pendientes</h3>
-      <p>Lo que quieres ver. Desde aquí puedes pasar una película a vista cuando la termines.</p>
+      <div class="seccion">
+        <h3>⏳ Pendientes</h3>
+        <p>Lo que quieres ver. Cuando lo termines, márcalo como visto.</p>
+      </div>
 
-      <h3>✓ Vistas</h3>
-      <p>Lo que ya viste, con tu calificación de estrellas, tu racha de calificaciones de la semana, el <b>mapa de gustos</b> (géneros y directores de tus favoritas) y tu resumen.</p>
+      <div class="seccion">
+        <h3>✓ Vistas</h3>
+        <p>Lo que ya viste, con tus estrellas, tu racha semanal, el <b>mapa de gustos</b> y tu resumen.</p>
+      </div>
 
-      <h3>Cada película</h3>
-      <p>Toca una película para abrir su ficha: puedes marcarla como vista o pendiente, ponerle estrellas, anotar con quién la viste y escribir una nota.</p>
+      <div class="seccion">
+        <h3>Ficha de cada película</h3>
+        <p>Tócala para marcarla como vista o pendiente, ponerle estrellas, anotar con quién la viste y escribir una nota.</p>
+      </div>
 
-      <h3>⋯ Más</h3>
-      <p><b>Exportar CSV</b> descarga tu lista. <b>Respaldar</b> y <b>Restaurar</b> guardan y recuperan tus marcas. <b>Borrar mis marcas</b> elimina todo y no se puede deshacer. Aquí también está el tema de la página y el modo ahorro de datos.</p>
+      <div class="seccion">
+        <h3>⋯ Más</h3>
+        <p><b>Exportar CSV</b> descarga tu lista. <b>Respaldar</b> y <b>Restaurar</b> guardan y recuperan tus marcas. <b>Borrar mis marcas</b> elimina todo y no se puede deshacer.</p>
+      </div>
 
-      <h3>Tus datos se guardan solos</h3>
-      <p>Cada cambio se guarda en tu Drive. Si no hay señal, se queda en este dispositivo y se sube cuando vuelve. El aviso de la parte de arriba te dice si todo está guardado o cuántos cambios faltan por subir.</p>
+      <div class="seccion">
+        <h3>Tus datos</h3>
+        <p>Cada cambio se guarda en tu Drive. Sin señal, se queda en este dispositivo y se sube al volver la conexión. El aviso de arriba indica si todo está guardado.</p>
+      </div>
     </div>
     <div class="pie">
       <button id="guiaEntendido" class="pildora destacado">Entendido</button>
