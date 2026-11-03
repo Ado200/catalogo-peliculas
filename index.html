@@ -504,6 +504,29 @@
   #app > header .botones-barra { display:flex !important; flex-direction:row !important; align-items:center !important; justify-content:flex-end; gap:8px; flex-shrink:0; }
   #app > header .botones-barra > button { display:inline-flex !important; align-items:center; justify-content:center; width:38px !important; height:38px !important; min-width:38px; min-height:38px; padding:0 !important; margin:0 !important; border:0 !important; border-radius:50% !important; background:rgba(118,118,128,.18) !important; color:var(--texto) !important; font-size:17px; line-height:1; cursor:pointer; box-shadow:none; }
   #app > header .botones-barra > button.destacado { background:var(--azul) !important; color:#fff !important; }  
+  .fuera-zona { display:none !important; }
+  .selector-zona { overflow-x:auto; max-width:100%; justify-content:flex-start; scrollbar-width:none; }
+  .selector-zona::-webkit-scrollbar { display:none; }
+  .selector-zona button { white-space:nowrap; flex:0 0 auto; }
+  /* Pantalla de acceso */
+  body:not(.con-sesion) { padding-bottom:0; }
+  body:not(.con-sesion) #tabbar { display:none !important; }
+  #login { min-height:100vh; min-height:100dvh; margin:0; padding:32px 20px calc(32px + env(safe-area-inset-bottom, 0px)); display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; box-sizing:border-box; background:radial-gradient(900px 480px at 50% -12%, rgba(10,132,255,.22), transparent 70%), var(--fondo); }
+  .login-tarjeta { width:min(380px,100%); background:var(--tarjeta); border-radius:var(--radio-grande); box-shadow:var(--sombra); padding:36px 26px 24px; }
+  .login-icono { width:72px; height:72px; margin:0 auto 16px; border-radius:20px; background:linear-gradient(145deg,#2997ff,#0a5fd6); display:grid; place-items:center; font-size:36px; box-shadow:0 10px 26px rgba(10,132,255,.35); }
+  #login h1 { font-size:26px; margin:0 0 10px; letter-spacing:-.4px; }
+  .login-texto { color:var(--gris); font-size:15px; line-height:1.5; margin:0 0 20px; }
+  .login-cualidades { list-style:none; margin:0 0 24px; padding:0; text-align:left; display:flex; flex-direction:column; gap:12px; }
+  .login-cualidades li { display:flex; gap:12px; align-items:center; font-size:14px; color:var(--texto); }
+  .login-cualidades span { flex:0 0 28px; height:28px; border-radius:50%; background:var(--tema-bg); display:grid; place-items:center; font-size:13px; }
+  #login .boton-login { width:100%; padding:15px 20px; font-weight:600; box-shadow:0 6px 18px rgba(10,132,255,.3); }
+  #login #error { margin-top:12px; font-size:14px; }
+  .login-nota { color:var(--gris); font-size:12px; line-height:1.45; margin:16px 4px 0; }
+  .login-etiqueta { display:inline-block; font-size:12px; font-weight:600; color:var(--tema-texto); background:var(--tema-bg); padding:5px 12px; border-radius:999px; margin:-4px 0 14px; }
+  .login-aviso { color:var(--texto); font-size:14px; line-height:1.45; margin:0 0 14px; padding:10px 12px; border-radius:var(--radio); background:var(--boton-suave); text-align:left; }
+  .login-icono { animation:flotarIcono 4s ease-in-out infinite; }
+  @keyframes flotarIcono { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-4px); } }
+  @media (prefers-reduced-motion: reduce) { .login-icono { animation:none; } }
 </style>
 </head>
 <body>
@@ -511,9 +534,21 @@
 <div id="calido"></div>
 
 <div id="login">
-  <h1>Mi catálogo de películas</h1>
-  <button id="btnLogin" class="boton-login">Iniciar sesión con Google</button>
-  <div id="error"></div>
+  <div class="login-tarjeta">
+    <div class="login-icono" aria-hidden="true">🎬</div>
+    <span class="login-etiqueta">🔒 Acceso con cuenta institucional</span>
+    <h1>Mi catálogo de películas</h1>
+    <p class="login-texto">Tu catálogo personal: lo que viste, lo que quieres ver y lo que te gustó, con sugerencias hechas a tu medida.</p>
+    <ul class="login-cualidades">
+      <li><span aria-hidden="true">✓</span>Vistas, pendientes y descartadas en un solo lugar</li>
+      <li><span aria-hidden="true">🎲</span>Qué ver esta noche, según el tiempo que tengas</li>
+      <li><span aria-hidden="true">☁️</span>Tus marcas se guardan en tu Google Drive</li>
+    </ul>
+    <p id="avisoInstitucional" class="login-aviso">Inicia sesión con tu correo institucional. Las cuentas personales no tienen acceso.</p>
+    <button id="btnLogin" class="boton-login">Entrar con mi cuenta institucional</button>
+    <div id="error"></div>
+    <p class="login-nota">Solo usamos tu cuenta para guardar tus marcas en tu Google Drive. Puedes borrar todo desde el menú ⋯ de la app.</p>
+  </div>
 </div>
 
 <div id="app">
@@ -526,15 +561,16 @@
     <button type="button" class="boton-circular" id="toggleMas" aria-label="Más opciones" aria-expanded="false">⋯</button>
     </div>
   </div>
+  <div id="selectorZona" class="segmentado selector-zona" role="group" aria-label="Secciones" style="display:none"></div>
   <div class="colapsable">
     <div class="buscar"><span aria-hidden="true">⌕</span><input id="buscar" type="search" list="sugerencias" placeholder="Busca por título, director o actor"><datalist id="sugerencias"></datalist><button id="voz" class="boton-voz" title="Buscar por voz" aria-label="Buscar por voz" hidden>🎤</button></div>
     <div class="ajustes" id="panelVidrio"><label for="vidrioAlfa">Transparencia del vidrio <span id="vidrioAlfaValor">72</span>%</label><input type="range" id="vidrioAlfa" min="40" max="95" step="1" value="72" aria-label="Transparencia del vidrio"></div>
-  <div class="segmentado solo-catalogo" role="group" aria-label="Filtrar películas">
+  <div class="segmentado solo-catalogo" data-zona="lista" role="group" aria-label="Filtrar películas">
        <button type="button" data-seg="" class="activa">Todas</button>
     <button type="button" data-seg="sin_ver">Sin ver</button>
     <button type="button" data-seg="favoritas">Favoritas</button>
   </div>
-  <div id="panelAvanzados" class="panel-avanzados">
+  <div id="panelAvanzados" class="panel-avanzados" data-zona="lista">
     <div class="campo"><label for="genero">Género</label>
       <select id="genero"><option value="">Todos los géneros</option></select></div>
     <div class="campo"><label for="estado">Estado</label>
@@ -606,29 +642,26 @@
     <button id="guardarPaletas" class="pildora">🎨 Guardar paletas</button>
     <button id="exportar" class="pildora">⬇ Exportar CSV</button>
     <button id="salirDispositivo" class="pildora">🚪 Salir y borrar datos de este dispositivo</button>
-    <button id="respaldoExportar" class="pildora">⬇ Respaldo JSON</button>
-    <button id="respaldoImportar" class="pildora">⬆ Cargar respaldo</button>
-    <button id="respaldarMarcas" class="pildora">⬇ Respaldar marcas</button>
-    <button id="restaurarMarcas" class="pildora">⬆ Restaurar marcas</button>
+    <button id="respaldarMarcas" class="pildora">⬇ Respaldar</button>
+    <button id="restaurarMarcas" class="pildora">⬆ Restaurar</button>
     <button id="borrarMarcas" class="pildora">🗑 Borrar mis marcas</button>
-    <input type="file" id="respaldoArchivo" accept="application/json,.json" hidden>
     <input type="file" id="archivoRestaurar" accept="application/json,.json" hidden>
   </div>
 
-  <div id="chips" class="solo-catalogo"></div>
-  <div id="contador"></div>
+  <div id="chips" class="solo-catalogo" data-zona="lista"></div>
+  <div id="contador" data-zona="lista"></div>
   <div id="estadoGuardado"></div>
   </div>
 </header>
 
-<div id="avisoFecha" class="aviso-estancados solo-catalogo" style="display:none">
+<div id="avisoFecha" class="aviso-estancados solo-catalogo" data-zona="inicio" style="display:none">
   <div class="aviso-cabecera">
     <span id="avisoFechaTexto"></span>
     <button id="avisoFechaCerrar" class="cerrar-aviso" title="Cerrar recordatorio" aria-label="Cerrar recordatorio">×</button>
   </div>
 </div>
 
-<div id="avisoEstancados" class="aviso-estancados solo-catalogo" style="display:none">
+<div id="avisoEstancados" class="aviso-estancados solo-catalogo" data-zona="inicio" style="display:none">
   <div class="aviso-cabecera">
     <span id="avisoEstancadosTexto"></span>
     <button id="avisoCerrar" class="cerrar-aviso" title="Cerrar aviso" aria-label="Cerrar aviso">×</button>
@@ -636,7 +669,7 @@
   <div id="avisoLista" class="aviso-lista"></div>
 </div>
 
-<div id="queVer" class="que-ver solo-catalogo" style="display:none">
+<div id="queVer" class="que-ver solo-catalogo" data-zona="inicio" style="display:none">
   <div class="tabs-ver">
     <button class="pildora" data-ver="ahora">Esta hora</button>
     <button class="pildora" data-ver="noche">Esta noche</button>
@@ -648,27 +681,27 @@
 </section>
 <section id="cena" class="destacados solo-catalogo" style="display:none"></section>
 </div>
-<section id="estaSemana" class="destacados solo-catalogo" style="display:none"></section>
-<section id="pregunta" class="destacados solo-catalogo" style="display:none"></section>
-<section id="bienvenida" class="destacados solo-catalogo" style="display:none"></section>
-<section id="duelo" class="destacados solo-catalogo" style="display:none"></section>
-<section id="resumenSemana" class="destacados solo-catalogo" style="display:none"></section>
-<section id="actividad" class="destacados solo-catalogo" style="display:none"></section>
-<section id="mapaGustos" class="destacados solo-catalogo" style="display:none"></section>
-<section id="recomendaciones" class="destacados solo-catalogo" style="display:none">
+<section id="estaSemana" class="destacados solo-catalogo" data-zona="inicio" style="display:none"></section>
+<section id="pregunta" class="destacados solo-catalogo" data-zona="inicio" style="display:none"></section>
+<section id="bienvenida" class="destacados solo-catalogo" data-zona="inicio" style="display:none"></section>
+<section id="duelo" class="destacados solo-catalogo" data-zona="duelo" style="display:none"></section>
+<section id="resumenSemana" class="destacados" data-zona="resumen" style="display:none"></section>
+<section id="actividad" class="destacados" data-zona="actividad" style="display:none"></section>
+<section id="mapaGustos" class="destacados" data-zona="mapa" style="display:none"></section>
+<section id="recomendaciones" class="destacados solo-catalogo" data-zona="inicio" style="display:none">
   <h3>Porque calificaste bien a…</h3>
   <div id="recomCarrusel" class="carrusel"></div>
 </section>
-<section id="destacados" class="destacados solo-catalogo">
+<section id="destacados" class="destacados solo-catalogo" data-zona="estrenos">
   <h3>Estrenos recientes</h3>
   <div id="carrusel" class="carrusel"></div>
 </section>
-<section id="sagas" class="destacados solo-catalogo" style="display:none"></section>
-<section id="actores" class="destacados solo-catalogo" style="display:none"></section>
+<section id="sagas" class="destacados solo-catalogo" data-zona="sagas" style="display:none"></section>
+<section id="actores" class="destacados solo-catalogo" data-zona="actores" style="display:none"></section>
 
 
 
-<div id="toolbarVistas" class="filtros" style="display:none">
+<div id="toolbarVistas" class="filtros" data-zona="lista" style="display:none">
   <div class="campo"><label for="personaVistas">Vistas con</label>
     <select id="personaVistas"><option value="">Todas</option></select></div>
 </div>
@@ -683,10 +716,10 @@
 </div>
 <div id="tagsNotas" class="tags-bar"></div>
 
-<main id="lista"></main>
+<main id="lista" data-zona="lista"></main>
 
-<div class="solo-catalogo" style="text-align:center"><button id="toggleSalud" class="pildora salud-toggle">🩺 Mostrar salud de la hoja</button></div>
-<section id="salud" class="salud oculto solo-catalogo"></section>
+<div class="solo-catalogo" data-zona="lista" style="text-align:center"><button id="toggleSalud" class="pildora salud-toggle">🩺 Mostrar salud de la hoja</button></div>
+<section id="salud" class="salud oculto solo-catalogo" data-zona="lista"></section>
 
 <footer class="pie">
   <a href="https://github.com/Ado200/catalogo-peliculas/blob/main/PRIVACIDAD.md" target="_blank" rel="noopener">Aviso de privacidad</a>
@@ -701,11 +734,11 @@
 </div>
 
 <nav id="tabbar">
-  <button data-tab="catalogo" class="activa"><span class="ico">🎬</span>Películas</button>
+  <button data-tab="inicio" class="activa"><span class="ico">🏠</span>Inicio</button>
+  <button data-tab="catalogo"><span class="ico">🎬</span>Películas</button>
   <button data-tab="notas"><span class="ico">📝</span>Notas</button>
   <button data-tab="pendientes"><span class="ico">⏳</span>Pendientes</button>
   <button data-tab="vistas"><span class="ico">✓</span>Vistas</button>
-  <button data-tab="descartadas"><span class="ico">🗑</span>Descartadas</button>
 </nav>
 
 <div id="modal">
@@ -748,6 +781,8 @@
 
 <script>
 const CLIENT_ID = "45846987194-cm8mnhijljms8k8u8j44n8aeq674vuis.apps.googleusercontent.com";
+// Dominio de la cuenta institucional (por ejemplo "universidad.edu.mx"). Solo estas cuentas pueden entrar. Déjalo vacío para no restringir.
+const DOMINIO_INSTITUCIONAL = "ucaribe.edu.mx";
 const HOJA_ID = "1W5oSA5yy4TpbVYxjya6S9T6NkeE6irwSHABXFAijO2k";
 const SCOPES = "https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.appdata openid email";
 const NOMBRE_PALETA = "paleta_poster";
@@ -774,6 +809,8 @@ let textoSugerida = "";
 let ahorroActivo = null;
 let chartsStats = [];
 let pestana = "catalogo";
+let zonaPeli = "inicio";     // dentro de Películas: inicio | lista | estrenos | sagas | actores | duelo
+let zonaVistas = "lista";    // dentro de Vistas: lista | resumen | actividad | mapa
 let decidiendo = null;
 let deshacerDescarte = null;
 let avisoCerrado = false;
@@ -1061,7 +1098,7 @@ function actualizarResumenSemana() {
   const esLunes = new Date().getDay() === 1;
   const mostrarHoy = esLunes || resumenDePrueba();
 
-  if (!peliculas.length || !mostrarHoy || modoGuardado("resumen_cerrado", "") === hoy || hayFiltros() || pestana !== "catalogo") {
+  if (!peliculas.length || !mostrarHoy || modoGuardado("resumen_cerrado", "") === hoy || pestana !== "vistas") {
     sec.style.display = "none";
     return;
   }
@@ -1098,40 +1135,6 @@ function actualizarResumenSemana() {
         : '<p class="meta">No tienes pendientes para sugerir hoy.</p>') +
     '</div>';
   sec.style.display = "block";
-}
-
-/* ---------- Respaldo de marcas (JSON) ---------- */
-function exportarRespaldo() {
-  const datos = { app: "catalogo-peliculas", version: 1, fecha: hoyLocalISO(), marcas };
-  const blob = new Blob([JSON.stringify(datos, null, 2)], { type: "application/json" });
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = "respaldo-marcas-" + hoyLocalISO() + ".json";
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-  setEstado("Respaldo descargado.");
-}
-
-function importarRespaldo(ev) {
-  const f = ev.target.files[0];
-  ev.target.value = "";
-  if (!f) return;
-  const lector = new FileReader();
-  lector.onload = () => {
-    let datos;
-    try { datos = JSON.parse(lector.result); }
-    catch (e) { setEstado("El archivo no es un respaldo válido."); return; }
-    const nuevas = datos && typeof datos === "object" && datos.marcas && typeof datos.marcas === "object" ? datos.marcas : null;
-    if (!nuevas) { setEstado("El archivo no tiene marcas."); return; }
-    if (!confirm("Esto reemplaza tus marcas actuales (" + Object.keys(marcas).length + ") por las del respaldo (" + Object.keys(nuevas).length + "). ¿Continuar?")) return;
-    marcas = envolverMarcas(nuevas);
-    programarGuardado();
-    pintar();
-    setEstado("Respaldo cargado.");
-  };
-  lector.readAsText(f);
 }
 
 /* ---------- Modo cena: pendiente de menos de 2 h, con alguien si aplica ---------- */
@@ -1306,7 +1309,7 @@ function topConteo(items, n) {
 function renderMapaGustos() {
   const sec = $("mapaGustos");
   destruirMapa();
-  if (!peliculas.length || hayFiltros() || pestana !== "catalogo") {
+  if (!peliculas.length || pestana !== "vistas") {
     sec.style.display = "none";
     return;
   }
@@ -1836,7 +1839,7 @@ function textoCalificaciones() {
 function renderActividad() {
   const sec = $("actividad");
   const hayFiltrosAct = hayFiltros();
-  if (!peliculas.length || hayFiltrosAct || pestana !== "catalogo") {
+  if (!peliculas.length || pestana !== "vistas") {
     sec.style.display = "none";
     return;
   }
@@ -2359,7 +2362,7 @@ function respaldarMarcas() {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = "marcas-" + hoyLocalISO() + ".json";
+  a.download = "respaldo-catalogo-" + hoyLocalISO() + ".json";
   document.body.appendChild(a);
   a.click();
   a.remove();
@@ -2370,8 +2373,11 @@ function respaldarMarcas() {
 function validarRespaldo(texto) {
   let datos;
   try { datos = JSON.parse(texto); } catch (e) { return { error: "El archivo no es un JSON válido." }; }
-  if (!datos || (datos.formato !== "catalogo-marcas" && datos.app !== "catalogo-peliculas")) return { error: "Este archivo no es un respaldo de marcas del catálogo." };
-  if (datos.version !== 1) return { error: "Versión de respaldo no compatible." };
+  if (!datos || typeof datos !== "object") return { error: "El archivo no es un respaldo válido." };
+  const esNuevo = datos.formato === "catalogo-marcas";
+  const esViejo = datos.app === "catalogo-peliculas" || (!datos.formato && !datos.app);
+  if (!esNuevo && !esViejo) return { error: "Este archivo no es un respaldo de marcas del catálogo." };
+  if (datos.version !== undefined && datos.version !== 1) return { error: "Versión de respaldo no compatible." };
   if (!datos.marcas || typeof datos.marcas !== "object" || Array.isArray(datos.marcas)) return { error: "El respaldo no tiene marcas válidas." };
   return { marcas: datos.marcas };
 }
@@ -2382,8 +2388,8 @@ async function restaurarMarcasDesdeArchivo(archivo) {
   const res = validarRespaldo(texto);
   if (res.error) { setEstado(res.error); return; }
 
-  const n = Object.keys(res.marcas).length;
-  const ok = confirm("¿Reemplazar tus marcas actuales por las de este respaldo (" + n + " películas)? Las marcas actuales se perderán.");
+  const n = Object.keys(res.marcas).filter(k => !k.startsWith("__")).length;
+  const ok = confirm("¿Reemplazar tus marcas actuales (" + Object.keys(marcas).filter(k => !k.startsWith("__")).length + ") por las de este respaldo (" + n + " películas)? Esto también reemplaza tus filtros guardados. Las marcas actuales se perderán.");
   if (!ok) { setEstado("Restauración cancelada."); return; }
 
   clearTimeout(guardadoTimer);
@@ -3411,14 +3417,11 @@ function pintar() {
   actualizarAhora();
   renderAvisoEstancados();
   actualizarAvisoFecha();
-  actualizarResumenSemana();
-  renderActividad();
   renderCena();
   renderEstaSemana();
   renderPregunta();
   renderBienvenida();
   renderDuelo();
-  renderMapaGustos();
   renderSagas();
   renderActores();
   revisarSalud();
@@ -3459,6 +3462,12 @@ function pintarPestana() {
   destruirMapa();
   $("recomendaciones").style.display = "none";
   chips.innerHTML = "";
+
+  if (pestana === "vistas") {
+    actualizarResumenSemana();
+    renderActividad();
+    renderMapaGustos();
+  }
 
   if (pestana === "descartadas") {
     renderPestanaDescartadas();
@@ -3692,22 +3701,91 @@ function refrescarTodo() {
   }
 }
 
-function cambiarPestana(nombre) {
-  pestana = nombre;
-  setEstado("");
-  try { localStorage.setItem("pestana_activa", nombre); } catch (e) {}
-  document.querySelectorAll("#tabbar button").forEach(b => b.classList.toggle("activa", b.dataset.tab === nombre));
-  document.body.classList.toggle("solo-lista", nombre !== "catalogo");
-  if (nombre !== "catalogo") {
-    buscar.value = "";
-    Object.values(sel).forEach(s => s.value = "");
-    $("panelAvanzados").classList.remove("abierto");
-  }
-  $("buscar").placeholder = nombre === "notas"
+const ZONAS_PELICULAS = [["lista","Lista"],["estrenos","Estrenos"],["sagas","Sagas"],["actores","Actores"],["duelo","Duelo"]];
+const ZONAS_VISTAS = [["lista","Películas vistas"],["resumen","Resumen"],["actividad","Actividad"],["mapa","Mapa de gustos"],["descartadas","Descartadas"]];
+
+// Qué pestaña de la barra está activa
+function tabActiva() {
+  if (pestana === "descartadas") return "vistas";
+  if (pestana === "catalogo") return zonaPeli === "inicio" ? "inicio" : "catalogo";
+  return pestana;
+}
+
+// Qué bloque de la página corresponde a la vista actual
+function zonaActual() {
+  if (pestana === "catalogo") return zonaPeli;
+  if (pestana === "vistas") return zonaVistas;
+  return "lista";
+}
+
+// Cambia el estado según la pestaña de la barra (sin pintar)
+function fijarTab(nombre) {
+  if (nombre === "inicio") { pestana = "catalogo"; zonaPeli = "inicio"; return; }
+  if (nombre === "catalogo") { pestana = "catalogo"; zonaPeli = "lista"; return; }
+  if (nombre === "vistas") { pestana = "vistas"; zonaVistas = "lista"; return; }
+  pestana = nombre; // notas, pendientes, descartadas
+}
+
+function guardarTab() {
+  const v = pestana === "catalogo" ? (zonaPeli === "inicio" ? "inicio" : "catalogo") : pestana;
+  try { localStorage.setItem("pestana_activa", v); } catch (e) {}
+}
+
+function limpiarFiltros() {
+  buscar.value = "";
+  Object.values(sel).forEach(s => s.value = "");
+  $("panelAvanzados").classList.remove("abierto");
+}
+
+// Muestra solo los bloques de la zona actual, marca la pestaña y el selector interno
+function aplicarZona() {
+  const actual = zonaActual();
+  document.querySelectorAll("[data-zona]").forEach(el => {
+    el.classList.toggle("fuera-zona", el.dataset.zona !== actual);
+  });
+  const tab = tabActiva();
+  document.querySelectorAll("#tabbar button").forEach(b => b.classList.toggle("activa", b.dataset.tab === tab));
+
+  const cont = $("selectorZona");
+  let opciones = null;
+  if (pestana === "catalogo" && zonaPeli !== "inicio") opciones = ZONAS_PELICULAS;
+  else if (pestana === "vistas" || pestana === "descartadas") opciones = ZONAS_VISTAS;
+  if (!opciones) { cont.style.display = "none"; cont.innerHTML = ""; return; }
+  const activa = pestana === "descartadas" ? "descartadas" : actual;
+  cont.style.display = "";
+  cont.innerHTML = opciones.map(([v, t]) =>
+    '<button type="button" data-zona-op="' + v + '" class="' + (v === activa ? "activa" : "") + '">' + t + '</button>'
+  ).join("");
+}
+
+function aplicarEstadoTabs() {
+  document.body.classList.toggle("solo-lista", pestana !== "catalogo");
+  $("buscar").placeholder = pestana === "notas"
     ? "Busca en tus notas o escribe #etiqueta..."
-    : nombre === "descartadas" ? "Buscar en descartadas..." : "Busca por título, director o actor";
+    : pestana === "descartadas" ? "Buscar en descartadas..." : "Busca por título, director o actor";
+  aplicarZona();
+}
+
+function cambiarPestana(nombre) {
+  fijarTab(nombre);
+  if (pestana !== "catalogo" || zonaPeli === "inicio") limpiarFiltros();
+  setEstado("");
+  guardarTab();
+  aplicarEstadoTabs();
   pintar();
   window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+// Selector interno: Películas (lista, estrenos, sagas, actores, duelo) o Vistas (lista, resumen, actividad, mapa, descartadas)
+function elegirZona(v) {
+  if (pestana === "catalogo") zonaPeli = v;
+  else if (v === "descartadas") pestana = "descartadas";
+  else { pestana = "vistas"; zonaVistas = v; }
+  if (pestana !== "catalogo") limpiarFiltros();
+  setEstado("");
+  guardarTab();
+  aplicarEstadoTabs();
+  pintar();
 }
 
 let cls = { cola: [], pila: [], x: 0, dx: 0, activo: false };
@@ -3795,6 +3873,25 @@ function moverSellos(dx) {
   card.querySelector(".clas-sello.izq").style.opacity = dx < 0 ? fuerza : 0;
 }
 
+// Comprueba que la cuenta que inició sesión sea la institucional. Sin dominio configurado, no restringe.
+async function cuentaPermitida(token) {
+  if (!DOMINIO_INSTITUCIONAL) return true;
+  try {
+    const r = await fetch("https://openidconnect.googleapis.com/v1/userinfo", {
+      headers: { Authorization: "Bearer " + token }
+    });
+    if (!r.ok) return false;
+    const j = await r.json();
+    const correo = String(j.email || "").toLowerCase();
+    const dominio = DOMINIO_INSTITUCIONAL.toLowerCase();
+    // En Google Workspace, "hd" indica la organización de la cuenta; si viene, debe coincidir
+    const orgOk = !j.hd || String(j.hd).toLowerCase() === dominio;
+    return j.email_verified !== false && correo.endsWith("@" + dominio) && orgOk;
+  } catch (e) {
+    return false;
+  }
+}
+
 function mostrarError(msg) {
   $("error").textContent = msg;
   $("btnLogin").disabled = false;
@@ -3831,6 +3928,7 @@ async function cargarHoja() {
 
     $("login").style.display = "none";
     $("app").style.display = "block";
+    document.body.classList.add("con-sesion");
     llenarFiltros();
     llenarSugerencias();
     renderDestacados();
@@ -3869,16 +3967,26 @@ window.addEventListener("load", () => {
     navigator.connection.addEventListener("change", actualizarAhorro);
   }
 
+  if (DOMINIO_INSTITUCIONAL) {
+    $("avisoInstitucional").textContent = "Usa tu correo @" + DOMINIO_INSTITUCIONAL + ". Las cuentas personales no tienen acceso.";
+  }
+
   tokenClient = google.accounts.oauth2.initTokenClient({
     client_id: CLIENT_ID,
     scope: SCOPES,
-    callback: resp => {
-      if (resp.access_token) {
-        accessToken = resp.access_token;
-        iniciarApp();
-      } else {
-        mostrarError("No se pudo iniciar sesión.");
+    hosted_domain: DOMINIO_INSTITUCIONAL || undefined,
+    callback: async resp => {
+      if (!resp.access_token) { mostrarError("No se pudo iniciar sesión."); return; }
+      const token = resp.access_token;
+      $("btnLogin").textContent = "Verificando tu cuenta…";
+      if (!(await cuentaPermitida(token))) {
+        try { google.accounts.oauth2.revoke(token, () => {}); } catch (e) {}
+        accessToken = null;
+        mostrarError("Esta app es solo para cuentas institucionales" + (DOMINIO_INSTITUCIONAL ? " (@" + DOMINIO_INSTITUCIONAL + ")" : "") + ". Vuelve a intentar con tu correo institucional.");
+        return;
       }
+      accessToken = token;
+      iniciarApp();
     }
   });
 
@@ -3889,6 +3997,7 @@ window.addEventListener("load", () => {
   });
 
   $("toggleAvanzados").addEventListener("click", () => {
+    if (pestana === "catalogo" && zonaPeli === "inicio") { zonaPeli = "lista"; aplicarEstadoTabs(); pintar(); }
     $("panelAvanzados").classList.toggle("abierto");
   });
 
@@ -3910,19 +4019,20 @@ window.addEventListener("load", () => {
 
   [buscar, sel.tipo, sel.genero, sel.tema, sel.anio, sel.pais, sel.duracion, sel.estado, $("orden")]
     .forEach(el => el.addEventListener("input", pintar));
+  buscar.addEventListener("input", () => {
+    if (pestana === "catalogo" && zonaPeli === "inicio" && buscar.value.trim()) { zonaPeli = "lista"; aplicarEstadoTabs(); }
+  });
+  $("selectorZona").addEventListener("click", e => {
+    const b = e.target.closest("[data-zona-op]");
+    if (b) elegirZona(b.dataset.zonaOp);
+  });
 
   document.querySelectorAll("#tabbar button").forEach(b => {
     b.addEventListener("click", () => cambiarPestana(b.dataset.tab));
   });
-  const guardada = modoGuardado("pestana_activa", "catalogo");
-  if (["catalogo", "notas", "pendientes", "vistas", "descartadas"].includes(guardada) && guardada !== "catalogo") {
-    pestana = guardada;
-    document.querySelectorAll("#tabbar button").forEach(b => b.classList.toggle("activa", b.dataset.tab === guardada));
-    document.body.classList.add("solo-lista");
-    $("buscar").placeholder = guardada === "notas"
-      ? "Busca en tus notas o escribe #etiqueta..."
-      : guardada === "descartadas" ? "Buscar en descartadas..." : "Busca por título, director o actor";
-  }
+  const guardada = modoGuardado("pestana_activa", "inicio");
+  if (["inicio", "catalogo", "notas", "pendientes", "vistas", "descartadas"].includes(guardada)) fijarTab(guardada);
+  aplicarEstadoTabs();
 
   chips.addEventListener("click", e => {
     const chip = e.target.closest(".chip");
@@ -4260,9 +4370,6 @@ function exportarCSV() {
 }
 
 $("exportar").addEventListener("click", exportarCSV);
-$("respaldoExportar").addEventListener("click", exportarRespaldo);
-$("respaldoImportar").addEventListener("click", () => $("respaldoArchivo").click());
-$("respaldoArchivo").addEventListener("change", importarRespaldo);
 
 let swipe = null;
 
