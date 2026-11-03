@@ -234,13 +234,22 @@
   .estrella:active { transform:scale(.85); }
   .estrella.on { color:var(--estrella); }
 
-  #tabbar { position:fixed; left:0; right:0; bottom:0; z-index:8; display:flex; justify-content:space-around; background:var(--tarjeta); border-top:1px solid var(--borde); padding:8px 4px calc(8px + env(safe-area-inset-bottom, 0px)); }
-  #tabbar button { flex:1; max-width:160px; background:none; border:none; color:var(--gris); font-size:11px; padding:6px 2px; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:2px; border-radius:12px; transition:color .2s; }
-  #tabbar button .ico { font-size:20px; line-height:1; }
-  #tabbar button.activa { color:var(--azul); font-weight:600; }
+  /* FASE 3: barra inferior flotante en píldora */
+  #tabbar { position:fixed; left:12px; right:12px; bottom:calc(12px + env(safe-area-inset-bottom, 0px)); z-index:8; display:flex; justify-content:space-around; align-items:center; gap:2px; padding:6px; border:1px solid var(--borde); border-radius:999px; background:rgba(242,242,247,var(--vidrio-a,.72)); box-shadow:var(--sombra); }
+  body.oscuro #tabbar { background:rgba(0,0,0,var(--vidrio-a,.72)); }
+  @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+    #tabbar { -webkit-backdrop-filter:saturate(160%) blur(12px); backdrop-filter:saturate(160%) blur(12px); }
+  }
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    #tabbar { background:var(--tarjeta) !important; }
+  }
+  #tabbar button { flex:1; background:none; border:none; color:var(--gris); font-size:11px; padding:8px 4px; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:2px; border-radius:999px; transition:color .2s, background .2s, transform .15s var(--ease); }
+  #tabbar button .ico { font-size:18px; line-height:1; }
+  #tabbar button.activa { color:var(--azul); font-weight:600; background:var(--tema-bg); }
+  #tabbar button:focus-visible { outline:2px solid var(--azul); outline-offset:-2px; }
   #tabbar button:active { transform:scale(.95); }
   @media (min-width: 900px) {
-    #tabbar { left:50%; right:auto; transform:translateX(-50%); width:min(560px, 100%); bottom:16px; border:1px solid var(--borde); border-radius:999px; padding:6px; box-shadow:var(--sombra); }
+    #tabbar { left:50%; right:auto; transform:translateX(-50%); width:min(560px, calc(100% - 24px)); bottom:16px; }
     body { padding-bottom:110px; }
   }
   body.solo-lista .solo-catalogo { display:none !important; }
