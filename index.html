@@ -468,6 +468,16 @@
   #app > header #toggleMas, #app > header #aleatorio { width:36px; height:36px; border-radius:50%; border:0; padding:0; background:rgba(118,118,128,.18); color:var(--texto); font-size:18px; cursor:pointer; display:grid; place-items:center; flex-shrink:0; }
   #app > header #panelMas { margin-top:12px; justify-content:flex-start; gap:8px; }
   #app > header #panelMas .pildora { font-size:13px; padding:8px 12px; }
+  /* Menú "Más" flotante: sale debajo del botón ⋯ sin empujar el contenido */
+  #app > header #panelMas {
+    position:absolute; top:calc(100% + 8px); right:16px; left:auto; z-index:30;
+    width:min(340px, calc(100vw - 32px)); max-width:none; margin:0;
+    max-height:70vh; overflow-y:auto; overflow-x:hidden;
+    flex-direction:column; align-items:stretch; flex-wrap:nowrap;
+    padding:14px; border-radius:var(--radio-grande);
+    box-shadow:0 10px 40px rgba(0,0,0,.18);
+  }
+  #app > header #panelMas .grupo-menu { width:100%; }
   body:not(.lista) main { grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:16px; padding:16px 16px 20px; }
   .tarjeta.amplia { position:relative; background:none; box-shadow:none; padding:0; border-radius:0; }
   .tarjeta.amplia:hover { transform:none; box-shadow:none; }
@@ -5471,46 +5481,29 @@ document.getElementById("salirDispositivo").addEventListener("click", salirDeEst
       <button id="guiaCerrar" class="cerrar" aria-label="Cerrar">×</button>
     </div>
     <div class="cuerpo">
-      <p class="intro">Tu lista vive en una hoja de Google. Tus marcas (vistas, pendientes, estrellas y notas) se guardan en tu Drive.</p>
-
       <div class="seccion">
         <h3>🏠 Inicio</h3>
-        <p><b>Qué ver</b> te sugiere algo según la hora o la noche. <b>Esta semana</b> muestra tus planes con alguien. <b>Recomendaciones</b> se basan en lo que ya calificaste.</p>
+        <p>Una sugerencia para hoy en <b>Qué ver</b>, tus planes de la semana y recomendaciones según lo que calificas.</p>
       </div>
 
       <div class="seccion">
         <h3>🎬 Películas</h3>
-        <p>Toda la lista, con buscador y filtros por género, año, duración y más. Dentro están <b>Estrenos</b>, <b>Sagas</b>, <b>Actores</b> y <b>Duelo</b>, para elegir entre dos pendientes.</p>
+        <p>Toda la lista. Busca, filtra y toca una película para abrir su ficha.</p>
       </div>
 
       <div class="seccion">
-        <h3>📝 Notas</h3>
-        <p>Ideas o recuerdos sobre películas que quieres ver o que ya viste.</p>
-      </div>
-
-      <div class="seccion">
-        <h3>⏳ Pendientes</h3>
-        <p>Lo que quieres ver. Cuando lo termines, márcalo como visto.</p>
-      </div>
-
-      <div class="seccion">
-        <h3>✓ Vistas</h3>
-        <p>Lo que ya viste, con tus estrellas, tu racha semanal, el <b>mapa de gustos</b> y tu resumen.</p>
+        <h3>📝 Notas · ⏳ Pendientes · ✓ Vistas</h3>
+        <p>Pendientes es lo que quieres ver. Vistas es lo que ya viste, con tus estrellas y tu mapa de gustos.</p>
       </div>
 
       <div class="seccion">
         <h3>Ficha de cada película</h3>
-        <p>Tócala para marcarla como vista o pendiente, ponerle estrellas, anotar con quién la viste y escribir una nota.</p>
+        <p>Márcala como vista o pendiente, ponle estrellas, anota con quién la viste o escribe una nota.</p>
       </div>
 
       <div class="seccion">
-        <h3>⋯ Más</h3>
-        <p><b>Exportar CSV</b> descarga tu lista. <b>Respaldar</b> y <b>Restaurar</b> guardan y recuperan tus marcas. <b>Borrar mis marcas</b> elimina todo y no se puede deshacer.</p>
-      </div>
-
-      <div class="seccion">
-        <h3>Tus datos</h3>
-        <p>Cada cambio se guarda en tu Drive. Sin señal, se queda en este dispositivo y se sube al volver la conexión. El aviso de arriba indica si todo está guardado.</p>
+        <h3>⋯ Más y tus datos</h3>
+        <p>Ahí están exportar, respaldar, restaurar y borrar. Tus cambios se guardan en tu Drive, aun sin señal.</p>
       </div>
     </div>
     <div class="pie">
