@@ -5574,5 +5574,137 @@ document.getElementById("salirDispositivo").addEventListener("click", salirDeEst
   document.getElementById("verGuia").addEventListener("click", abrirGuia);
 })();
 </script>
+<style>
+#chatAbrir{position:fixed;right:16px;bottom:96px;z-index:11;width:52px;height:52px;border-radius:50%;border:0;background:var(--azul);color:#fff;font-size:24px;cursor:pointer;box-shadow:var(--sombra)}
+#chatPanel{display:none;position:fixed;right:12px;left:12px;bottom:160px;max-width:420px;margin-left:auto;z-index:12;background:var(--tarjeta);color:var(--texto);border-radius:var(--radio-grande);box-shadow:var(--sombra);flex-direction:column;height:min(560px,70vh);overflow:hidden}
+#chatPanel.abierto{display:flex}
+#chatCab{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-bottom:1px solid var(--borde)}
+#chatCerrar{background:none;border:0;font-size:22px;color:var(--gris);cursor:pointer}
+#chatMensajes{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px}
+.chat-burbuja{max-width:85%;padding:9px 12px;border-radius:16px;font-size:14px;line-height:1.45;white-space:pre-wrap;word-wrap:break-word}
+.chat-burbuja.yo{align-self:flex-end;background:var(--azul);color:#fff}
+.chat-burbuja.ia{align-self:flex-start;background:var(--boton-suave);color:var(--texto)}
+.chat-burbuja.error{align-self:flex-start;border:1px solid var(--error);color:var(--error)}
+.chat-pensando{align-self:flex-start;color:var(--gris);font-size:13px;font-style:italic}
+#chatSugerencias{display:flex;flex-wrap:wrap;gap:6px;padding:0 14px 8px}
+#chatSugerencias button{background:var(--boton-suave);border:0;border-radius:999px;padding:6px 11px;font-size:12px;color:var(--texto);cursor:pointer}
+#chatForm{display:flex;gap:8px;padding:10px 12px 12px;border-top:1px solid var(--borde)}
+#chatInput{flex:1;min-width:0;padding:10px 14px;border:1px solid var(--borde);border-radius:999px;background:var(--fondo);color:var(--texto);font-size:14px;outline:none}
+#chatForm button{border:0;border-radius:999px;background:var(--azul);color:#fff;padding:0 16px;font-size:14px;cursor:pointer}
+#chatForm button:disabled{opacity:.5}
+</style>
+<button id="chatAbrir" aria-label="Abrir el compañero peliculero">💬</button>
+<div id="chatPanel" role="dialog" aria-label="Compañero peliculero">
+  <div id="chatCab">
+    <b>🍿 Tu compa peliculero</b>
+    <button id="chatCerrar" aria-label="Cerrar">×</button>
+  </div>
+  <div id="chatMensajes"></div>
+  <div id="chatSugerencias">
+    <button type="button" data-q="¿Qué veo hoy? Dame una sugerencia de mis pendientes.">¿Qué veo hoy?</button>
+    <button type="button" data-q="¿Qué tengo pendiente?">Mis pendientes</button>
+    <button type="button" data-q="Recomiéndame algo parecido a lo que más me ha gustado.">Algo parecido a lo que me gusta</button>
+    <button type="button" data-q="¿Qué películas tengo de crimen y cuáles ya vi?">Crimen</button>
+  </div>
+  <form id="chatForm">
+    <input id="chatInput" type="text" maxlength="600" placeholder="Pregúntame sobre tu catálogo…" autocomplete="off">
+    <button type="submit" id="chatEnviar">Enviar</button>
+  </form>
+</div>
+<script>
+(function () {
+  const CHAT_URL = "https://script.google.com/a/macros/ucaribe.edu.mx/s/AKfycbxFdFD3vTK_J0k5YgI4QKOKBdbYyVLXSKuHPuCLaEyKGVbw2kTjE0K3cua8yLAgsA5o/exec";
+
+  const panel = document.getElementById("chatPanel");
+  const lista = document.getElementById("chatMensajes");
+  const form = document.getElementById("chatForm");
+  const input = document.getElementById("chatInput");
+  const enviar = document.getElementById("chatEnviar");
+  let historial = [];
+  let saludado = false;
+
+  function burbuja(texto, tipo) {
+    const d = document.createElement("div");
+    d.className = "chat-burbuja " + tipo;
+    d.textContent = texto;
+    lista.appendChild(d);
+    lista.scrollTop = lista.scrollHeight;
+    return d;
+  }
+
+  function saludar() {
+    if (saludado) return;
+    saludado = true;
+    burbuja("¡Hola! Soy tu compa peliculero. Te ayudo a elegir qué ver, a recordar qué tienes pendiente y a platicar de películas con base en tu catálogo.\n\nSi algo no está en tu lista, te lo diré. Pregúntame lo que quieras.", "ia");
+  }
+
+  function catalogoParaIA() {
+    return peliculas.map(p => {
+      const e = estadoDe(p);
+      return {
+        titulo: p.titulo, año: p["año"], tipo: p.tipo, duracion: p.duracion,
+        genero: p.genero, director: p.director, reparto: p.reparto, temas: p.temas,
+        vista: e.vista, pendiente: e.pendiente, estrellas: e.estrellas, conAlguien: e.conAlguien
+      };
+    });
+  }
+
+  async function preguntar(texto) {
+    if (!accessToken || !peliculas.length) {
+      burbuja("Primero necesito que tu catálogo cargue. Intenta en unos segundos.", "error");
+      return;
+    }
+    burbuja(texto, "yo");
+    const pensando = document.createElement("div");
+    pensando.className = "chat-pensando";
+    pensando.textContent = "Pensando…";
+    lista.appendChild(pensando);
+    lista.scrollTop = lista.scrollHeight;
+    enviar.disabled = true;
+
+    try {
+      const r = await fetch(CHAT_URL, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({ token: accessToken, pregunta: texto, historial: historial, catalogo: catalogoParaIA() })
+      });
+      const j = await r.json();
+      pensando.remove();
+      if (j.error) {
+        burbuja(j.error, "error");
+      } else {
+        burbuja(j.respuesta, "ia");
+        historial.push({ role: "user", content: texto });
+        historial.push({ role: "assistant", content: j.respuesta });
+        historial = historial.slice(-8);
+      }
+    } catch (e) {
+      pensando.remove();
+      burbuja("No pude conectar con el asistente. Revisa tu conexión y que la URL esté bien configurada.", "error");
+    } finally {
+      enviar.disabled = false;
+    }
+  }
+
+  document.getElementById("chatAbrir").addEventListener("click", () => {
+    panel.classList.add("abierto");
+    saludar();
+    input.focus();
+  });
+  document.getElementById("chatCerrar").addEventListener("click", () => panel.classList.remove("abierto"));
+
+  form.addEventListener("submit", e => {
+    e.preventDefault();
+    const t = input.value.trim();
+    if (!t || enviar.disabled) return;
+    input.value = "";
+    preguntar(t);
+  });
+
+  document.querySelectorAll("#chatSugerencias button").forEach(b => {
+    b.addEventListener("click", () => preguntar(b.dataset.q));
+  });
+})();
+</script>
 </body>
 </html>
