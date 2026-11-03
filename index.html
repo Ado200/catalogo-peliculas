@@ -458,8 +458,7 @@
   body.barra-compacta #app > header .colapsable { display:none; }
 
   /* AJUSTE A BOCETO: botones de encabezado, tarjetas y sugerencia */
-  #app > header #toggleMas { width:36px; height:36px; border-radius:50%; border:0; padding:0; background:rgba(118,118,128,.18); color:var(--texto); font-size:18px; cursor:pointer; display:grid; place-items:center; flex-shrink:0; }
-  #app > header #panelMas { margin-top:12px; justify-content:flex-start; gap:8px; }
+  #app > header #toggleMas, #app > header #aleatorio { width:36px; height:36px;  #app > header #panelMas { margin-top:12px; justify-content:flex-start; gap:8px; }
   #app > header #panelMas .pildora { font-size:13px; padding:8px 12px; }
   body:not(.lista) main { grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:16px; padding:16px 16px 20px; }
   .tarjeta.amplia { position:relative; background:none; box-shadow:none; padding:0; border-radius:0; }
@@ -526,9 +525,9 @@
     <div class="buscar"><span aria-hidden="true">⌕</span><input id="buscar" type="search" list="sugerencias" placeholder="Busca por título, director o actor"><datalist id="sugerencias"></datalist><button id="voz" class="boton-voz" title="Buscar por voz" aria-label="Buscar por voz" hidden>🎤</button></div>
     <div class="ajustes" id="panelVidrio"><label for="vidrioAlfa">Transparencia del vidrio <span id="vidrioAlfaValor">72</span>%</label><input type="range" id="vidrioAlfa" min="40" max="95" step="1" value="72" aria-label="Transparencia del vidrio"></div>
   <div class="segmentado solo-catalogo" role="group" aria-label="Filtrar películas">
-    <button type="button" data-seg="" class="activa">Todas</button>
-    <button type="button" data-seg="pendiente">Pendientes</button>
-    <button type="button" data-seg="vista">Vistas</button>
+       <button type="button" data-seg="" class="activa">Todas</button>
+    <button type="button" data-seg="sin_ver">Sin ver</button>
+    <button type="button" data-seg="favoritas">Favoritas</button>
   </div>
   <div id="panelAvanzados" class="panel-avanzados">
     <div class="campo"><label for="genero">Género</label>
@@ -595,10 +594,8 @@
   </div>
 
   <div id="panelMas" class="panel-mas">
-  <button id="aleatorio" class="pildora destacado">🎲 Aleatorio</button>
   <button id="vista" class="pildora">Vista compacta</button>
   <button id="agrupar" class="pildora">Agrupar por tema</button>
-    <button type="button" id="verDescartadas" class="pildora">🗑 Descartadas</button>
     <button id="clasificar" class="pildora destacado">⚡ Clasificar</button>
     <button id="estadisticas" class="pildora">📊 Estadísticas</button>
     <button id="guardarPaletas" class="pildora">🎨 Guardar paletas</button>
@@ -703,6 +700,7 @@
   <button data-tab="notas"><span class="ico">📝</span>Notas</button>
   <button data-tab="pendientes"><span class="ico">⏳</span>Pendientes</button>
   <button data-tab="vistas"><span class="ico">✓</span>Vistas</button>
+  <button data-tab="descartadas"><span class="ico">🗑</span>Descartadas</button>
 </nav>
 
 <div id="modal">
