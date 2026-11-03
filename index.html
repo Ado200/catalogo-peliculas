@@ -499,6 +499,10 @@
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation:none !important; transition:none !important; }
   }
+  /* CORRECCIÓN: botones de la esquina superior, misma forma, tamaño y alineación */
+  #app > header .botones-barra { display:flex !important; flex-direction:row !important; align-items:center !important; justify-content:flex-end; gap:8px; flex-shrink:0; }
+  #app > header .botones-barra > button { display:inline-flex !important; align-items:center; justify-content:center; width:38px !important; height:38px !important; min-width:38px; min-height:38px; padding:0 !important; margin:0 !important; border:0 !important; border-radius:50% !important; background:rgba(118,118,128,.18) !important; color:var(--texto) !important; font-size:17px; line-height:1; cursor:pointer; box-shadow:none; }
+  #app > header .botones-barra > button.destacado { background:var(--azul) !important; color:#fff !important; }  
 </style>
 </head>
 <body>
