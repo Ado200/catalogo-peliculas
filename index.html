@@ -356,15 +356,14 @@
   .tarjeta.rapida-abierta .acciones-rapidas { display:flex !important; }
 
   /* FASE 2: barra superior con vidrio */
-  #app > header { position:sticky; top:0; z-index:7; background:rgba(242,242,247,var(--vidrio-a,.72)); transition:padding .45s var(--ease); }
+  #app > header { position:sticky; top:0; z-index:7; background:rgba(242,242,247,var(--vidrio-a,.72)); }
   body.oscuro #app > header { background:rgba(0,0,0,var(--vidrio-a,.72)); }
   @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
-    #app > header { -webkit-backdrop-filter:saturate(180%) blur(20px); backdrop-filter:saturate(180%) blur(20px); }
+    #app > header { -webkit-backdrop-filter:saturate(160%) blur(12px); backdrop-filter:saturate(160%) blur(12px); }
   }
   @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
     #app > header { background:var(--fondo) !important; }
   }
-  #app > header h1 { transition:font-size .45s var(--ease), margin .45s var(--ease); }
   body.barra-compacta #app > header { padding:10px 14px 8px; }
   body.barra-compacta #app > header h1 { font-size:18px; margin:0 0 8px; }
   body.barra-compacta #app > header .barra-acciones,
@@ -4394,16 +4393,26 @@ zonaClas.addEventListener("touchcancel", () => {
     try { localStorage.setItem("vidrio_alfa", String(n)); } catch (e) {}
   });
 
+  const compactaPorDefecto = false;
+  let compacta = compactaPorDefecto;
   let ultimoY = window.scrollY;
+  let anclaY = 0;
+  let ignorarHasta = 0;
   let pendiente = false;
 
-  // Compacta sin mover el contenido: compensa el cambio de altura con el scroll
-  function setCompacta(v) {
-    if (document.body.classList.contains("barra-compacta") === v) return;
+  // Al compactar, corrige el scroll para que el contenido no salte.
+  // Ignora los eventos de scroll que provoca esa corrección.
+  function cambiarEstado(v, y) {
+    if (compacta === v) return;
+    compacta = v;
+    anclaY = y;
     const antes = header.offsetHeight;
     document.body.classList.toggle("barra-compacta", v);
     const despues = header.offsetHeight;
-    if (window.scrollY > 0) window.scrollBy(0, despues - antes);
+    if (y > 0 && despues !== antes) {
+      ignorarHasta = performance.now() + 200;
+      window.scrollBy(0, despues - antes);
+    }
   }
 
   function alDesplazar() {
@@ -4411,10 +4420,14 @@ zonaClas.addEventListener("touchcancel", () => {
     pendiente = true;
     requestAnimationFrame(() => {
       pendiente = false;
+      if (performance.now() < ignorarHasta) return;
       const y = window.scrollY;
-      if (y <= 4) setCompacta(false);
-      else if (y > ultimoY && y > 60) setCompacta(true);
-      else if (y < ultimoY) setCompacta(false);
+      if (!compacta) {
+        if (y > 60 && y > ultimoY) cambiarEstado(true, y);
+      } else {
+        // Histéresis: solo se expande al subir un tramo claro o al volver arriba
+        if (y <= 4 || y < anclaY - 80) cambiarEstado(false, y);
+      }
       ultimoY = y;
     });
   }
