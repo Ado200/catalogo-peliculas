@@ -457,6 +457,28 @@
   body.barra-compacta #app > header h1 { font-size:20px; }
   body.barra-compacta #app > header .colapsable { display:none; }
 
+  /* AJUSTE A BOCETO: botones de encabezado, tarjetas y sugerencia */
+  #app > header #toggleMas { width:36px; height:36px; border-radius:50%; border:0; padding:0; background:rgba(118,118,128,.18); color:var(--texto); font-size:18px; cursor:pointer; display:grid; place-items:center; flex-shrink:0; }
+  #app > header #panelMas { margin-top:12px; justify-content:flex-start; gap:8px; }
+  #app > header #panelMas .pildora { font-size:13px; padding:8px 12px; }
+  body:not(.lista) main { grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:16px; padding:16px 16px 20px; }
+  .tarjeta.amplia { position:relative; background:none; box-shadow:none; padding:0; border-radius:0; }
+  .tarjeta.amplia:hover { transform:none; box-shadow:none; }
+  .tarjeta.amplia .portada, .tarjeta.amplia .sinportada { border-radius:18px; box-shadow:var(--sombra); }
+  .tarjeta.amplia .mini-insignias { position:absolute; top:8px; right:8px; margin:0; z-index:1; }
+  .tarjeta.amplia .mini-insignias .badge { background:rgba(0,0,0,.4); color:#fff; font-size:11px; font-weight:700; padding:4px 8px; -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px); }
+  .tarjeta.amplia h2 { font-size:15px; font-weight:600; margin:8px 2px 2px; }
+  .tarjeta.amplia .meta { margin:0 2px; font-size:13px; }
+  .tarjeta.amplia .sinopsis { display:none; }
+  #ahora .ahora-card { max-width:none; background:var(--tarjeta); border-radius:var(--radio); padding:16px; box-shadow:var(--sombra); gap:14px; cursor:pointer; }
+  #ahora .ahora-card img { width:64px; height:96px; border-radius:12px; object-fit:cover; flex-shrink:0; }
+  #ahora .ahora-card .sinportada { width:64px; height:96px; font-size:28px; border-radius:12px; background:var(--boton-suave); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  #ahora .ahora-card .acciones { display:none; }
+
+  /* FILTROS Y MENÚ VISIBLES EN LA BARRA */
+  #app > header #toggleAvanzados { width:36px; height:36px; border-radius:50%; border:0; padding:0; background:rgba(118,118,128,.18); color:var(--texto); font-size:17px; cursor:pointer; display:grid; place-items:center; flex-shrink:0; }
+  #app > header #toggleAvanzados.destacado { background:var(--azul); color:#fff; }
+  #app > header .fila-titulo { gap:8px; }
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation:none !important; transition:none !important; }
   }
@@ -475,8 +497,10 @@
 <div id="app">
 <header>
   <div class="fila-titulo">
-    <h1>Mi catálogo de películas</h1>
+    <h1>Películas</h1>
     <button type="button" class="boton-circular" id="btnVidrio" aria-label="Ajustar transparencia" aria-expanded="false">◐</button>
+    <button type="button" class="boton-circular" id="toggleAvanzados" aria-label="Filtros avanzados">⚙</button>
+    <button type="button" class="boton-circular" id="toggleMas" aria-label="Más opciones" aria-expanded="false">⋯</button>
   </div>
   <div class="colapsable">
     <div class="buscar"><span aria-hidden="true">⌕</span><input id="buscar" type="search" list="sugerencias" placeholder="Busca por título, director o actor"><datalist id="sugerencias"></datalist><button id="voz" class="boton-voz" title="Buscar por voz" aria-label="Buscar por voz" hidden>🎤</button></div>
@@ -486,14 +510,6 @@
     <button type="button" data-seg="pendiente">Pendientes</button>
     <button type="button" data-seg="vista">Vistas</button>
   </div>
-  <div class="barra-acciones solo-catalogo">
-    <button id="toggleAvanzados" class="pildora">⚙ Filtros</button>
-    <button id="aleatorio" class="pildora destacado">🎲 Aleatorio</button>
-    <button id="vista" class="pildora">Vista compacta</button>
-    <button id="agrupar" class="pildora">Agrupar por tema</button>
-    <button id="toggleMas" class="pildora">⋯ Más</button>
-  </div>
-
   <div id="panelAvanzados" class="panel-avanzados">
     <div class="campo"><label for="genero">Género</label>
       <select id="genero"><option value="">Todos los géneros</option></select></div>
@@ -559,6 +575,10 @@
   </div>
 
   <div id="panelMas" class="panel-mas">
+  <button id="aleatorio" class="pildora destacado">🎲 Aleatorio</button>
+  <button id="vista" class="pildora">Vista compacta</button>
+  <button id="agrupar" class="pildora">Agrupar por tema</button>
+    <button type="button" id="verDescartadas" class="pildora">🗑 Descartadas</button>
     <button id="clasificar" class="pildora destacado">⚡ Clasificar</button>
     <button id="estadisticas" class="pildora">📊 Estadísticas</button>
     <button id="guardarPaletas" class="pildora">🎨 Guardar paletas</button>
@@ -599,7 +619,7 @@
     <button class="pildora" data-ver="noche">Esta noche</button>
   </div>
 <section id="ahora" class="destacados solo-catalogo" style="display:none">
-  <h3>Para esta hora</h3>
+  <h3 id="tituloAhora">Para esta hora</h3>
   <p id="ahoraTexto" class="meta"></p>
   <div id="ahoraCaja"></div>
 </section>
@@ -658,11 +678,10 @@
 </div>
 
 <nav id="tabbar">
-  <button data-tab="catalogo" class="activa"><span class="ico">🎬</span>Catálogo</button>
+  <button data-tab="catalogo" class="activa"><span class="ico">🎬</span>Películas</button>
   <button data-tab="notas"><span class="ico">📝</span>Notas</button>
   <button data-tab="pendientes"><span class="ico">⏳</span>Pendientes</button>
   <button data-tab="vistas"><span class="ico">✓</span>Vistas</button>
-  <button data-tab="descartadas"><span class="ico">🗑</span>Descartadas</button>
 </nav>
 
 <div id="modal">
@@ -3050,7 +3069,8 @@ function hayFiltros() {
 function actualizarBotonAvanzados() {
   const n = AVANZADOS.filter(k => sel[k].value).length;
   const boton = $("toggleAvanzados");
-  boton.textContent = "⚙ Filtros avanzados" + (n ? " (" + n + ")" : "");
+  boton.textContent = "⚙" + (n ? " " + n : "");
+  boton.setAttribute("aria-label", "Filtros avanzados" + (n ? ", " + n + " activos" : ""));
   boton.classList.toggle("destacado", n > 0);
 }
 
@@ -3857,7 +3877,7 @@ async function iniciarApp() {
 
 window.addEventListener("load", () => {
   $("tema-modo").value = modoGuardado("tema_modo", "sistema");
-  $("vista-modo").value = modoGuardado("vista_modo", "auto");
+  $("vista-modo").value = modoGuardado("vista_modo", "apagada");
   $("ahorro-modo").value = modoGuardado("ahorro_modo", "auto");
   actualizarTodo();
   actualizarAhorro();
@@ -4344,7 +4364,11 @@ lista.addEventListener("touchend", () => {
   if (s.dx <= -90) { marcarVistaGesto(p); return; }
   if (s.dx >= 90) {
     const pendienteActual = estadoDe(p).pendiente;
+    const previo = marcas[p.titulo] ? Object.assign({}, marcas[p.titulo]) : null;
     cambiarEstado(p.titulo, { pendiente: !pendienteActual, vista: false });
+    mostrarDeshacer(pendienteActual
+      ? "«" + p.titulo + "» quitada de pendientes."
+      : "«" + p.titulo + "» puesta en pendientes.", [{ titulo: p.titulo, previo }]);
     refrescarTodo();
   }
 });
@@ -4806,6 +4830,151 @@ zonaClas.addEventListener("touchcancel", () => {
       b.setAttribute("aria-current", b.classList.contains("activa") ? "page" : "false");
     });
   }).observe(document.getElementById("tabbar"), { attributes: true, subtree: true, attributeFilter: ["class"] });
+})();
+</script>
+<script>
+(function () {
+  // Tarjeta de sugerencia: tocarla abre la ficha
+  document.addEventListener("click", e => {
+    const card = e.target.closest("#ahoraCaja .ahora-card");
+    if (!card || e.target.closest("button")) return;
+    const b = document.getElementById("ahoraVer");
+    if (b) b.click();
+  });
+
+  // Descartadas ahora está en el menú ⋯
+  document.addEventListener("click", e => {
+    if (!e.target.closest || !e.target.closest("#verDescartadas")) return;
+    document.getElementById("panelMas").classList.remove("abierto");
+    cambiarPestana("descartadas");
+  });
+
+  // Si la última pestaña guardada era Descartadas, vuelve al catálogo
+  window.addEventListener("load", () => {
+    if (pestana === "descartadas") cambiarPestana("catalogo");
+  });
+})();
+</script>
+<script>
+(function () {
+  // El título de la sugerencia cambia según la hora del día
+  function tituloSegunHora() {
+    const h = new Date().getHours();
+    const t = h >= 19 || h < 5 ? "Para esta noche" : h < 12 ? "Para esta mañana" : "Para esta tarde";
+    const el = document.getElementById("tituloAhora");
+    if (el && el.textContent !== t) el.textContent = t;
+  }
+  tituloSegunHora();
+  setInterval(tituloSegunHora, 60000);
+})();
+</script>
+<script>
+(function () {
+  // ---------- 0. Saber si hay cambios sin guardar en Drive ----------
+  let guardadoPendiente = false;
+  const programarOriginal = programarGuardado;
+  programarGuardado = function () { guardadoPendiente = true; programarOriginal(); };
+  const guardarOriginal = guardarMarcasDrive;
+  guardarMarcasDrive = async function () {
+    try { await guardarOriginal(); } finally { guardadoPendiente = false; }
+  };
+
+  // ---------- 1. Sincronizar marcas al volver a la app (solo lectura) ----------
+  async function sincronizarMarcas() {
+    if (!accessToken || !idMarcas || guardadoPendiente) return;
+    try {
+      const r = await driveFetch("https://www.googleapis.com/drive/v3/files/" + idMarcas + "?alt=media");
+      const remotas = await r.json();
+      if (guardadoPendiente) return;
+      if (JSON.stringify(remotas) === JSON.stringify(marcas)) return;
+      marcas = remotas;
+      try { localStorage.setItem("catalogo_estado", JSON.stringify(marcas)); } catch (e) {}
+      refrescarTodo();
+      setEstado("Marcas actualizadas desde tu Drive.");
+    } catch (e) {}
+  }
+
+  let ultimaSync = 0;
+  function alVolver() {
+    if (document.visibilityState !== "visible") return;
+    if (Date.now() - ultimaSync < 30000) return;
+    ultimaSync = Date.now();
+    sincronizarMarcas();
+  }
+  document.addEventListener("visibilitychange", alVolver);
+  window.addEventListener("focus", alVolver);
+
+  // ---------- 2. Respaldo semanal de marcas en tu Drive (se conservan 4) ----------
+  async function respaldoSemanal() {
+    if (!accessToken || !idMarcas || !Object.keys(marcas).length) return;
+    const lunes = inicioSemanaISO(hoyLocalISO());
+    if (modoGuardado("respaldo_semana", "") === lunes) return;
+    try {
+      const nombre = "respaldo-marcas-" + lunes + ".json";
+      const frontera = "respaldo_frontera";
+      const meta = JSON.stringify({ name: nombre, parents: ["appDataFolder"] });
+      const cuerpo = JSON.stringify(marcas);
+      const partes = "--" + frontera + "\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n" + meta +
+        "\r\n--" + frontera + "\r\nContent-Type: application/json\r\n\r\n" + cuerpo + "\r\n--" + frontera + "--";
+      await driveFetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart", {
+        method: "POST",
+        headers: { "Content-Type": "multipart/related; boundary=" + frontera },
+        body: partes
+      });
+      const q = encodeURIComponent("name contains 'respaldo-marcas-'");
+      const orden = encodeURIComponent("name desc");
+      const r = await driveFetch("https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q=" + q + "&orderBy=" + orden + "&fields=files(id,name)");
+      const j = await r.json();
+      for (const f of (j.files || []).slice(4)) {
+        await driveFetch("https://www.googleapis.com/drive/v3/files/" + f.id, { method: "DELETE" });
+      }
+      try { localStorage.setItem("respaldo_semana", lunes); } catch (e) {}
+    } catch (e) {}
+  }
+
+  // ---------- 3. Limpieza de avisos y datos viejos (cada minuto) ----------
+  function mantener() {
+    const hoy = hoyLocalISO();
+    guardarJSON("recordatorio_cerrados", leerJSON("recordatorio_cerrados", []).filter(k => k.endsWith("|" + hoy)));
+    if (!peliculas.length || pestana !== "catalogo") return;
+    renderAvisoEstancados();
+    actualizarAvisoFecha();
+  }
+
+  // ---------- 4. Recordar dónde te quedaste ----------
+  const CLAVE_SESION = "ultima_sesion";
+  const CAMPOS = ["estado", "tipo", "genero", "tema", "anio", "pais", "duracion"];
+
+  function guardarSesion() {
+    if (!peliculas.length) return;
+    const datos = { y: window.scrollY, buscar: buscar.value, orden: $("orden").value };
+    CAMPOS.forEach(k => { datos[k] = sel[k].value; });
+    guardarJSON(CLAVE_SESION, datos);
+  }
+  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") guardarSesion(); });
+  window.addEventListener("pagehide", guardarSesion);
+
+  function restaurarSesion() {
+    if (new URLSearchParams(location.search).get("id")) return;
+    const s = leerJSON(CLAVE_SESION, null);
+    if (!s) return;
+    buscar.value = s.buscar || "";
+    $("orden").value = s.orden || "titulo";
+    CAMPOS.forEach(k => { sel[k].value = s[k] || ""; });
+    sel.estado.dispatchEvent(new Event("input"));
+    requestAnimationFrame(() => window.scrollTo(0, s.y || 0));
+  }
+
+  // Cuando la hoja ya cargó: restaura la sesión y revisa el respaldo una vez
+  const espera = setInterval(() => {
+    if (!peliculas.length || $("app").style.display !== "block") return;
+    clearInterval(espera);
+    restaurarSesion();
+    respaldoSemanal();
+  }, 300);
+
+  setInterval(mantener, 60000);
+  setInterval(respaldoSemanal, 600000);
 })();
 </script>
 </body>
