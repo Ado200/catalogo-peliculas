@@ -7334,8 +7334,8 @@ document.querySelectorAll("input[type=range]").forEach(r => {
     const r = slot.getBoundingClientRect();
     if (!r.width) return;
     const t = 58;
-    orbe.style.left = (r.left + (r.width - t) / 2) + "px";
-    orbe.style.top = (r.top + (r.height - t) / 2) + "px";
+    orbe.style.left = (r.left + (r.width - t) / 2) + "px"; orbe.style.setProperty("left", (r.left + (r.width - t) / 2) + "px", "important");
+    orbe.style.top = (r.top + (r.height - t) / 2) + "px"; orbe.style.setProperty("top", (r.top + (r.height - t) / 2) + "px", "important");
   };
   colocar();
   setInterval(colocar, 400);
