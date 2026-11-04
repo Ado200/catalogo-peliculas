@@ -612,6 +612,28 @@
   #panelMas .grupo-menu .campo label { margin:0; font-size:13px; color:var(--texto); white-space:nowrap; }
   #panelMas .grupo-menu .campo select { width:150px; flex:0 0 auto; padding:7px 10px; font-size:13px; }
 </style>
+<style id="redondeo-y-barra">
+/* Todo redondeado: botones, selectores, campos, deslizadores */
+button, select, input[type=text], input[type=search], input[type=number], input[type=date] { border-radius:999px; }
+textarea { border-radius:18px; }
+.grupo-menu { border-radius:24px; padding:14px 16px; }
+.grupo-menu button { white-space:normal; line-height:1.25; padding:10px 16px; text-align:center; flex:1 1 auto; }
+.grupo-peligro .nota-peligro { border-radius:16px; }
+
+/* Deslizador redondo */
+input[type=range] { -webkit-appearance:none; appearance:none; width:100%; height:10px; border-radius:999px; background:var(--boton-suave); outline:none; margin:14px 0; cursor:pointer; }
+input[type=range]::-webkit-slider-runnable-track { height:10px; border-radius:999px; background:linear-gradient(to right, var(--azul) var(--pct,50%), var(--boton-suave) var(--pct,50%)); }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; appearance:none; width:26px; height:26px; margin-top:-8px; border-radius:50%; background:#fff; border:0; box-shadow:0 2px 8px rgba(0,0,0,.25); }
+input[type=range]::-moz-range-track { height:10px; border-radius:999px; background:var(--boton-suave); }
+input[type=range]::-moz-range-progress { height:10px; border-radius:999px; background:var(--azul); }
+input[type=range]::-moz-range-thumb { width:26px; height:26px; border-radius:50%; background:#fff; border:0; box-shadow:0 2px 8px rgba(0,0,0,.25); }
+input[type=range]:focus-visible { outline:2px solid var(--azul); outline-offset:4px; border-radius:999px; }
+
+/* Barra inferior: más grande, centrada y en forma de píldora */
+#tabbar { left:50% !important; right:auto !important; transform:translateX(-50%); width:min(560px, calc(100% - 24px)) !important; bottom:calc(14px + env(safe-area-inset-bottom, 0px)) !important; padding:8px; border-radius:999px !important; min-height:76px; align-items:center; }
+#tabbar button { border-radius:999px; padding:12px 6px; font-size:12px; min-height:58px; gap:4px; }
+#tabbar button .ico { font-size:22px; }
+</style>
 </head>
 <body>
 <div id="bannerSinConexion" class="banner-offline" hidden></div>
@@ -5874,17 +5896,24 @@ document.getElementById("salirDispositivo").addEventListener("click", salirDeEst
 #chatVoz[hidden]{display:none}
 #chatVoz.escuchando{background:#ff453a;color:#fff}
 </style>
-<button id="chatAbrir" style="display:none" aria-label="Abrir el compañero peliculero">💬</button>
+<button id="chatAbrir" style="display:none" aria-label="Abrir el compañero peliculero" title="Hablar con Rolo"><span class="orbe" aria-hidden="true"></span></button>
 <div id="chatPanel" role="dialog" aria-label="Compañero peliculero">
   <div id="chatCab">
-    <b>🍿 Tu compa peliculero</b>
+    <div class="chat-titulo"><span class="chat-avatar">🍿</span><b>Rolo</b></div>
+    <button id="chatCerrar" aria-label="Cerrar">×</button>
+  </div>
+  <div id="chatAjustes" class="chat-ajustes">
     <select id="chatGenero" aria-label="Tipo de voz" title="Tipo de voz">
       <option value="mujer">Voz de mujer</option>
       <option value="hombre">Voz de hombre</option>
     </select>
-    <button id="chatContinuo" aria-label="Conversación continua" title="Conversación continua (sin tocar el micrófono)" hidden>🎙</button>
+    <select id="chatVelocidad" aria-label="Velocidad de la voz" title="Velocidad de la voz">
+      <option value="lento">Lento</option>
+      <option value="normal">Normal</option>
+      <option value="rapido">Rápido</option>
+    </select>
+    <button id="chatContinuo" aria-label="Conversación continua" title="Conversación continua" hidden>🎙</button>
     <button id="chatVozOn" aria-label="Voz del asistente" title="Voz del asistente">🔊</button>
-    <button id="chatCerrar" aria-label="Cerrar">×</button>
   </div>
   <div id="chatUso" class="chat-uso" hidden></div>
   <div id="chatMensajes"></div>
@@ -5962,6 +5991,11 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
   const NOMBRES_HOMBRE = /jorge|diego|juan|carlos|pablo|raul|raúl|enrique|alonso|andres|andrés|male|hombre/i;
   const CALIDAD_VOZ = /natural|neural|premium|enhanced|google|mejorad|plus/i;
 
+  const VELOCIDADES = { lento: 0.88, normal: 1.06, rapido: 1.22 };
+  const velocidadVoz = () => {
+    try { return VELOCIDADES[localStorage.getItem("chat_velocidad")] || VELOCIDADES.normal; } catch (e) { return VELOCIDADES.normal; }
+  };
+
   const generoVoz = () => { try { return localStorage.getItem("chat_genero") || "mujer"; } catch (e) { return "mujer"; } };
 
   function puntuarVoz(v, genero) {
@@ -5997,7 +6031,7 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
       const u = new SpeechSynthesisUtterance(frase);
       u.lang = voz ? voz.lang : "es-MX";
       if (voz) u.voice = voz;
-      u.rate = 0.96;
+      u.rate = velocidadVoz();
       u.pitch = genero === "hombre" ? 0.92 : 1.06;
       u.onend = () => {
         if (typeof conversacionActiva !== "undefined" && conversacionActiva && frase === frases[frases.length - 1].trim()) {
@@ -6013,6 +6047,16 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
   }
 
   const selectGenero = document.getElementById("chatGenero");
+  const selectVelocidad = document.getElementById("chatVelocidad");
+  if (selectVelocidad) {
+    try { selectVelocidad.value = localStorage.getItem("chat_velocidad") || "normal"; } catch (e) { selectVelocidad.value = "normal"; }
+    selectVelocidad.addEventListener("change", () => {
+      try { localStorage.setItem("chat_velocidad", selectVelocidad.value); } catch (e) {}
+      if (vozSoportada) speechSynthesis.cancel();
+      hablar("Así es la velocidad que elegiste.");
+    });
+  }
+
   if (selectGenero) {
     selectGenero.value = generoVoz();
     selectGenero.addEventListener("change", () => {
@@ -7021,6 +7065,8 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
     try { return localStorage.getItem("chat_conversacion") === "1"; } catch (e) { return false; }
   }
   function pintarContinuo() {
+    const orbe = document.getElementById("chatAbrir");
+    if (orbe) orbe.classList.toggle("escuchando", escuchandoConv);
     if (!botonContinuo) return;
     botonContinuo.classList.toggle("activo", conversacionActiva);
     botonContinuo.classList.toggle("escuchando", escuchandoConv);
@@ -7112,5 +7158,60 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
   });
 })();
 </script>
+<script>
+/* Pinta la parte llena de cada deslizador */
+document.querySelectorAll("input[type=range]").forEach(r => {
+  const pintar = () => r.style.setProperty("--pct", ((r.value - r.min) / (r.max - r.min) * 100) + "%");
+  r.addEventListener("input", pintar);
+  pintar();
+});
+</script>
+<style id="chat-pulido">
+#chatAbrir{right:20px;bottom:calc(104px + env(safe-area-inset-bottom,0px));width:56px;height:56px;border-radius:50%;box-shadow:0 8px 24px rgba(0,113,227,.35);font-size:22px}
+#chatPanel{right:16px;left:auto;bottom:calc(164px + env(safe-area-inset-bottom,0px));width:min(380px,calc(100vw - 32px));max-width:380px;max-height:min(72vh,640px);border-radius:24px;background:var(--tarjeta);box-shadow:0 20px 50px rgba(0,0,0,.18);border:1px solid var(--borde);overflow:hidden;flex-direction:column}
+#chatCab{padding:14px 16px 10px;border-bottom:0}
+.chat-titulo{display:flex;align-items:center;gap:10px;min-width:0}
+.chat-titulo b{font-size:16px;letter-spacing:-.2px}
+.chat-avatar{width:32px;height:32px;border-radius:50%;background:var(--tema-bg);display:grid;place-items:center;font-size:17px}
+#chatCerrar{width:32px;height:32px;border-radius:50%;background:var(--boton-suave);color:var(--gris);font-size:18px;line-height:1;display:grid;place-items:center;padding:0}
+.chat-ajustes{display:flex;align-items:center;gap:6px;padding:0 16px 10px;border-bottom:1px solid var(--borde)}
+#chatVelocidad{flex:0 0 auto;background:var(--boton-suave);color:var(--texto);border:0;border-radius:999px;padding:6px 10px;font-size:12px;margin:0}
+#chatGenero{flex:1;min-width:0;background:var(--boton-suave);color:var(--texto);border:0;border-radius:999px;padding:6px 12px;font-size:12px;margin:0}
+#chatContinuo,#chatVozOn{width:34px;height:34px;border-radius:50%;margin:0;padding:0;font-size:16px;display:grid;place-items:center;background:var(--boton-suave);opacity:1;border:0}
+#chatContinuo:not(.activo){opacity:.6}
+#chatUso{padding:8px 16px;font-size:12px;border-bottom:0;background:transparent}
+#chatMensajes{padding:6px 14px 10px;gap:10px}
+.chat-burbuja{font-size:15px;line-height:1.5;padding:10px 14px;border-radius:20px;max-width:88%}
+.chat-burbuja.yo{border-bottom-right-radius:6px}
+.chat-burbuja.ia{border-bottom-left-radius:6px}
+.chat-pensando{font-size:13px}
+.chat-posters{padding:2px 0 4px;gap:10px}
+#chatSugerencias{flex-wrap:nowrap;overflow-x:auto;padding:0 16px 10px;gap:6px;scrollbar-width:none}
+#chatSugerencias::-webkit-scrollbar{display:none}
+#chatSugerencias button{flex:0 0 auto;padding:7px 12px;font-size:13px}
+#chatForm{padding:10px 12px 12px;gap:8px;border-top:1px solid var(--borde);align-items:center}
+#chatVoz{width:40px;height:40px;border-radius:50%;padding:0;font-size:16px;flex:0 0 auto;background:var(--boton-suave);color:var(--texto)}
+#chatInput{padding:11px 16px;font-size:15px;background:var(--boton-suave);border:0;border-radius:999px}
+#chatInput:focus{box-shadow:0 0 0 3px rgba(10,132,255,.25)}
+#chatForm button[type=submit]{width:40px;height:40px;padding:0;border-radius:50%;font-size:0;flex:0 0 auto;display:grid;place-items:center}
+#chatForm button[type=submit]::before{content:"↑";font-size:20px;line-height:1}
+#chatEnviar:disabled{opacity:.4}
+@media (min-width:900px){#chatPanel{right:24px}}
+</style>
+<style id="asistente-orbe">
+#chatAbrir{position:fixed;left:50%;right:auto;top:auto;transform:translateX(-50%);bottom:calc(78px + env(safe-area-inset-bottom,0px));width:68px;height:68px;border-radius:50%;border:0;background:transparent;padding:0;z-index:12;cursor:pointer;box-shadow:0 12px 32px rgba(94,92,230,.45);-webkit-tap-highlight-color:transparent;transition:transform .2s ease}
+#chatAbrir:active{transform:translateX(-50%) scale(.94)}
+#chatAbrir .orbe{position:absolute;inset:0;border-radius:50%;background:
+  radial-gradient(circle at 30% 28%, rgba(255,255,255,.95) 0 8%, rgba(255,255,255,0) 30%),
+  conic-gradient(from 0deg, #0a84ff, #5e5ce6, #bf5af2, #ff375f, #ff9f0a, #30d158, #64d2ff, #0a84ff);
+  animation:orbeGira 7s linear infinite, orbePulso 3.2s ease-in-out infinite;overflow:hidden}
+#chatAbrir .orbe::after{content:"";position:absolute;inset:12px;border-radius:50%;background:radial-gradient(circle at 35% 30%, rgba(255,255,255,.75), rgba(255,255,255,.12) 70%);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
+#chatAbrir.escuchando .orbe{animation:orbeGira 2.2s linear infinite, orbePulso .9s ease-in-out infinite}
+#chatAbrir.escuchando{box-shadow:0 0 0 8px rgba(255,69,58,.18),0 12px 32px rgba(255,69,58,.45)}
+@keyframes orbeGira{to{transform:rotate(360deg)}}
+@keyframes orbePulso{0%,100%{filter:brightness(1) saturate(1.1)}50%{filter:brightness(1.18) saturate(1.4)}}
+#chatPanel{bottom:calc(164px + env(safe-area-inset-bottom,0px))}
+@media (prefers-reduced-motion:reduce){#chatAbrir .orbe{animation:none}}
+</style>
 </body>
 </html>
