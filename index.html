@@ -740,6 +740,39 @@ input[type=range]:focus-visible { outline:2px solid var(--azul); outline-offset:
   #app > header .buscar.buscar-titulo span[aria-hidden="true"] { display:none; }
 }
 </style>
+<style id="fila-estable">
+/* La fila superior no se mueve al cambiar de pestaña, de filtro o al desplazarse:
+   título, buscador y botones tienen anchos y alturas fijos. */
+#app > header .fila-titulo {
+  min-height: 46px;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 10px !important;
+}
+#app > header .fila-titulo h1,
+body.barra-compacta #app > header h1 {
+  width: clamp(110px, 30vw, 170px) !important;
+  flex: 0 0 clamp(110px, 30vw, 170px) !important;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 26px !important;
+  transition: none !important;
+}
+#app > header .buscar.buscar-titulo {
+  flex: 1 1 0 !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  transition: none !important;
+}
+#app > header .botones-barra {
+  width: 130px !important;
+  flex: 0 0 130px !important;
+  justify-content: flex-end !important;
+  transition: none !important;
+}
+</style>
 </head>
 <body>
 <div id="bannerSinConexion" class="banner-offline" hidden></div>
