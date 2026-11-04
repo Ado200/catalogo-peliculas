@@ -672,8 +672,7 @@ input[type=range]:focus-visible { outline:2px solid var(--azul); outline-offset:
     <button type="button" class="boton-circular" id="aleatorio" aria-label="Sugerir una película al azar" title="Aleatorio">🎲</button>
     <button type="button" class="boton-circular" id="queVerNoche" aria-label="Qué ver esta noche" title="Qué ver esta noche">🍿</button>
     <button type="button" class="boton-circular" id="toggleAvanzados" aria-label="Filtros avanzados">⚙</button>
-    <button type="button" class="boton-circular" id="toggleMas" aria-label="Más opciones" aria-expanded="false">⋯</button>
-    </div>
+       </div>
   </div>
   <div id="selectorZona" class="segmentado selector-zona" role="group" aria-label="Secciones" style="display:none"></div>
   <div class="colapsable">
@@ -872,11 +871,9 @@ input[type=range]:focus-visible { outline:2px solid var(--azul); outline-offset:
 <nav id="tabbar">
   <button data-tab="inicio" class="activa"><span class="ico">🏠</span>Inicio</button>
   <button data-tab="catalogo"><span class="ico">🎬</span>Películas</button>
-  <button data-tab="notas"><span class="ico">📝</span>Notas</button>
   <span id="tabRolo" class="tab-rolo" aria-hidden="true"></span>
   <button data-tab="pendientes"><span class="ico">⏳</span>Pendientes</button>
   <button data-tab="vistas"><span class="ico">✓</span>Vistas</button>
-  <button type="button" id="tabMas" aria-label="Más opciones"><span class="ico">⋯</span>Más</button>
 </nav>
 
 <div id="modal">
@@ -5821,7 +5818,7 @@ document.getElementById("salirDispositivo").addEventListener("click", salirDeEst
       </div>
 
       <div class="seccion">
-        <h3>⋯ Más y tus datos</h3>
+<h3>⚙ Filtros, ajustes y datos</h3>
         <p>Ahí están exportar, respaldar, restaurar y borrar. Tus cambios se guardan en tu Drive, aun sin señal.</p>
       </div>
     </div>
@@ -7344,12 +7341,25 @@ document.querySelectorAll("input[type=range]").forEach(r => {
   setInterval(colocar, 400);
   window.addEventListener("resize", colocar);
 })();
-</script>
 <style id="menu-mas-encima">
 /* El menú ⋯ va por encima del velo de fondo y de la barra, para poder tocarlo */
 #panelMas,
 #panelMas.abierto{z-index:31 !important}
 #velo{z-index:29}
 </style>
+<style>
+#panelAvanzados .grupo-menu{grid-column:1/-1}
+#panelMas{display:none!important}
+</style>
+#panelAvanzados .grupo-menu{grid-column:1/-1}
+#panelMas{display:none!important}
+</style>
+<script>
+(function(){
+  const mas = document.getElementById("panelMas");
+  const av = document.getElementById("panelAvanzados");
+  if (mas && av) { while (mas.firstChild) av.appendChild(mas.firstChild); }
+})();
+</script>
 </body>
 </html>
