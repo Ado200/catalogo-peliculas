@@ -740,38 +740,30 @@ input[type=range]:focus-visible { outline:2px solid var(--azul); outline-offset:
   #app > header .buscar.buscar-titulo span[aria-hidden="true"] { display:none; }
 }
 </style>
-<style id="fila-estable">
-/* La fila superior no se mueve al cambiar de pestaña, de filtro o al desplazarse:
-   título, buscador y botones tienen anchos y alturas fijos. */
-#app > header .fila-titulo {
-  min-height: 46px;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: flex-start !important;
-  gap: 10px !important;
+<style id="pildoras-deslizables">
+/* Filas de botones tipo píldora: no saltan de línea; se deslizan en horizontal con barra visible */
+.aviso-opciones,
+.acciones-rapidas,
+.aviso-item .aviso-opciones {
+  flex-wrap: nowrap !important;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: var(--gris, #9a9a9a) transparent;
+  padding-bottom: 6px;
+  max-width: 100%;
 }
-#app > header .fila-titulo h1,
-body.barra-compacta #app > header h1 {
-  width: clamp(110px, 30vw, 170px) !important;
-  flex: 0 0 clamp(110px, 30vw, 170px) !important;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: 26px !important;
-  transition: none !important;
-}
-#app > header .buscar.buscar-titulo {
-  flex: 1 1 0 !important;
-  min-width: 0 !important;
-  margin: 0 !important;
-  transition: none !important;
-}
-#app > header .botones-barra {
-  width: 130px !important;
-  flex: 0 0 130px !important;
-  justify-content: flex-end !important;
-  transition: none !important;
-}
+.aviso-opciones > *,
+.acciones-rapidas > * { flex: 0 0 auto; white-space: nowrap; }
+.aviso-opciones::-webkit-scrollbar,
+.acciones-rapidas::-webkit-scrollbar { height: 6px; }
+.aviso-opciones::-webkit-scrollbar-track,
+.acciones-rapidas::-webkit-scrollbar-track { background: transparent; border-radius: 999px; }
+.aviso-opciones::-webkit-scrollbar-thumb,
+.acciones-rapidas::-webkit-scrollbar-thumb { background: var(--gris, #9a9a9a); border-radius: 999px; }
 </style>
 </head>
 <body>
