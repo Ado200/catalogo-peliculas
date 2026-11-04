@@ -7058,13 +7058,32 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
     consultarUso();
     saludar();
     input.focus();
+    reiniciarCierreAuto();
   });
   document.getElementById("chatCerrar").addEventListener("click", () => {
     panel.classList.remove("abierto");
     fondoChat.classList.remove("visible");
     if (vozSoportada) speechSynthesis.cancel();
     detenerEscuchaConv();
+    clearTimeout(temporizadorCierre);
   });
+
+  /* ---------- Cierre automático por inactividad ---------- */
+  // Se cierra solo si el usuario no interactúa durante CIERRE_AUTO_MS, sin conversación continua,
+  // sin que el asistente esté hablando o escuchando y sin texto escrito a medias.
+  const CIERRE_AUTO_MS = 60000;
+  let temporizadorCierre = null;
+  function reiniciarCierreAuto() {
+    clearTimeout(temporizadorCierre);
+    if (!panel.classList.contains("abierto")) return;
+    temporizadorCierre = setTimeout(() => {
+      if (!panel.classList.contains("abierto")) return;
+      const ocupado = conversacionActiva || escuchandoConv || asistenteHablando() || input.value.trim() !== "";
+      if (ocupado) { reiniciarCierreAuto(); return; }
+      document.getElementById("chatCerrar").click();
+    }, CIERRE_AUTO_MS);
+  }
+  ["pointerdown", "keydown", "input", "submit"].forEach(ev => panel.addEventListener(ev, reiniciarCierreAuto));
 
   form.addEventListener("submit", e => {
     e.preventDefault();
