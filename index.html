@@ -729,13 +729,9 @@ input[type=range]:focus-visible { outline:2px solid var(--azul); outline-offset:
   #panelAvanzados { grid-template-columns: 1fr; }
 }
 </style>
-<style id="mini-rolo-css">
-#app > header .buscar { margin-top:10px; }
-.mini-rolo { display:flex; align-items:center; gap:8px; margin:8px auto 0; max-width:900px; padding:5px 5px 5px 6px; background:var(--tarjeta); border-radius:999px; box-shadow:var(--sombra); }
-.mini-rolo-avatar { width:34px; height:34px; border-radius:50%; background:var(--boton-suave); display:flex; align-items:center; justify-content:center; font-size:17px; flex-shrink:0; }
-.mini-rolo input { flex:1; min-width:0; border:none; background:transparent; font-size:15px; color:var(--texto); padding:8px 6px; outline:none; }
-.mini-rolo-enviar { width:36px; height:36px; border-radius:50%; border:none; background:var(--azul, #0a84ff); color:#fff; font-size:15px; cursor:pointer; flex-shrink:0; transition:transform .15s ease; }
-.mini-rolo-enviar:active { transform:scale(.94); }
+<style id="buscar-rolo-css">
+.buscar-rolo { width:34px; height:34px; border-radius:50%; border:none; background:var(--boton-suave); font-size:16px; cursor:pointer; flex-shrink:0; display:flex; align-items:center; justify-content:center; margin-left:4px; transition:transform .15s ease; }
+.buscar-rolo:active { transform:scale(.94); }
 </style>
 </head>
 <body>
@@ -771,12 +767,7 @@ input[type=range]:focus-visible { outline:2px solid var(--azul); outline-offset:
     <button type="button" class="boton-circular" id="toggleAvanzados" aria-label="Filtros avanzados">⚙</button>
        </div>
   </div>
-    <div class="buscar"><span aria-hidden="true">⌕</span><input id="buscar" type="search" list="sugerencias" placeholder="Busca por título, director o actor"><datalist id="sugerencias"></datalist><button id="voz" class="boton-voz" title="Buscar por voz" aria-label="Buscar por voz" hidden>🎤</button></div>
-    <form id="miniRolo" class="mini-rolo" autocomplete="off">
-      <span class="mini-rolo-avatar" aria-hidden="true">🍿</span>
-      <input id="miniRoloInput" type="text" maxlength="600" placeholder="Pregúntale a Rolo…" aria-label="Pregúntale a Rolo">
-      <button type="submit" class="mini-rolo-enviar" aria-label="Enviar a Rolo">➤</button>
-    </form>
+    <div class="buscar"><span aria-hidden="true">⌕</span><input id="buscar" type="search" list="sugerencias" placeholder="Busca por título, director o actor"><datalist id="sugerencias"></datalist><button id="voz" class="boton-voz" title="Buscar por voz" aria-label="Buscar por voz" hidden>🎤</button><button type="button" id="buscarRolo" class="buscar-rolo" aria-label="Preguntarle a Rolo" title="Preguntarle a Rolo">🍿</button></div>
   <div id="selectorZona" class="segmentado selector-zona" role="group" aria-label="Secciones" style="display:none"></div>
   <div class="colapsable">
   <div class="segmentado solo-catalogo" data-zona="lista" role="group" aria-label="Filtrar películas">
@@ -7190,20 +7181,31 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
   }
   ["pointerdown", "keydown", "input", "submit"].forEach(ev => panel.addEventListener(ev, reiniciarCierreAuto));
 
-  /* ---------- Mini asistente en la barra superior ---------- */
-  const miniForm = document.getElementById("miniRolo");
-  const miniInput = document.getElementById("miniRoloInput");
-  if (miniForm && miniInput) {
-    miniForm.addEventListener("submit", e => {
-      e.preventDefault();
-      const t = miniInput.value.trim();
-      if (!t) return;
-      miniInput.value = "";
+  /* ---------- Rolo dentro del buscador principal ---------- */
+  // Enter busca en el catálogo; si lo escrito es una pregunta (¿…? o termina en ?), o se toca 🍿, se envía a Rolo.
+  const buscarPrincipal = document.getElementById("buscar");
+  function preguntarARolo(texto) {
+    const t = String(texto || "").trim();
+    if (!t) {
       if (!panel.classList.contains("abierto")) document.getElementById("chatAbrir").click();
-      input.value = t;
-      form.dispatchEvent(new Event("submit", { cancelable: true, bubbles: true }));
-    });
+      input.focus();
+      return;
+    }
+    buscarPrincipal.value = "";
+    buscarPrincipal.dispatchEvent(new Event("input", { bubbles: true }));
+    if (!panel.classList.contains("abierto")) document.getElementById("chatAbrir").click();
+    input.value = t;
+    form.dispatchEvent(new Event("submit", { cancelable: true, bubbles: true }));
   }
+  document.getElementById("buscarRolo").addEventListener("click", () => preguntarARolo(buscarPrincipal.value));
+  buscarPrincipal.addEventListener("keydown", e => {
+    if (e.key !== "Enter") return;
+    const t = buscarPrincipal.value.trim();
+    if (t.startsWith("¿") || t.endsWith("?")) {
+      e.preventDefault();
+      preguntarARolo(t);
+    }
+  });
 
   form.addEventListener("submit", e => {
     e.preventDefault();
