@@ -764,6 +764,32 @@ body[data-pestana="pendientes"] .aviso-opciones::-webkit-scrollbar-track { backg
 body[data-pestana="pendientes"] .acciones-rapidas::-webkit-scrollbar-thumb,
 body[data-pestana="pendientes"] .aviso-opciones::-webkit-scrollbar-thumb { background: var(--gris, #9a9a9a); border-radius: 999px; }
 </style>
+<style id="pulido-noche-y-cabecera">
+/* Panel "¿Cuánto tiempo tienes?" */
+.noche-panel{border-radius:28px !important;padding:20px 20px 18px !important;box-shadow:0 18px 40px rgba(0,0,0,.18) !important;border:1px solid var(--borde)}
+.noche-cab{margin-bottom:14px !important}
+.noche-cab b, .noche-cab strong, .noche-cab h2{font-size:17px;font-weight:700;letter-spacing:-.01em}
+.noche-cab button{width:34px;height:34px;border-radius:50%;background:var(--boton-suave) !important;color:var(--texto) !important;font-size:18px !important;line-height:1;display:flex;align-items:center;justify-content:center;padding:0}
+.noche-panel select{-webkit-appearance:none;appearance:none;padding:13px 44px 13px 18px !important;margin-bottom:12px !important;font-size:15px !important;background-color:var(--tarjeta) !important;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path d='M1 1.5l5 5 5-5' fill='none' stroke='%238a8a8e' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/></svg>");background-repeat:no-repeat;background-position:right 18px center}
+.noche-panel select:focus{outline:none;box-shadow:0 0 0 3px var(--boton-suave)}
+.noche-panel > .noche-elegir, .noche-panel > button:not(.noche-x) {border-radius:999px}
+.noche-tarjeta{gap:14px !important;margin-top:16px !important;padding-top:16px;border-top:1px solid var(--borde)}
+.noche-tarjeta img, .noche-tarjeta .noche-sin{width:90px !important;height:135px !important;border-radius:16px !important;box-shadow:0 8px 20px rgba(0,0,0,.18)}
+.noche-info h3{font-size:18px !important;font-weight:700;line-height:1.2;margin:0 0 6px !important}
+.noche-info p{font-size:13px !important;margin:0 0 12px !important;line-height:1.4}
+.noche-acciones{flex-wrap:nowrap !important;gap:8px !important}
+.noche-acciones button{flex:0 0 auto;height:38px;padding:0 16px !important;font-size:14px !important;font-weight:600;border-radius:999px !important;white-space:nowrap;transition:transform .15s ease}
+.noche-acciones button:active{transform:scale(.96)}
+.noche-acciones button.principal{background:var(--azul) !important;color:#fff !important}
+.noche-vacio{text-align:center;padding:10px 0 4px;font-size:14px !important}
+
+/* Cabecera: selectores y estado */
+#app > header .segmentado{width:100% !important;display:flex !important;margin:8px 0 0 !important;padding:4px !important;border-radius:999px !important;background:rgba(118,118,128,.12) !important;box-sizing:border-box}
+#app > header .segmentado button{border-radius:999px !important;padding:9px 0 !important;font-size:14px !important;font-weight:600 !important;letter-spacing:-.01em}
+#app > header .segmentado button.activa{background:var(--tarjeta) !important;box-shadow:0 2px 6px rgba(0,0,0,.12) !important}
+#app > header #contador{font-size:13px !important;font-weight:600;letter-spacing:.01em;margin-top:12px !important;color:var(--texto);opacity:.75}
+#estadoGuardado{font-size:12px;color:var(--gris);margin-top:4px;opacity:.85}
+</style>
 </head>
 <body>
 <div id="bannerSinConexion" class="banner-offline" hidden></div>
