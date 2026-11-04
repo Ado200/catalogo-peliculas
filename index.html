@@ -11,7 +11,17 @@
 <link rel="apple-touch-icon" href="icon.svg">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-<style>
+
+
+
+
+
+
+
+
+
+<style id="hoja-unica">
+/* ===== bloque 1 ===== */
   :root {
     --fondo:#f2f2f7; --tarjeta:#ffffff; --texto:#1c1c1e; --gris:#6e6e73;
     --azul:#0071e3; --borde:rgba(60,60,67,.14); --boton-suave:#e5e5ea;
@@ -611,8 +621,8 @@
   #panelMas .grupo-menu .campo { grid-column:1 / -1; display:flex; justify-content:space-between; align-items:center; gap:10px; }
   #panelMas .grupo-menu .campo label { margin:0; font-size:13px; color:var(--texto); white-space:nowrap; }
   #panelMas .grupo-menu .campo select { width:150px; flex:0 0 auto; padding:7px 10px; font-size:13px; }
-</style>
-<style id="redondeo-y-barra">
+
+/* ===== redondeo-y-barra ===== */
 /* Todo redondeado: botones, selectores, campos, deslizadores */
 button, select, input[type=text], input[type=search], input[type=number], input[type=date] { border-radius:999px; }
 textarea { border-radius:18px; }
@@ -633,16 +643,16 @@ input[type=range]:focus-visible { outline:2px solid var(--azul); outline-offset:
 #tabbar { left:50% !important; right:auto !important; transform:translateX(-50%); width:min(560px, calc(100% - 24px)) !important; bottom:calc(14px + env(safe-area-inset-bottom, 0px)) !important; padding:8px; border-radius:999px !important; min-height:76px; align-items:center; }
 #tabbar button { border-radius:999px; padding:12px 6px; font-size:12px; min-height:58px; gap:4px; }
 #tabbar button .ico { font-size:22px; }
-</style>
-<style id="orbe-en-barra">
+
+/* ===== orbe-en-barra ===== */
 #tabbar{left:50% !important;right:auto !important;transform:translateX(-50%) !important;width:min(560px, calc(100% - 24px)) !important;bottom:calc(14px + env(safe-area-inset-bottom,0px)) !important}
 #tabbar{justify-content:space-between !important;padding:8px 10px !important}
 #tabbar > *{flex:1 1 0 !important;min-width:0 !important;width:auto !important;max-width:none !important}
 #tabbar .tab-rolo{height:58px;display:block;pointer-events:none}
 #chatAbrir{position:fixed !important;left:0;top:0;right:auto !important;bottom:auto !important;transform:none !important;width:58px;height:58px;margin:0;z-index:30;box-shadow:0 6px 16px rgba(59,124,244,.35)}
 #chatAbrir:active{transform:scale(.94) !important}
-</style>
-<style id="filtros-pulidos">
+
+/* ===== filtros-pulidos ===== */
 /* Panel de filtros: todo redondeado, con cabecera, rejilla de dos columnas y desplazamiento suave */
 #panelAvanzados {
   border-radius: 28px;
@@ -728,8 +738,8 @@ input[type=range]:focus-visible { outline:2px solid var(--azul); outline-offset:
 @media (max-width: 420px) {
   #panelAvanzados { grid-template-columns: 1fr; }
 }
-</style>
-<style id="fila-superior">
+
+/* ===== fila-superior ===== */
 #app > header .fila-titulo { display:flex; align-items:center; gap:10px; }
 #app > header .fila-titulo h1 { flex:0 0 auto; margin:0; }
 #app > header .buscar.buscar-titulo { flex:1 1 auto; min-width:0; margin:0 4px; padding:7px 12px; gap:6px; }
@@ -739,8 +749,8 @@ input[type=range]:focus-visible { outline:2px solid var(--azul); outline-offset:
 @media (max-width: 520px) {
   #app > header .buscar.buscar-titulo span[aria-hidden="true"] { display:none; }
 }
-</style>
-<style id="pendientes-deslizable">
+
+/* ===== pendientes-deslizable ===== */
 /* Dentro de Pendientes: las filas de botones tipo píldora se deslizan en horizontal, sin saltar de línea */
 body[data-pestana="pendientes"] .acciones-rapidas,
 body[data-pestana="pendientes"] .aviso-opciones {
@@ -763,8 +773,8 @@ body[data-pestana="pendientes"] .acciones-rapidas::-webkit-scrollbar-track,
 body[data-pestana="pendientes"] .aviso-opciones::-webkit-scrollbar-track { background: transparent; border-radius: 999px; }
 body[data-pestana="pendientes"] .acciones-rapidas::-webkit-scrollbar-thumb,
 body[data-pestana="pendientes"] .aviso-opciones::-webkit-scrollbar-thumb { background: var(--gris, #9a9a9a); border-radius: 999px; }
-</style>
-<style id="pulido-noche-y-cabecera">
+
+/* ===== pulido-noche-y-cabecera ===== */
 /* Panel "¿Cuánto tiempo tienes?" */
 .noche-panel{border-radius:28px !important;padding:20px 20px 18px !important;box-shadow:0 18px 40px rgba(0,0,0,.18) !important;border:1px solid var(--borde)}
 .noche-cab{margin-bottom:14px !important}
@@ -789,6 +799,338 @@ body[data-pestana="pendientes"] .aviso-opciones::-webkit-scrollbar-thumb { backg
 #app > header .segmentado button.activa{background:var(--tarjeta) !important;box-shadow:0 2px 6px rgba(0,0,0,.12) !important}
 #app > header #contador{font-size:13px !important;font-weight:600;letter-spacing:.01em;margin-top:12px !important;color:var(--texto);opacity:.75}
 #estadoGuardado{font-size:12px;color:var(--gris);margin-top:4px;opacity:.85}
+
+/* ===== cabecera-limpia ===== */
+.fila-estado{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:10px;min-width:0}
+.fila-estado #contador,.fila-estado #estadoGuardado{margin:0 !important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.fila-estado #estadoGuardado{text-align:right;flex-shrink:1}
+.fila-estado #estadoGuardado:empty{display:none}
+
+/* ===== noche-sobra ===== */
+.noche-sobra{display:inline-block;margin-top:4px;padding:3px 10px;border-radius:999px;background:var(--boton-suave);font-size:12px;font-weight:600;color:var(--texto)}
+
+/* ===== bloque 10 ===== */
+  #guia { position:fixed; inset:0; z-index:50; display:none; align-items:center; justify-content:center; padding:16px; background:rgba(0,0,0,.35); }
+  #guia.abierta { display:flex; animation:aparecer .25s var(--ease) both; }
+  #guia .caja { background:var(--tarjeta); color:var(--texto); width:min(560px,100%); max-height:86vh; display:flex; flex-direction:column; border-radius:var(--radio-grande); box-shadow:var(--sombra); overflow:hidden; }
+  #guia .cab { padding:16px 18px 6px 20px; display:flex; justify-content:space-between; align-items:center; }
+  #guia .cab h2 { margin:0; font-size:17px; font-weight:600; }
+  #guia .cerrar { background:none; border:none; font-size:22px; line-height:1; color:var(--gris); cursor:pointer; padding:4px 8px; }
+  #guia .cuerpo { overflow-y:auto; padding:4px 20px 8px; font-size:14px; line-height:1.5; }
+  #guia .intro { color:var(--gris); margin:0 0 4px; }
+  #guia .seccion { padding:12px 0 4px; }
+  #guia .seccion h3 { margin:0 0 4px; font-size:12px; font-weight:600; color:var(--gris); text-transform:uppercase; letter-spacing:.4px; }
+  #guia .seccion p { margin:0; }
+  #guia .pie { padding:12px 20px 16px; display:flex; justify-content:flex-end; }
+
+/* ===== bloque 11 ===== */
+#chatAbrir{position:fixed;right:16px;bottom:96px;z-index:11;width:52px;height:52px;border-radius:50%;border:0;background:var(--azul);color:#fff;font-size:24px;cursor:pointer;box-shadow:var(--sombra)}
+#chatPanel{display:none;position:fixed;right:12px;left:12px;bottom:160px;max-width:420px;margin-left:auto;z-index:12;background:var(--tarjeta);color:var(--texto);border-radius:var(--radio-grande);box-shadow:var(--sombra);flex-direction:column;height:min(560px,70vh);overflow:hidden}
+#chatPanel.abierto{display:flex}
+#chatCab{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-bottom:1px solid var(--borde)}
+#chatCerrar{background:none;border:0;font-size:22px;color:var(--gris);cursor:pointer}
+.chat-uso{font-size:12px;color:var(--gris);padding:6px 14px;border-bottom:1px solid var(--borde)}
+.banner-offline{position:fixed;top:0;left:0;right:0;z-index:80;background:#ff9f0a;color:#1c1c1e;text-align:center;font-size:13px;padding:7px 12px}
+.banner-offline[hidden]{display:none}
+.chat-uso.alerta{color:var(--error)}
+#chatGenero{background:var(--boton-suave);color:var(--texto);border:0;border-radius:999px;padding:4px 8px;font-size:12px;margin-left:auto}
+#chatContinuo{background:none;border:0;font-size:18px;cursor:pointer;margin-left:6px;padding:2px 6px;border-radius:999px;opacity:.55}
+#chatContinuo.activo{opacity:1;background:var(--boton-suave)}
+#chatContinuo.escuchando{opacity:1;background:#ff453a;color:#fff;animation:pulsoVoz 1s ease-in-out infinite}
+#chatContinuo[hidden]{display:none}
+#chatVozOn{background:none;border:0;font-size:18px;color:var(--gris);cursor:pointer;margin-left:8px;margin-right:10px}
+#chatMensajes{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px}
+.chat-burbuja{max-width:85%;padding:9px 12px;border-radius:16px;font-size:14px;line-height:1.45;white-space:pre-wrap;word-wrap:break-word}
+.chat-burbuja.yo{align-self:flex-end;background:var(--azul);color:#fff}
+.chat-burbuja.ia{align-self:flex-start;background:var(--boton-suave);color:var(--texto)}
+.chat-burbuja.error{align-self:flex-start;border:1px solid var(--error);color:var(--error)}
+.chat-pensando{align-self:flex-start;color:var(--gris);font-size:13px;font-style:italic}
+#chatSugerencias{display:flex;flex-wrap:wrap;gap:6px;padding:0 14px 8px}
+#chatSugerencias button{background:var(--boton-suave);border:0;border-radius:999px;padding:6px 11px;font-size:12px;color:var(--texto);cursor:pointer}
+#chatForm{display:flex;gap:8px;padding:10px 12px 12px;border-top:1px solid var(--borde)}
+#chatInput{flex:1;min-width:0;padding:10px 14px;border:1px solid var(--borde);border-radius:999px;background:var(--fondo);color:var(--texto);font-size:14px;outline:none}
+#chatForm button{border:0;border-radius:999px;background:var(--azul);color:#fff;padding:0 16px;font-size:14px;cursor:pointer}
+#chatForm button:disabled{opacity:.5}
+.chat-acciones{display:flex;flex-wrap:wrap;gap:6px;align-self:flex-start}
+.chat-stats{align-self:stretch;background:linear-gradient(135deg,#0a84ff,#5e5ce6);color:#fff;border-radius:18px;padding:16px 18px;font-size:14px;line-height:1.5}
+.chat-stats h4{margin:0 0 6px;font-size:17px}
+.chat-stats p{margin:0}
+.chat-stats .chat-acciones button{background:rgba(255,255,255,.22);color:#fff}
+.chat-acciones button{border:0;border-radius:999px;padding:6px 12px;font-size:13px;background:var(--azul);color:#fff;cursor:pointer}
+.chat-acciones button.secundario{background:var(--boton-suave);color:var(--texto)}
+.chat-posters{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 6px;align-self:stretch;-webkit-overflow-scrolling:touch}
+.chat-poster{flex:0 0 96px;background:var(--tarjeta);border:1px solid var(--borde);border-radius:12px;padding:0;cursor:pointer;text-align:left;overflow:hidden;font:inherit;color:var(--texto)}
+.chat-poster img,.chat-poster .chat-sinposter{width:100%;height:136px;object-fit:cover;display:block}
+.chat-poster .chat-sinposter{display:grid;place-items:center;font-size:30px;background:var(--boton-suave)}
+.chat-poster span{display:block;padding:6px 7px;font-size:12px;line-height:1.25}
+.chat-poster-col{flex:0 0 96px;display:flex;flex-direction:column;gap:4px}
+.chat-poster-col .chat-poster{flex:none;width:100%}
+.chat-marcar{display:flex;gap:4px}
+.chat-marcar button{flex:1;font-size:11px;padding:4px 2px;border:0;border-radius:999px;background:var(--boton-suave);color:var(--texto);cursor:pointer;white-space:nowrap}
+.chat-marcar button.activo{background:var(--azul);color:#fff}
+.chat-marcar button:disabled{opacity:.6;cursor:default}
+#chatVoz{background:var(--boton-suave);color:var(--texto);padding:0 12px;font-size:16px}
+#chatVoz[hidden]{display:none}
+#chatVoz.escuchando{background:#ff453a;color:#fff}
+
+/* ===== chat-pulido ===== */
+#chatAbrir{right:20px;bottom:calc(104px + env(safe-area-inset-bottom,0px));width:56px;height:56px;border-radius:50%;box-shadow:0 8px 24px rgba(0,113,227,.35);font-size:22px}
+#chatPanel{right:16px;left:auto;bottom:calc(164px + env(safe-area-inset-bottom,0px));width:min(380px,calc(100vw - 32px));max-width:380px;max-height:min(72vh,640px);border-radius:24px;background:var(--tarjeta);box-shadow:0 20px 50px rgba(0,0,0,.18);border:1px solid var(--borde);overflow:hidden;flex-direction:column}
+#chatCab{padding:14px 16px 10px;border-bottom:0}
+.chat-titulo{display:flex;align-items:center;gap:10px;min-width:0}
+.chat-titulo b{font-size:16px;letter-spacing:-.2px}
+.chat-avatar{width:32px;height:32px;border-radius:50%;background:var(--tema-bg);display:grid;place-items:center;font-size:17px}
+#chatCerrar{width:32px;height:32px;border-radius:50%;background:var(--boton-suave);color:var(--gris);font-size:18px;line-height:1;display:grid;place-items:center;padding:0}
+.chat-ajustes{display:flex;align-items:center;gap:6px;padding:0 16px 10px;border-bottom:1px solid var(--borde)}
+#chatVelocidad{flex:0 0 auto;background:var(--boton-suave);color:var(--texto);border:0;border-radius:999px;padding:6px 10px;font-size:12px;margin:0}
+#chatGenero{flex:1;min-width:0;background:var(--boton-suave);color:var(--texto);border:0;border-radius:999px;padding:6px 12px;font-size:12px;margin:0}
+#chatContinuo,#chatVozOn{width:34px;height:34px;border-radius:50%;margin:0;padding:0;font-size:16px;display:grid;place-items:center;background:var(--boton-suave);opacity:1;border:0}
+#chatContinuo:not(.activo){opacity:.6}
+#chatUso{padding:8px 16px;font-size:12px;border-bottom:0;background:transparent}
+#chatMensajes{padding:6px 14px 10px;gap:10px}
+.chat-burbuja{font-size:15px;line-height:1.5;padding:10px 14px;border-radius:20px;max-width:88%}
+.chat-burbuja.yo{border-bottom-right-radius:6px}
+.chat-burbuja.ia{border-bottom-left-radius:6px}
+.chat-pensando{font-size:13px}
+.chat-posters{padding:2px 0 4px;gap:10px}
+#chatSugerencias{flex-wrap:nowrap;overflow-x:auto;padding:0 16px 10px;gap:6px;scrollbar-width:none}
+#chatSugerencias::-webkit-scrollbar{display:none}
+#chatSugerencias button{flex:0 0 auto;padding:7px 12px;font-size:13px}
+#chatForm{padding:10px 12px 12px;gap:8px;border-top:1px solid var(--borde);align-items:center}
+#chatVoz{width:40px;height:40px;border-radius:50%;padding:0;font-size:16px;flex:0 0 auto;background:var(--boton-suave);color:var(--texto)}
+#chatInput{padding:11px 16px;font-size:15px;background:var(--boton-suave);border:0;border-radius:999px}
+#chatInput:focus{box-shadow:0 0 0 3px rgba(10,132,255,.25)}
+#chatForm button[type=submit]{width:40px;height:40px;padding:0;border-radius:50%;font-size:0;flex:0 0 auto;display:grid;place-items:center}
+#chatForm button[type=submit]::before{content:"↑";font-size:20px;line-height:1}
+#chatEnviar:disabled{opacity:.4}
+@media (min-width:900px){#chatPanel{right:24px}}
+
+/* ===== asistente-orbe ===== */
+#chatAbrir{position:fixed;left:50%;right:auto;top:auto;transform:translateX(-50%);bottom:calc(78px + env(safe-area-inset-bottom,0px));width:68px;height:68px;border-radius:50%;border:0;background:transparent;padding:0;z-index:12;cursor:pointer;box-shadow:0 12px 32px rgba(94,92,230,.45);-webkit-tap-highlight-color:transparent;transition:transform .2s ease}
+#chatAbrir:active{transform:translateX(-50%) scale(.94)}
+#chatAbrir .orbe{position:absolute;inset:0;border-radius:50%;background:
+  radial-gradient(circle at 30% 28%, rgba(255,255,255,.95) 0 8%, rgba(255,255,255,0) 30%),
+  conic-gradient(from 0deg, #0a84ff, #5e5ce6, #bf5af2, #ff375f, #ff9f0a, #30d158, #64d2ff, #0a84ff);
+  animation:orbeGira 7s linear infinite, orbePulso 3.2s ease-in-out infinite;overflow:hidden}
+#chatAbrir .orbe::after{content:"";position:absolute;inset:12px;border-radius:50%;background:radial-gradient(circle at 35% 30%, rgba(255,255,255,.75), rgba(255,255,255,.12) 70%);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
+#chatAbrir.escuchando .orbe{animation:orbeGira 2.2s linear infinite, orbePulso .9s ease-in-out infinite}
+#chatAbrir.escuchando{box-shadow:0 0 0 8px rgba(255,69,58,.18),0 12px 32px rgba(255,69,58,.45)}
+@keyframes orbeGira{to{transform:rotate(360deg)}}
+@keyframes orbePulso{0%,100%{filter:brightness(1) saturate(1.1)}50%{filter:brightness(1.18) saturate(1.4)}}
+#chatPanel{bottom:calc(164px + env(safe-area-inset-bottom,0px))}
+@media (prefers-reduced-motion:reduce){#chatAbrir .orbe{animation:none}}
+
+/* ===== ajustes-finales ===== */
+/* Orbe discreto: blanco y azul suave, sin colores fuertes */
+#chatAbrir{left:auto;right:16px;transform:none;bottom:calc(100px + env(safe-area-inset-bottom,0px));width:52px;height:52px;z-index:12;box-shadow:0 8px 22px rgba(0,0,0,.16)}
+#chatAbrir:active{transform:scale(.94)}
+#chatAbrir .orbe{animation:orbePulsoSuave 3.6s ease-in-out infinite;background:radial-gradient(circle at 35% 30%, #ffffff 0%, #eef1f6 45%, #c9d0dc 100%)}
+#chatAbrir .orbe::before{content:"";position:absolute;inset:9px;border-radius:50%;background:radial-gradient(circle, rgba(10,132,255,.55) 0%, rgba(10,132,255,0) 70%);animation:orbeRespira 3.6s ease-in-out infinite}
+#chatAbrir .orbe::after{inset:11px;background:radial-gradient(circle at 35% 30%, rgba(255,255,255,.9), rgba(255,255,255,0) 65%)}
+#chatAbrir.escuchando .orbe{animation:orbePulsoSuave .9s ease-in-out infinite}
+#chatAbrir.escuchando .orbe::before{background:radial-gradient(circle, rgba(255,69,58,.7) 0%, rgba(255,69,58,0) 70%);animation:orbeRespira .9s ease-in-out infinite}
+#chatAbrir.escuchando{box-shadow:0 0 0 6px rgba(255,69,58,.18),0 8px 22px rgba(0,0,0,.16)}
+@keyframes orbePulsoSuave{0%,100%{transform:scale(1)}50%{transform:scale(1.04)}}
+@keyframes orbeRespira{0%,100%{opacity:.45}50%{opacity:1}}
+
+/* Fondo: al tocarlo se cierra el chat */
+#chatFondo{position:fixed;inset:0;z-index:11;background:transparent;display:none}
+#chatFondo.visible{display:block}
+
+/* Panel del asistente: más grande y siempre completo en pantalla */
+#chatPanel{right:16px;left:auto;bottom:calc(166px + env(safe-area-inset-bottom,0px));width:min(420px,calc(100vw - 32px));max-width:420px;max-height:min(72vh,calc(100dvh - 200px));z-index:13}
+#chatMensajes{min-height:120px}
+
+/* Botón ⋯ en el centro de la barra (en la parte superior ya no aparece) */
+#toggleMas{display:none !important}
+#tabbar button#tabMas{font-size:12px}
+#tabbar button#tabMas .ico{font-size:22px;font-weight:700}
+
+/* Menú ⋯: hoja flotante centrada sobre la barra, con botones más grandes */
+#panelMas.abierto{position:fixed !important;top:auto !important;right:auto !important;left:50% !important;transform:translateX(-50%) !important;bottom:calc(100px + env(safe-area-inset-bottom,0px)) !important;width:min(420px,calc(100vw - 24px)) !important;max-width:min(420px,calc(100vw - 24px)) !important;max-height:min(70vh,calc(100dvh - 200px)) !important;overflow:auto !important;z-index:14 !important;border-radius:24px !important;padding:16px !important;box-shadow:0 20px 50px rgba(0,0,0,.2) !important;display:flex !important}
+#panelMas .grupo-menu > .pildora,
+#panelMas .grupo-menu > button{font-size:15px !important;padding:12px 14px !important;white-space:normal !important}
+
+/* ===== chat-claro ===== */
+/* Orbe visible sobre fondo blanco: azul suave con brillo, no colorido */
+#chatAbrir{width:56px;height:56px;background:transparent;border:0;padding:0;box-shadow:0 10px 24px rgba(59,124,244,.38);right:16px;bottom:calc(100px + env(safe-area-inset-bottom,0px));z-index:12}
+#chatAbrir .orbe{background:radial-gradient(circle at 32% 28%, #ffffff 0%, #bcd6ff 30%, #5b93ff 68%, #2f6fe8 100%);box-shadow:inset 0 0 0 1px rgba(255,255,255,.55);animation:orbePulsoSuave 3.6s ease-in-out infinite}
+#chatAbrir .orbe::before{content:"";position:absolute;inset:14px;border-radius:50%;background:radial-gradient(circle, rgba(255,255,255,.85) 0%, rgba(255,255,255,0) 70%);animation:orbeRespira 3.6s ease-in-out infinite}
+#chatAbrir .orbe::after{inset:9px;background:radial-gradient(circle at 35% 28%, rgba(255,255,255,.7), rgba(255,255,255,0) 55%)}
+#chatAbrir.escuchando .orbe{background:radial-gradient(circle at 32% 28%, #ffffff 0%, #ffc4bf 30%, #ff5a4f 68%, #e0352b 100%);animation:orbePulsoSuave .9s ease-in-out infinite}
+#chatAbrir.escuchando{box-shadow:0 0 0 6px rgba(255,69,58,.2),0 10px 24px rgba(255,69,58,.35)}
+
+/* Panel: más información visible, texto más compacto */
+#chatPanel{right:12px;left:auto;bottom:calc(166px + env(safe-area-inset-bottom,0px));width:min(400px,calc(100vw - 24px));max-width:400px;max-height:min(80vh,calc(100dvh - 190px));flex-direction:column;font-size:14px;z-index:13}
+#chatPanel:not(.abierto){display:none !important}
+#chatPanel.abierto{display:flex !important}
+#chatCab{padding:10px 14px 8px}
+.chat-avatar{width:28px;height:28px;font-size:15px}
+.chat-titulo b{font-size:15px}
+#chatCerrar{width:28px;height:28px;font-size:16px}
+.chat-ajustes{padding:0 14px 8px;gap:6px}
+#chatGenero,#chatVelocidad{font-size:12px;padding:5px 10px}
+#chatContinuo,#chatVozOn{width:30px;height:30px;font-size:15px}
+#chatUso{padding:6px 14px;font-size:11px;line-height:1.35}
+#chatMensajes{flex:1 1 auto;min-height:0;overflow-y:auto;padding:8px 12px}
+.chat-burbuja{font-size:14px;line-height:1.45;padding:9px 13px;max-width:90%}
+#chatSugerencias{flex:0 0 auto;padding:4px 12px 8px}
+#chatSugerencias button{font-size:12px;padding:6px 11px}
+#chatForm{flex:0 0 auto;padding:8px 10px 10px}
+#chatVoz,#chatForm button[type=submit]{width:36px;height:36px}
+#chatInput{font-size:14px;padding:9px 14px}
+
+/* Recomendaciones: la portada se ve al instante, bajo el texto */
+.chat-posters{padding:4px 0 6px;gap:10px}
+.chat-poster-col{flex:0 0 118px;gap:5px}
+.chat-poster{flex:0 0 auto;width:100%;border-radius:14px}
+.chat-poster img,.chat-poster .chat-sinposter{height:164px}
+.chat-poster span{font-size:11px;padding:5px 7px;line-height:1.2}
+.chat-marcar button{font-size:11px;padding:5px 2px}
+
+/* ===== ajustes-barra-orbe ===== */
+/* Las recomendaciones no se encogen: se ven completas y se puede bajar hasta el final */
+#chatMensajes > *{flex-shrink:0}
+.chat-posters{flex:0 0 auto;min-height:auto;overflow-x:auto;overflow-y:visible}
+.chat-poster-col{min-height:max-content}
+
+/* Barra inferior y orbe a la misma altura: el orbe queda al lado derecho de la barra */
+#chatAbrir:active{transform:scale(.94) !important}
+
+/* ===== menu-mas-encima ===== */
+/* El menú ⋯ va por encima del velo de fondo y de la barra, para poder tocarlo */
+#panelMas,
+#panelMas.abierto{z-index:31 !important}
+#velo{z-index:29}
+
+/* ===== bloque 18 ===== */
+#panelAvanzados .grupo-menu{grid-column:1/-1}
+#panelMas{display:none!important}
+
+/* ===== panel-flotante ===== */
+/* Panel de ajustes flotante, al centro, con esquinas redondeadas y entrada suave */
+#panelAvanzados.abierto,
+#panelMas.abierto{position:fixed !important;left:50% !important;right:auto !important;top:50% !important;bottom:auto !important;transform:translate(-50%,-50%) !important;width:min(440px, calc(100vw - 28px)) !important;max-width:none !important;max-height:min(78dvh, 640px) !important;margin:0 !important;border-radius:28px !important;box-shadow:0 24px 60px rgba(0,0,0,.22) !important;padding:20px !important;overflow-y:auto !important;z-index:31 !important;animation:aparecerFlotante .28s cubic-bezier(.2,.8,.2,1) both !important}
+@keyframes aparecerFlotante{from{opacity:0;transform:translate(-50%,-46%) scale(.96)}to{opacity:1;transform:translate(-50%,-50%) scale(1)}}
+#velo{z-index:29}
+
+/* ===== asistente-grande ===== */
+/* Panel del asistente más grande y centrado sobre la barra: aprovecha la pantalla */
+#chatPanel{left:50% !important;right:auto !important;transform:translateX(-50%) !important;bottom:calc(104px + env(safe-area-inset-bottom,0px)) !important;width:min(480px, calc(100vw - 20px)) !important;max-width:480px !important;max-height:min(80dvh, calc(100dvh - 150px)) !important;height:min(80dvh, 720px);border-radius:28px !important;font-size:15px !important}
+#chatCab{padding:14px 18px 10px}
+.chat-titulo b{font-size:17px}
+.chat-avatar{width:34px;height:34px;font-size:18px}
+#chatCerrar{width:34px;height:34px;font-size:18px}
+.chat-ajustes{padding:0 18px 10px;gap:8px}
+#chatGenero,#chatVelocidad{font-size:13px;padding:7px 12px}
+#chatContinuo,#chatVozOn{width:36px;height:36px;font-size:17px}
+#chatUso{padding:8px 18px;font-size:12px}
+#chatMensajes{flex:1 1 auto;min-height:220px;padding:10px 16px}
+.chat-burbuja{font-size:15px;line-height:1.5;padding:11px 15px;max-width:88%}
+#chatSugerencias{padding:6px 16px 10px}
+#chatSugerencias button{font-size:13px;padding:7px 13px}
+#chatForm{padding:10px 14px 14px}
+#chatVoz,#chatForm button[type=submit]{width:42px;height:42px}
+#chatInput{font-size:15px;padding:11px 16px}
+.chat-poster-col{flex:0 0 128px}
+.chat-poster img,.chat-poster .chat-sinposter{height:186px}
+.chat-poster span{font-size:12px}
+@media (max-width:420px){#chatPanel{width:calc(100vw - 16px) !important;bottom:calc(100px + env(safe-area-inset-bottom,0px)) !important}}
+
+/* ===== asistente-altura ===== */
+/* La altura se calcula para que el panel quepa completo: encabezado arriba y campo de texto sobre la barra */
+#chatPanel{height:min(720px, calc(100dvh - 150px - env(safe-area-inset-top,0px))) !important;max-height:min(720px, calc(100dvh - 150px)) !important;min-height:0 !important;overflow:hidden}
+#chatMensajes{min-height:120px !important;flex:1 1 0 !important}
+</style>
+<style id="ayuda-atajos">
+.ayuda-atajos{position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;z-index:2000;padding:16px}
+.ayuda-caja{background:var(--tarjeta);color:var(--texto);border-radius:18px;padding:20px 22px;max-width:360px;width:100%;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+.ayuda-caja h3{margin:0 0 12px;font-size:17px}
+.ayuda-caja dl{display:grid;grid-template-columns:auto 1fr;gap:8px 14px;margin:0 0 16px;font-size:14px}
+.ayuda-caja dt{font-weight:700;font-family:ui-monospace,monospace;font-size:13px;white-space:nowrap}
+.ayuda-caja dd{margin:0;color:var(--gris)}
+@media (hover:none) and (pointer:coarse){ .ayuda-atajos{display:none} }
+</style>
+<style id="pareja-reto-capsula">
+.capsula-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center;margin-bottom:12px}
+.capsula-stats b{display:block;font-size:17px}
+.capsula-stats span{font-size:12px;color:var(--gris)}
+.ventana-larga{max-height:85vh;overflow:auto;max-width:440px}
+.ventana-larga h4{margin:14px 0 6px;font-size:14px;text-transform:capitalize}
+.ventana-larga ol{margin:0 0 0 18px;padding:0}
+.diario-entrada{padding:8px 0;border-bottom:1px solid rgba(0,0,0,.08)}
+.diario-entrada p{margin:4px 0 0;font-size:14px;color:var(--gris)}
+.reto-caja{margin:12px 16px;padding:14px 16px;border-radius:18px;background:var(--tarjeta);color:var(--texto)}
+.reto-caja.listo{outline:2px solid var(--acento,#34c759)}
+.reto-titulo{font-weight:700;font-size:14px}
+.reto-texto{margin:4px 0 8px;font-size:15px}
+.reto-barra{height:8px;border-radius:999px;background:rgba(118,118,128,.18);overflow:hidden}
+.reto-barra span{display:block;height:100%;background:var(--acento,#34c759);border-radius:999px}
+</style>
+<style id="etapa-1-seleccion">
+.campo{display:block;margin:10px 0;font-size:14px}
+.campo select,.campo input{display:block;width:100%;margin-top:4px;padding:8px;border-radius:10px;border:1px solid rgba(0,0,0,.15);font:inherit;background:var(--fondo,#fff);color:var(--texto)}
+</style>
+<style id="etapa-2-pareja-animo">
+.voto-tarjeta{margin:12px 0;padding:14px;border-radius:16px;background:var(--fondo-suave,rgba(118,118,128,.1))}
+.voto-botones{display:flex;gap:10px;margin-top:12px}
+.animo-op{margin:4px 4px 4px 0}
+</style>
+<style id="etapa-2-3-animo-mapa-buzon">
+#lista.animo-activo [data-i]:not(.animo-match){opacity:.55;filter:saturate(.6)}
+#lista.animo-activo [data-i].animo-match{box-shadow:0 0 0 2px var(--animo),0 8px 20px rgba(0,0,0,.12)}
+.paises-grid{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
+.pais-chip{padding:5px 10px;border-radius:999px;font-size:12px;background:rgba(118,118,128,.14);color:var(--gris)}
+.pais-chip.visto{background:var(--acento,#34c759);color:#fff;font-weight:600}
+.carta-caja{padding:10px 0;border-bottom:1px solid rgba(0,0,0,.08)}
+.carta-caja p{margin:4px 0 0;font-size:14px}
+.racha{margin:4px 16px}
+</style>
+<style id="etapa-4-viaje-estrenos">
+.viaje-fila{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid rgba(0,0,0,.08)}
+.alertas-estreno{margin:8px 16px;font-size:14px}
+.alertas-estreno p{margin:4px 0}
+</style>
+<style id="menu-y-inicio">
+.hoy{margin:14px 16px 6px;padding:20px 18px 18px;border-radius:24px;background:var(--tarjeta);color:var(--texto);box-shadow:0 1px 0 rgba(0,0,0,.04),0 10px 30px rgba(0,0,0,.06)}
+.hoy-saludo{margin:0;font-size:13px;letter-spacing:.04em;text-transform:uppercase;color:var(--gris)}
+.hoy-titulo{margin:4px 0 2px;font-size:26px;font-weight:700;letter-spacing:-.02em}
+.hoy-sub{margin:0 0 14px;font-size:14px;color:var(--gris)}
+.hoy-acciones{display:flex;flex-wrap:wrap;gap:8px}
+.hoy-reto{margin-top:16px;font-size:14px}
+.hoy-reto span{display:block;margin-bottom:6px}
+.hoy .alertas-estreno{margin:12px 0 0 0;padding:0}
+</style>
+<style id="pulido-visual">
+/* 1. Bordes y esquinas suaves */
+:root { --radio:20px; --radio-chico:12px; --borde:rgba(60,60,67,.10); }
+body.oscuro { --borde:rgba(255,255,255,.08); }
+.tarjeta, .panel-avanzados, .hoy, .dest, .aviso-estancados, .que-ver { border-color:var(--borde) !important; }
+.pildora { border:1px solid var(--borde); }
+
+/* 3. Jerarquía tipográfica */
+body { -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility; }
+h1 { letter-spacing:-.02em; }
+.meta { color:var(--gris); font-size:13px; line-height:1.45; }
+.tarjeta h3 { font-size:16px; font-weight:650; letter-spacing:-.01em; margin:10px 0 4px; }
+
+/* 4. Pósters como protagonistas */
+.tarjeta .portada { border-radius:14px; box-shadow:0 6px 18px rgba(0,0,0,.12); }
+
+/* 5. Movimiento suave */
+.pildora, .tarjeta, .panel-avanzados, .hoy, .segmentado button {
+  transition: transform .25s var(--ease), box-shadow .25s var(--ease), background-color .25s var(--ease), opacity .25s var(--ease);
+}
+.pildora:active, .segmentado button:active { transform:scale(.97); }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition:none !important; animation:none !important; }
+}
+
+/* 6. Cabecera ligera con desenfoque */
+#app > header { backdrop-filter:saturate(1.4) blur(14px); -webkit-backdrop-filter:saturate(1.4) blur(14px); border-bottom:1px solid var(--borde); }
+
+/* 7. Iconos alineados en el menú */
+.ico { display:inline-block; width:1.4em; text-align:center; margin-right:.3em; }
 </style>
 </head>
 <body>
@@ -833,8 +1175,7 @@ body[data-pestana="pendientes"] .aviso-opciones::-webkit-scrollbar-thumb { backg
     <button type="button" data-seg="favoritas">Favoritas</button>
   </div>
   <div id="chips" class="solo-catalogo" data-zona="lista"></div>
-  <div id="contador" data-zona="lista"></div>
-  <div id="estadoGuardado"></div>
+  <div class="fila-estado" data-zona="lista"><div id="contador"></div><div id="estadoGuardado"></div></div>
   </div>
 </header>
 
@@ -890,9 +1231,33 @@ body[data-pestana="pendientes"] .aviso-opciones::-webkit-scrollbar-thumb { backg
       <button id="agrupar" class="pildora">Agrupar por tema</button>
     </div>
     <div class="grupo-menu">
-      <span class="grupo-titulo">Herramientas</span>
+      <span class="grupo-titulo">Descubrir</span>
+      <button id="nocheTema" class="pildora">🎡 Noche temática</button>
+      <button id="maraton" class="pildora">🎬 Maratón</button>
+      <button id="sorpresa" class="pildora">🎁 Sorpresa con reglas</button>
+      <button id="animoBtn" class="pildora">🎭 ¿Cómo te sientes?</button>
+      <button id="mapaViaje" class="pildora">🗺 Mapa de viaje</button>
+    </div>
+    <div class="grupo-menu">
+      <span class="grupo-titulo">Con alguien</span>
+      <button id="parejaBtn" class="pildora">💑 Modo pareja</button>
+      <button id="votarPareja" class="pildora">🗳 Votar en pareja</button>
+      <button id="capsula" class="pildora">🎁 Cápsula del año</button>
+    </div>
+    <div class="grupo-menu">
+      <span class="grupo-titulo">Planear y recordar</span>
       <button id="clasificar" class="pildora destacado">⚡ Clasificar</button>
       <button id="estadisticas" class="pildora">📊 Estadísticas</button>
+      <button id="diario" class="pildora">📔 Diario de cine</button>
+      <button id="buzon" class="pildora">📬 Buzón de cartas</button>
+      <button id="prepararViaje" class="pildora">✈ Preparar viaje</button>
+      <button id="verViaje" class="pildora">🎒 Lista de viaje</button>
+    </div>
+    <div class="grupo-menu">
+      <span class="grupo-titulo">Ajustes</span>
+      <button id="guardarPaletas" class="pildora">🎨 Guardar paletas</button>
+      <button id="deshacer" class="pildora">↶ Deshacer</button>
+      <button id="atajos" class="pildora">⌨ Atajos de teclado</button>
     </div>
     <div class="grupo-menu">
       <span class="grupo-titulo">Ayuda</span>
@@ -939,6 +1304,7 @@ body[data-pestana="pendientes"] .aviso-opciones::-webkit-scrollbar-thumb { backg
   </div>
 
 
+<section id="hoy" class="hoy solo-catalogo" data-zona="inicio" style="display:none"></section>
 <div id="avisoFecha" class="aviso-estancados solo-catalogo" data-zona="inicio" style="display:none">
   <div class="aviso-cabecera">
     <span id="avisoFechaTexto"></span>
@@ -971,6 +1337,7 @@ body[data-pestana="pendientes"] .aviso-opciones::-webkit-scrollbar-thumb { backg
 <section id="bienvenida" class="destacados solo-catalogo" data-zona="inicio" style="display:none"></section>
 <section id="duelo" class="destacados solo-catalogo" data-zona="duelo" style="display:none"></section>
 <section id="resumenSemana" class="destacados" data-zona="resumen" style="display:none"></section>
+<section id="retoMes" class="destacados" data-zona="actividad" style="display:none"></section>
 <section id="actividad" class="destacados" data-zona="actividad" style="display:none"></section>
 <section id="mapaGustos" class="destacados" data-zona="mapa" style="display:none"></section>
 <section id="recomendaciones" class="destacados solo-catalogo" data-zona="inicio" style="display:none">
@@ -2315,6 +2682,23 @@ function fraseRecomendacion(r) {
   return frase + ".";
 }
 
+// Desglose legible: los puntos negativos muestran la película descartada que los causó
+function lineasPorQue(desglose) {
+  return desglose.map(d => {
+    if (d.puntos < 0) {
+      const f = d.fuentes[0];
+      const otras = d.fuentes.length - 1;
+      return d.etiqueta + " (" + d.puntos + ", por descartada: " + f.titulo +
+        (otras > 0 ? " y " + otras + " más" : "") + ")";
+    }
+    const fuentes = d.fuentes.slice().sort((a, b) => b.estrellas - a.estrellas);
+    const mejor = fuentes[0];
+    const otras = fuentes.length - 1;
+    return d.etiqueta + " (+" + d.puntos + ", por tu " + mejor.estrellas + "★ en " + mejor.titulo +
+      (otras > 0 ? " y " + otras + " más" : "") + ")";
+  });
+}
+
 function renderRecomendaciones() {
   const sec = $("recomendaciones");
   if (hayFiltros() || pestana !== "catalogo") {
@@ -2334,7 +2718,9 @@ function renderRecomendaciones() {
       : '<div class="sinportada-mini">🎬</div>';
     const abierto = porQueAbiertos.has(r.p.titulo);
     const detalle = abierto
-      ? '<p class="porque-lista">' + esc(fraseRecomendacion(r)) + '</p>'
+      ? '<p class="porque-lista">' + esc(fraseRecomendacion(r)) + '</p>' +
+        '<ul class="porque-lista porque-desglose">' +
+        lineasPorQue(r.desglose).map(l => '<li>' + esc(l) + '</li>').join('') + '</ul>'
       : '';
     return '<div class="dest" data-idx="' + idx + '">' + img +
       '<div class="dest-titulo">' + esc(r.p.titulo) + '</div>' +
@@ -2474,6 +2860,48 @@ async function sheetsFetch(path, metodo, cuerpo) {
   });
   if (!r.ok) throw new Error("Sheets respondió " + r.status);
   return r.json();
+}
+
+/* ---------- Guardar paletas en la hoja (solo cuenta dueña) ---------- */
+async function asegurarColumnaPaleta() {
+  if (COL_PALETA !== -1) return;
+  COL_PALETA = encabezados.length;
+  encabezados.push(NOMBRE_PALETA);
+  await sheetsFetch("values/" + letraColumna(COL_PALETA) + "1?valueInputOption=RAW", "PUT", {
+    values: [[NOMBRE_PALETA]]
+  });
+}
+
+async function guardarPaletasEnHoja() {
+  const pendientes = peliculas.filter(p => !paletaDeTexto(p[NOMBRE_PALETA]).length && p.portada);
+  if (!pendientes.length) {
+    setEstado("Todas las portadas ya tienen paleta guardada.");
+    return;
+  }
+  setEstado("Calculando paletas de " + pendientes.length + " películas...");
+  const cambios = [];
+  for (const p of pendientes) {
+    const calc = await paletaDePoster(p.portada);
+    if (calc.length) {
+      p[NOMBRE_PALETA] = calc.map(rgbAHex).join(",");
+      cambios.push(p);
+    }
+  }
+  if (!cambios.length) {
+    setEstado("No pude leer las portadas en este navegador.");
+    return;
+  }
+  try {
+    await asegurarColumnaPaleta();
+    const data = cambios.map(p => ({
+      range: letraColumna(COL_PALETA) + p._fila,
+      values: [[p[NOMBRE_PALETA]]]
+    }));
+    await sheetsFetch("values:batchUpdate", "POST", { valueInputOption: "RAW", data: data });
+    setEstado("Paletas guardadas en la hoja: " + cambios.length);
+  } catch (e) {
+    setEstado("No pude guardar en la hoja. Esta opción solo funciona con la cuenta dueña de la hoja.");
+  }
 }
 
 /* ---------- Marcas personales en Drive ---------- */
@@ -3649,7 +4077,7 @@ function renderPestanaDescartadas() {
     '</div>';
 
   if (!todas.length) {
-    html += '<p class="vacio">No tienes películas descartadas.</p>';
+    html += '<p class="vacio">Aún no descartas películas. Si una no te interesa, ábrela y usa «Descartar»; así no te la vuelvo a sugerir.</p>';
   } else {
     html += todas.map(p => {
       const k = esc(p.titulo);
@@ -3720,10 +4148,12 @@ function pintar() {
       coincideEstado(p, sel.estado.value);
   });
   visibles.sort(ordenes[$("orden").value]);
+  visibles = ordenarPorAnimo(visibles);
 
   const { vistas, pendientes } = contarEstados();
   $("destacados").style.display = hayFiltros() ? "none" : "block";
   renderRecomendaciones();
+  renderHoy();
   actualizarAhora();
   renderAvisoEstancados();
   actualizarAvisoFecha();
@@ -3743,7 +4173,7 @@ function pintar() {
 
   ajustarQueVer();
   if (!visibles.length) {
-    lista.innerHTML = '<p class="vacio">No encontré nada con esos criterios.</p>';
+    lista.innerHTML = '<p class="vacio">No encontré películas con esos criterios. Prueba quitando algún filtro o cambiando la búsqueda.</p>';
     return;
   }
   if (agrupado) {
@@ -3751,6 +4181,7 @@ function pintar() {
     return;
   }
   lista.innerHTML = visibles.map((p, i) => vistaLista ? filaHtml(p, i) : tarjeta(p, i)).join("");
+  marcarAnimo();
 }
 
 function pintarPestana() {
@@ -3776,6 +4207,8 @@ function pintarPestana() {
   if (pestana === "vistas") {
     actualizarResumenSemana();
     renderActividad();
+  renderRetoMes();
+  renderExtrasActividad();
     renderMapaGustos();
   }
 
@@ -3823,7 +4256,7 @@ function pintarPestana() {
     contador.textContent = "Pendientes: " + items.length + " · con alguien: " + planeadas.length;
 
     if (!items.length) {
-      lista.innerHTML = '<p class="vacio">No tienes pendientes.</p>';
+      lista.innerHTML = '<p class="vacio">Aún no tienes pendientes. Marca una película con «Pendiente» para verla después.</p>';
       return;
     }
     let html = "";
@@ -3871,7 +4304,7 @@ function pintarPestana() {
   if (!items.length) {
     const msg = pestana === "notas"
       ? "Aún no tienes notas. Abre una película y escribe en «Mi nota». Usa #palabras para etiquetarlas."
-      : "Aún no has marcado películas como vistas.";
+      : "Aún no marcas películas como vistas. Abre una película y pulsa «Vista» para empezar tu historial.";
     lista.innerHTML = '<p class="vacio">' + msg + '</p>';
     return;
   }
@@ -3990,6 +4423,7 @@ function cerrarDetalle() {
 }
 
 function sugerirAleatoria() {
+  if (modoPareja()) { sugerirParaDos(); return; }
   if (!visibles.length) {
     contador.textContent = "No hay películas con esos criterios para sugerir.";
     return;
@@ -4044,7 +4478,7 @@ function abrirQueVerEstaNoche() {
 
   const sel = document.createElement("select");
   sel.id = "nocheTiempo";
-  [["60", "1 hora"], ["90", "1 hora 30 min"], ["120", "2 horas"], ["150", "2 horas 30 min"], ["180", "3 horas"], ["0", "Sin límite"]]
+  [["60", "Hasta 1 hora"], ["90", "Hasta 1 h 30 min"], ["120", "Hasta 2 horas"], ["150", "Hasta 2 h 30 min"], ["180", "Hasta 3 horas"], ["0", "Sin límite"]]
     .forEach(([v, t], i) => {
       const o = document.createElement("option");
       o.value = v;
@@ -4073,7 +4507,7 @@ function elegirNoche(otra) {
   if (!sel || !res) return;
   const tiempo = Number(sel.value);
   const base = peliculas.filter(p => !estadoDe(p).vista && !(marcas[p.titulo] || {}).descartada);
-  const cabe = p => !tiempo || (minutos(p) > 0 && minutos(p) <= tiempo + 10);
+  const cabe = p => !tiempo || (minutos(p) > 0 && minutos(p) <= tiempo);
   let pool = base.filter(p => estadoDe(p).pendiente && cabe(p));
   if (!pool.length) pool = base.filter(cabe);
   if (otra && ultimaNoche && pool.length > 1) pool = pool.filter(p => p.titulo !== ultimaNoche.titulo);
@@ -4082,7 +4516,7 @@ function elegirNoche(otra) {
   if (!pool.length) {
     const vacio = document.createElement("p");
     vacio.className = "noche-vacio";
-    vacio.textContent = "No encontré películas que quepan en ese tiempo. Prueba con más tiempo.";
+    vacio.textContent = "Ninguna de tus pendientes cabe en ese tiempo. Prueba con más minutos o agrega películas a pendientes.";
     res.appendChild(vacio);
     return;
   }
@@ -4109,7 +4543,16 @@ function elegirNoche(otra) {
   h.textContent = p.titulo;
   const meta = document.createElement("p");
   const partes = [p["año"], p.duracion, p.director].filter(Boolean);
+  const durMin = minutos(p);
+  const fmtMin = m => (Math.floor(m / 60) ? Math.floor(m / 60) + " h " : "") + (m % 60) + " min";
   meta.textContent = partes.join(" · ");
+  if (tiempo && durMin) {
+    const sobra = document.createElement("span");
+    sobra.className = "noche-sobra";
+    sobra.textContent = "Te sobran " + fmtMin(tiempo - durMin);
+    meta.appendChild(document.createElement("br"));
+    meta.appendChild(sobra);
+  }
   const acciones = document.createElement("div");
   acciones.className = "noche-acciones";
 
@@ -4279,7 +4722,7 @@ function pintarClasificador() {
   $("clasDeshacer").disabled = !cls.pila.length;
 
   if (!p) {
-    zona.innerHTML = '<p class="vacio">No quedan películas por clasificar. ¡Buen trabajo!</p>';
+    zona.innerHTML = '<p class="vacio">Ya no quedan películas por clasificar. ¡Buen trabajo!</p>';
     return;
   }
 
@@ -4823,6 +5266,22 @@ window.addEventListener("load", () => {
   $("aleatorio").addEventListener("click", sugerirAleatoria);
   $("queVerNoche").addEventListener("click", abrirQueVerEstaNoche);
   $("estadisticas").addEventListener("click", abrirEstadisticas);
+  $("guardarPaletas").addEventListener("click", guardarPaletasEnHoja);
+  $("deshacer").addEventListener("click", deshacerUltimo);
+  $("atajos").addEventListener("click", toggleAyudaAtajos);
+  $("capsula").addEventListener("click", abrirCapsulaAno);
+  $("parejaBtn").addEventListener("click", alternarModoPareja);
+  $("diario").addEventListener("click", abrirDiario);
+  $("nocheTema").addEventListener("click", nocheTematica);
+  $("maraton").addEventListener("click", abrirMaraton);
+  $("sorpresa").addEventListener("click", abrirSorpresa);
+  $("votarPareja").addEventListener("click", abrirVotacionPareja);
+  $("animoBtn").addEventListener("click", abrirAnimo);
+  $("mapaViaje").addEventListener("click", abrirMapaViaje);
+  $("buzon").addEventListener("click", abrirBuzon);
+  $("prepararViaje").addEventListener("click", prepararViaje);
+  $("verViaje").addEventListener("click", abrirModoViaje);
+  if (modoPareja()) { $("parejaBtn").textContent = "💑 Modo pareja: activo"; $("parejaBtn").classList.add("destacado"); }
   $("cerrarStats").addEventListener("click", cerrarEstadisticas);
   $("statsModal").addEventListener("click", e => { if (e.target.id === "statsModal") cerrarEstadisticas(); });
 
@@ -5864,7 +6323,691 @@ function migrarClaves() {
 }
 
 // Funciones que usa el resto de la página
+/* ---------- Ventana sencilla reutilizable ---------- */
+function abrirVentanaSimple(id, titulo, cuerpo) {
+  const previa = document.getElementById(id);
+  if (previa) previa.remove();
+  const div = document.createElement("div");
+  div.id = id;
+  div.className = "ayuda-atajos";
+  div.innerHTML = '<div class="ayuda-caja ventana-larga" role="dialog" aria-label="' + esc(titulo) + '">' +
+    '<h3>' + esc(titulo) + '</h3>' + cuerpo +
+    '<button type="button" class="pildora" data-cerrar>Cerrar</button></div>';
+  div.addEventListener("click", e => { if (e.target === div || e.target.hasAttribute("data-cerrar")) div.remove(); });
+  document.body.appendChild(div);
+}
+
+/* ---------- Cápsula del año ---------- */
+function vistasDelAno(ano) {
+  return peliculas.filter(p => ((marcas[p.titulo] || {}).historial || [])
+    .some(h => h.a === "vista" && String(h.f).startsWith(ano)));
+}
+
+function abrirCapsulaAno() {
+  const ano = String(new Date().getFullYear());
+  const vistas = vistasDelAno(ano);
+  if (!vistas.length) {
+    abrirVentanaSimple("capsulaAno", "Cápsula " + ano,
+      '<p class="meta">Aún no marcas películas como vistas este año. Cuando lo hagas, aquí verás tu resumen.</p>');
+    return;
+  }
+  const est = p => (marcas[p.titulo] || {}).estrellas || 0;
+  const top = vistas.slice().sort((a, b) => est(b) - est(a)).slice(0, 5);
+  const genero = {};
+  vistas.forEach(p => String(p.genero || "").split(/[,\/]/).map(x => x.trim()).filter(Boolean)
+    .forEach(g => genero[g] = (genero[g] || 0) + 1));
+  const generos = Object.entries(genero).sort((a, b) => b[1] - a[1]).slice(0, 3).map(x => x[0]).join(", ") || "sin datos";
+  const calificadas = vistas.filter(p => est(p) > 0);
+  const promedio = calificadas.length
+    ? (calificadas.reduce((s, p) => s + est(p), 0) / calificadas.length).toFixed(1) : "—";
+  const cuerpo =
+    '<div class="capsula-stats">' +
+    '<div><b>' + vistas.length + '</b><span>vistas</span></div>' +
+    '<div><b>' + promedio + '★</b><span>promedio</span></div>' +
+    '<div><b>' + esc(generos) + '</b><span>géneros favoritos</span></div></div>' +
+    '<h4>Tus favoritas del año</h4><ol>' +
+    top.map(p => '<li>' + esc(p.titulo) + (est(p) ? ' · ' + est(p) + '★' : '') + '</li>').join('') + '</ol>';
+  abrirVentanaSimple("capsulaAno", "Cápsula " + ano, cuerpo);
+}
+
+/* ---------- Modo pareja: elegir de «Para ver con alguien» ---------- */
+function modoPareja() {
+  try { return localStorage.getItem("modo_pareja") === "1"; } catch (e) { return false; }
+}
+
+function alternarModoPareja() {
+  const activo = !modoPareja();
+  try { localStorage.setItem("modo_pareja", activo ? "1" : "0"); } catch (e) {}
+  $("parejaBtn").textContent = activo ? "💑 Modo pareja: activo" : "💑 Modo pareja";
+  $("parejaBtn").classList.toggle("destacado", activo);
+  setEstado(activo ? "Modo pareja activo: el aleatorio elige entre «Para ver con alguien»." : "Modo pareja desactivado.");
+}
+
+function sugerirParaDos() {
+  const pool = peliculas.filter(p => (marcas[p.titulo] || {}).conAlguien && !(marcas[p.titulo] || {}).vista);
+  if (!pool.length) {
+    setEstado("Aún no tienen películas para ver juntos. Marca «Para ver con alguien» en una pendiente.");
+    return;
+  }
+  abrirDetalle(pool[Math.floor(Math.random() * pool.length)]);
+}
+
+/* ---------- Reto del mes ---------- */
+const RETOS_MES = [
+  { texto: "Ve 3 películas este mes", meta: 3, cuenta: vs => vs.length },
+  { texto: "Ve una película de un país distinto a Estados Unidos", meta: 1,
+    cuenta: vs => vs.filter(p => !/estados unidos|eeuu|ee\. ?uu|usa/i.test(String(p.pais || ""))).length },
+  { texto: "Ve una película anterior a 1980", meta: 1,
+    cuenta: vs => vs.filter(p => Number(p["año"]) < 1980).length },
+  { texto: "Ve 2 películas que califiques con 4 o 5★", meta: 2,
+    cuenta: vs => vs.filter(p => ((marcas[p.titulo] || {}).estrellas || 0) >= 4).length }
+];
+
+function renderRetoMes() {
+  const sec = $("retoMes");
+  const hoy = new Date();
+  const mes = hoy.getFullYear() + "-" + String(hoy.getMonth() + 1).padStart(2, "0");
+  const vistasMes = peliculas.filter(p => ((marcas[p.titulo] || {}).historial || [])
+    .some(h => h.a === "vista" && String(h.f).startsWith(mes)));
+  const reto = RETOS_MES[hoy.getMonth() % RETOS_MES.length];
+  const hecho = Math.min(reto.cuenta(vistasMes), reto.meta);
+  const listo = hecho >= reto.meta;
+  sec.style.display = "block";
+  sec.innerHTML = '<div class="reto-caja' + (listo ? ' listo' : '') + '">' +
+    '<div class="reto-titulo">🏆 Reto del mes</div>' +
+    '<div class="reto-texto">' + esc(reto.texto) + '</div>' +
+    '<div class="reto-barra"><span style="width:' + Math.round(hecho / reto.meta * 100) + '%"></span></div>' +
+    '<div class="meta">' + (listo ? '¡Reto cumplido este mes!' : hecho + " de " + reto.meta + " logrado") + '</div></div>';
+}
+
+/* ---------- Diario de cine ---------- */
+function abrirDiario() {
+  const entradas = [];
+  peliculas.forEach(p => {
+    const o = marcas[p.titulo] || {};
+    const v = (o.historial || []).filter(h => h.a === "vista").slice(-1)[0];
+    if (v) entradas.push({ p, o, f: String(v.f) });
+  });
+  entradas.sort((a, b) => b.f.localeCompare(a.f));
+  if (!entradas.length) {
+    abrirVentanaSimple("diarioCine", "Diario de cine",
+      '<p class="meta">Tu diario se llena solo cuando marcas películas como vistas. Escribe una nota en cada una y aparecerá aquí.</p>');
+    return;
+  }
+  let html = "", mesActual = "";
+  entradas.slice(0, 200).forEach(e => {
+    const mes = e.f.slice(0, 7);
+    if (mes !== mesActual) { mesActual = mes; html += '<h4>' + esc(mes) + '</h4>'; }
+    html += '<div class="diario-entrada"><b>' + esc(e.p.titulo) + '</b>' +
+      (e.o.estrellas ? ' <span class="meta">' + e.o.estrellas + '★</span>' : '') +
+      ' <span class="meta">· ' + esc(e.f) + '</span>' +
+      (e.o.nota ? '<p>' + esc(e.o.nota) + '</p>' : '') + '</div>';
+  });
+  abrirVentanaSimple("diarioCine", "Diario de cine", html);
+}
+
+/* ---------- Perfil de gustos para Rolo (sale de tus marcas) ---------- */
+function perfilGustos() {
+  const gen = {}, dir = {}, neg = {};
+  let pend = 0;
+  peliculas.forEach(p => {
+    const o = marcas[p.titulo] || {};
+    const gs = String(p.genero || "").split(/[,\/]/).map(x => x.trim()).filter(Boolean);
+    if (o.pendiente) pend++;
+    if (o.vista && (o.estrellas || 0) >= 4) {
+      gs.forEach(g => gen[g] = (gen[g] || 0) + 1);
+      if (p.director) dir[p.director] = (dir[p.director] || 0) + 1;
+    }
+    if (o.descartada) gs.forEach(g => neg[g] = (neg[g] || 0) + 1);
+  });
+  const top = obj => Object.entries(obj).sort((a, b) => b[1] - a[1]).slice(0, 3).map(x => x[0]).join(", ") || "sin datos";
+  return "le gustan los géneros " + top(gen) + "; directores " + top(dir) +
+    "; descarta " + top(neg) + "; tiene " + pend + " pendientes";
+}
+
+/* ---------- Etapa 1: selección inteligente ---------- */
+const TEMAS_NOCHE = [
+  { dia: "domingo", tema: "Ciencia ficción", genero: "ciencia ficci" },
+  { dia: "lunes", tema: "Animación", genero: "animaci" },
+  { dia: "martes", tema: "Comedia", genero: "comedia" },
+  { dia: "miércoles", tema: "Drama", genero: "drama" },
+  { dia: "jueves", tema: "Aventura", genero: "aventura" },
+  { dia: "viernes", tema: "Terror o suspenso", genero: "terror|suspenso|thriller" },
+  { dia: "sábado", tema: "Romance", genero: "romance" }
+];
+
+function pendientesNoVistas() {
+  return peliculas.filter(p => (marcas[p.titulo] || {}).pendiente && !(marcas[p.titulo] || {}).vista);
+}
+
+function generoCoincide(p, patron) {
+  return new RegExp(patron, "i").test(String(p.genero || ""));
+}
+
+function elegirAlAzar(lista) {
+  return lista[Math.floor(Math.random() * lista.length)];
+}
+
+/* 1) Noche temática según el día */
+function nocheTematica() {
+  const hoy = TEMAS_NOCHE[new Date().getDay()];
+  const pool = pendientesNoVistas();
+  if (!pool.length) {
+    setEstado("No tienes pendientes sin ver. Agrega algunas para elegir.");
+    return;
+  }
+  const del_tema = pool.filter(p => generoCoincide(p, hoy.genero));
+  if (!del_tema.length) {
+    setEstado("Hoy es noche de " + hoy.tema + ", pero no tienes pendientes de ese género. Te muestro otra.");
+    abrirDetalle(elegirAlAzar(pool));
+    return;
+  }
+  setEstado("Noche de " + hoy.tema + " (" + hoy.dia + ").");
+  abrirDetalle(elegirAlAzar(del_tema));
+}
+
+/* 3) Maratón: arma hasta 3 películas que quepan en el tiempo indicado */
+function abrirMaraton() {
+  const minutosPedidos = Number(prompt("¿Cuántos minutos tienes para ver películas?", "300"));
+  if (!minutosPedidos || minutosPedidos <= 0) return;
+  const pool = pendientesNoVistas().map(p => ({ p, m: minutos(p) })).filter(x => x.m > 0);
+  if (!pool.length) {
+    setEstado("Tus pendientes no tienen duración escrita, así que no puedo armar el maratón.");
+    return;
+  }
+  const orden = pool.slice().sort(() => Math.random() - 0.5);
+  const elegidas = [];
+  let total = 0;
+  for (const x of orden) {
+    if (elegidas.length >= 3) break;
+    if (total + x.m <= minutosPedidos) { elegidas.push(x); total += x.m; }
+  }
+  if (!elegidas.length) {
+    setEstado("Ninguna pendiente cabe en " + minutosPedidos + " minutos. Prueba con más tiempo.");
+    return;
+  }
+  const h = Math.floor(total / 60), mm = total % 60;
+  abrirVentanaSimple("maraton", "Tu maratón",
+    '<p class="meta">Total: ' + h + " h " + mm + ' min · ' + elegidas.length + ' películas</p><ol>' +
+    elegidas.map(x => '<li><b>' + esc(x.p.titulo) + '</b> · ' + x.m + ' min</li>').join("") + '</ol>');
+}
+
+/* 8) Modo sorpresa con reglas */
+function abrirSorpresa() {
+  const generos = [...new Set(peliculas.flatMap(p => String(p.genero || "").split(/[,\/]/).map(x => x.trim()).filter(Boolean)))].sort();
+  abrirVentanaSimple("sorpresa", "Sorpresa con reglas",
+    '<label class="campo">Duración máxima<select id="sorpDur"><option value="0">Cualquiera</option><option value="90">Hasta 90 min</option><option value="120">Hasta 2 h</option></select></label>' +
+    '<label class="campo">Género<select id="sorpGen"><option value="">Cualquiera</option>' +
+    generos.map(g => '<option value="' + esc(g) + '">' + esc(g) + '</option>').join("") + '</select></label>' +
+    '<label class="campo">Actor (opcional)<input id="sorpAct" type="text" placeholder="Ej. Scarlett Johansson"></label>' +
+    '<p id="sorpRes" class="meta"></p>' +
+    '<button type="button" class="pildora destacado" id="sorpOtra">🎲 Sorpréndeme</button>');
+  const elegir = () => {
+    const dur = Number($("sorpDur") ? document.getElementById("sorpDur").value : 0);
+    const gen = document.getElementById("sorpGen").value;
+    const act = document.getElementById("sorpAct").value.trim().toLowerCase();
+    const pool = pendientesNoVistas().filter(p =>
+      (!dur || (minutos(p) > 0 && minutos(p) <= dur)) &&
+      (!gen || String(p.genero || "").toLowerCase().includes(gen.toLowerCase())) &&
+      (!act || String(p.reparto || "").toLowerCase().includes(act)));
+    const res = document.getElementById("sorpRes");
+    if (!pool.length) { res.textContent = "Ninguna pendiente cumple esas reglas. Relaja alguna."; return; }
+    const p = elegirAlAzar(pool);
+    res.innerHTML = "Te toca: <b>" + esc(p.titulo) + "</b>";
+    document.querySelector("#sorpresa [data-cerrar]").click();
+    abrirDetalle(p);
+  };
+  document.getElementById("sorpOtra").addEventListener("click", elegir);
+}
+
+/* ---------- Etapa 2a: votación en pareja (en un mismo dispositivo) ---------- */
+function leerVotos() {
+  try { return JSON.parse(localStorage.getItem("votos_pareja") || "{}"); } catch (e) { return {}; }
+}
+function guardarVotos(v) {
+  try { localStorage.setItem("votos_pareja", JSON.stringify(v)); } catch (e) {}
+}
+
+function abrirVotacionPareja() {
+  const votos = leerVotos();
+  let quien = "1";
+  const candidatas = () => pendientesNoVistas().filter(p => !(votos[p.titulo] && votos[p.titulo][quien]));
+
+  function pintarVotacion() {
+    const cola = candidatas();
+    const caja = document.querySelector("#votacionPareja .ventana-larga");
+    const coincidencias = pendientesNoVistas().filter(p => votos[p.titulo] && votos[p.titulo]["1"] === 1 && votos[p.titulo]["2"] === 1);
+    let html = '<p class="meta">Votando: <b>Persona ' + quien + '</b> · pendientes por votar: ' + cola.length + '</p>';
+    if (cola.length) {
+      const p = cola[0];
+      html += '<div class="voto-tarjeta"><b>' + esc(p.titulo) + '</b><div class="meta">' +
+        esc(p.genero || "") + (p.duracion ? " · " + esc(p.duracion) : "") + '</div>' +
+        '<div class="voto-botones"><button type="button" class="pildora" data-voto="-1">👎 No</button>' +
+        '<button type="button" class="pildora destacado" data-voto="1">👍 Sí</button></div></div>';
+    } else {
+      html += '<p class="meta">Ya votó esta persona por todas.</p>';
+    }
+    html += '<button type="button" class="pildora" id="cambiarPersona">Cambiar a Persona ' + (quien === "1" ? "2" : "1") + '</button>';
+    html += '<h4>Coinciden los dos (' + coincidencias.length + ')</h4><ul>' +
+      coincidencias.map(p => '<li>' + esc(p.titulo) + '</li>').join("") + '</ul>';
+    caja.querySelector(".voto-cuerpo").innerHTML = html;
+    caja.querySelectorAll("[data-voto]").forEach(b => b.addEventListener("click", () => {
+      const t = cola[0].titulo;
+      votos[t] = Object.assign({}, votos[t] || {}, { [quien]: Number(b.dataset.voto) });
+      guardarVotos(votos);
+      pintarVotacion();
+    }));
+    document.getElementById("cambiarPersona").addEventListener("click", () => {
+      quien = quien === "1" ? "2" : "1";
+      pintarVotacion();
+    });
+  }
+
+  abrirVentanaSimple("votacionPareja", "Votación en pareja",
+    '<div class="voto-cuerpo"></div>' +
+    '<p class="meta">Se guarda en este navegador. Es para votar en un mismo dispositivo, turnándose.</p>' +
+    '<button type="button" class="pildora" id="reiniciarVotos">Empezar de cero</button>');
+  document.getElementById("reiniciarVotos").addEventListener("click", () => {
+    guardarVotos({});
+    Object.keys(votos).forEach(k => delete votos[k]);
+    pintarVotacion();
+  });
+  pintarVotacion();
+}
+
+/* ---------- Etapa 2b: filtro por ánimo (ordena el catálogo) ---------- */
+const ANIMOS = [
+  { id: "tranquilo", texto: "😌 Tranquilo", generos: "animaci|documental|romance" },
+  { id: "emocionado", texto: "🔥 Emocionado", generos: "acci|aventura|ciencia ficci|thriller" },
+  { id: "reir", texto: "😂 Quiero reír", generos: "comedia" },
+  { id: "melancolico", texto: "🌧 Melancólico", generos: "drama" },
+  { id: "pensar", texto: "🧠 Para pensar", generos: "misterio|documental|historia|ciencia ficci" }
+];
+
+function animoActual() {
+  try { return localStorage.getItem("animo") || ""; } catch (e) { return ""; }
+}
+
+function abrirAnimo() {
+  const actual = animoActual();
+  abrirVentanaSimple("animoVentana", "¿Cómo te sientes hoy?",
+    ANIMOS.map(a => '<button type="button" class="pildora animo-op' + (a.id === actual ? ' destacado' : '') +
+      '" data-animo="' + a.id + '">' + esc(a.texto) + '</button>').join(" ") +
+    '<p class="meta">El catálogo pondrá primero las películas de ese ánimo.</p>' +
+    '<button type="button" class="pildora" data-animo="">Quitar ánimo</button>');
+  document.querySelectorAll("#animoVentana [data-animo]").forEach(b => b.addEventListener("click", () => {
+    try { localStorage.setItem("animo", b.dataset.animo); } catch (e) {}
+    document.querySelector("#animoVentana [data-cerrar]").click();
+    pintar();
+    const a = ANIMOS.find(x => x.id === b.dataset.animo);
+    setEstado(a ? "Catálogo en modo " + a.texto + "." : "Ánimo quitado.");
+  }));
+}
+
+function ordenarPorAnimo(lista) {
+  const a = ANIMOS.find(x => x.id === animoActual());
+  if (!a) return lista;
+  const re = new RegExp(a.generos, "i");
+  return lista.slice().sort((x, y) => (re.test(String(y.genero || "")) ? 1 : 0) - (re.test(String(x.genero || "")) ? 1 : 0));
+}
+
+/* ---------- Etapa 2c: el ánimo cambia el color de las tarjetas ---------- */
+const ANIMO_COLOR = { tranquilo: "#30b0c7", emocionado: "#ff6b35", reir: "#ffcc00", melancolico: "#5e5ce6", pensar: "#34c759" };
+
+function marcarAnimo() {
+  const lis = document.getElementById("lista");
+  if (!lis) return;
+  const a = ANIMOS.find(x => x.id === animoActual());
+  lis.classList.toggle("animo-activo", !!a);
+  if (!a) return;
+  lis.style.setProperty("--animo", ANIMO_COLOR[a.id]);
+  const re = new RegExp(a.generos, "i");
+  lis.querySelectorAll("[data-i]").forEach(el => {
+    const p = visibles[Number(el.dataset.i)];
+    el.classList.toggle("animo-match", !!p && re.test(String(p.genero || "")));
+  });
+}
+
+/* ---------- Etapa 3a: mapa de viaje cinematográfico ---------- */
+const PAISES_MAPA = ["Estados Unidos", "México", "Francia", "Italia", "España", "Japón", "Corea del Sur", "India",
+  "Brasil", "Reino Unido", "Alemania", "China", "Argentina", "Canadá", "Irán", "Australia", "Rusia", "Suecia"];
+
+function paisesDe(p) {
+  return String(p.pais || "").split(/[,\/]/).map(x => x.trim()).filter(Boolean);
+}
+
+function abrirMapaViaje() {
+  const vistas = peliculas.filter(p => (marcas[p.titulo] || {}).vista);
+  const cuenta = {};
+  vistas.forEach(p => paisesDe(p).forEach(c => cuenta[c] = (cuenta[c] || 0) + 1));
+  const vistos = new Set(Object.keys(cuenta));
+  const grid = PAISES_MAPA.map(c => '<span class="pais-chip' + (vistos.has(c) ? ' visto' : '') + '">' +
+    esc(c) + (cuenta[c] ? ' · ' + cuenta[c] : '') + '</span>').join("");
+  const nuevos = peliculas.filter(p => !(marcas[p.titulo] || {}).vista && paisesDe(p).some(c => !vistos.has(c)));
+  let sugerencia = "";
+  if (nuevos.length) {
+    const p = elegirAlAzar(nuevos);
+    const pais = paisesDe(p).find(c => !vistos.has(c));
+    sugerencia = '<p>Un país nuevo para ti: <b>' + esc(pais) + '</b> con «' + esc(p.titulo) + '».</p>';
+  }
+  abrirVentanaSimple("mapaViaje", "Mapa de viaje",
+    '<p class="meta">Países de tus películas vistas: ' + vistos.size + ' de ' + PAISES_MAPA.length + ' en esta lista.</p>' +
+    '<div class="paises-grid">' + grid + '</div>' + sugerencia);
+}
+
+/* ---------- Etapa 3b: rachas de gustos ---------- */
+function detectarRachas() {
+  const avisos = [];
+  const vistas = peliculas.map(p => ({ p, o: marcas[p.titulo] || {} }))
+    .filter(x => x.o.vista && x.o.estrellas)
+    .map(x => {
+      const ultima = (x.o.historial || []).filter(h => h.a === "vista").slice(-1)[0];
+      return { p: x.p, o: x.o, f: ultima ? String(ultima.f) : "" };
+    })
+    .sort((a, b) => a.f.localeCompare(b.f));
+
+  const dir = {};
+  vistas.forEach(v => { if (v.o.estrellas >= 4 && v.p.director) dir[v.p.director] = (dir[v.p.director] || 0) + 1; });
+  Object.entries(dir).filter(x => x[1] >= 3).forEach(([d, n]) =>
+    avisos.push("Te gusta mucho " + d + ": " + n + " películas suyas con 4 o 5★."));
+
+  if (vistas.length >= 16) {
+    const topGenero = arr => {
+      const c = {};
+      arr.forEach(v => String(v.p.genero || "").split(/[,\/]/).map(x => x.trim()).filter(Boolean)
+        .forEach(g => c[g] = (c[g] || 0) + 1));
+      const e = Object.entries(c).sort((a, b) => b[1] - a[1])[0];
+      return e ? e[0] : "";
+    };
+    const antes = topGenero(vistas.slice(-16, -8)), ahora = topGenero(vistas.slice(-8));
+    if (antes && ahora && antes !== ahora)
+      avisos.push("Últimamente te inclinas por " + ahora + " (antes era " + antes + ").");
+  }
+  return avisos;
+}
+
+/* ---------- Etapa 3c: buzón de cartas a tu yo futuro ---------- */
+function fechaMasMeses(iso, meses) {
+  const d = new Date(iso + "T12:00:00");
+  d.setMonth(d.getMonth() + meses);
+  return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+}
+
+function cartasListas() {
+  const hoy = hoyLocalISO();
+  return peliculas.filter(p => {
+    const c = (marcas[p.titulo] || {}).carta;
+    return c && !c.leida && fechaMasMeses(c.fecha, c.meses) <= hoy;
+  });
+}
+
+function abrirBuzon() {
+  const listas = cartasListas();
+  const vistas = peliculas.filter(p => (marcas[p.titulo] || {}).vista && !(marcas[p.titulo] || {}).carta);
+  const cartaHtml = p => {
+    const c = marcas[p.titulo].carta;
+    return '<div class="carta-caja"><b>' + esc(p.titulo) + '</b> <span class="meta">escrita el ' + esc(c.fecha) + '</span>' +
+      '<p>' + esc(c.texto) + '</p></div>';
+  };
+  const cuerpo =
+    (listas.length
+      ? '<h4>Cartas que ya puedes leer (' + listas.length + ')</h4>' + listas.map(cartaHtml).join("") +
+        '<button type="button" class="pildora" id="marcarLeidas">Marcar como leídas</button>'
+      : '<p class="meta">No hay cartas listas para leer.</p>') +
+    '<h4>Escribir una carta</h4>' +
+    (vistas.length
+      ? '<label class="campo">Película vista<select id="cartaPeli">' +
+        vistas.map(p => '<option>' + esc(p.titulo) + '</option>').join("") + '</select></label>' +
+        '<label class="campo">Tu mensaje<textarea id="cartaTexto" rows="4" placeholder="¿Qué sentiste hoy? ¿Qué quieres recordar?"></textarea></label>' +
+        '<label class="campo">Leer en<select id="cartaMeses"><option value="6">6 meses</option><option value="12">1 año</option></select></label>' +
+        '<button type="button" class="pildora destacado" id="guardarCarta">Guardar carta</button>'
+      : '<p class="meta">Marca una película como vista para escribirle una carta.</p>');
+  abrirVentanaSimple("buzon", "Buzón de cartas", cuerpo);
+
+  const marcarLeidas = document.getElementById("marcarLeidas");
+  if (marcarLeidas) marcarLeidas.addEventListener("click", () => {
+    listas.forEach(p => { marcas[p.titulo] = Object.assign({}, marcas[p.titulo], { carta: Object.assign({}, marcas[p.titulo].carta, { leida: true }) }); });
+    programarGuardado();
+    document.querySelector("#buzon [data-cerrar]").click();
+    pintar();
+    setEstado("Cartas marcadas como leídas.");
+  });
+
+  const guardar = document.getElementById("guardarCarta");
+  if (guardar) guardar.addEventListener("click", () => {
+    const titulo = document.getElementById("cartaPeli").value;
+    const texto = document.getElementById("cartaTexto").value.trim();
+    if (!texto) { setEstado("Escribe algo en la carta antes de guardarla."); return; }
+    marcas[titulo] = Object.assign({}, marcas[titulo], {
+      carta: { texto, fecha: hoyLocalISO(), meses: Number(document.getElementById("cartaMeses").value), leida: false }
+    });
+    programarGuardado();
+    document.querySelector("#buzon [data-cerrar]").click();
+    setEstado("Carta guardada. Se abrirá dentro de " + document.getElementById("cartaMeses").selectedOptions[0].text + ".");
+  });
+}
+
+/* ---------- Extras de Actividad: rachas y cartas listas ---------- */
+function renderExtrasActividad() {
+  const sec = $("retoMes");
+  const avisos = detectarRachas();
+  let html = avisos.map(a => '<p class="meta racha">· ' + esc(a) + '</p>').join("");
+  const listas = cartasListas().length;
+  if (listas) html += '<button type="button" class="pildora destacado" id="abrirBuzonBtn">📬 Tienes ' + listas + ' carta(s) lista(s)</button>';
+  html += renderAlertasEstreno();
+  sec.insertAdjacentHTML("beforeend", html);
+  const b = document.getElementById("abrirBuzonBtn");
+  if (b) b.addEventListener("click", abrirBuzon);
+}
+
+/* ---------- Etapa 4a: modo viaje (lista de pendientes guardada para usar sin internet) ---------- */
+function prepararViaje() {
+  const lista = pendientesNoVistas().map(p => ({
+    titulo: p.titulo, genero: p.genero || "", duracion: p.duracion || "",
+    año: p["año"] || "", sinopsis: String(p.sinopsis || "").slice(0, 300)
+  }));
+  if (!lista.length) {
+    setEstado("No tienes pendientes para llevar. Marca algunas como «Pendiente» primero.");
+    return;
+  }
+  try {
+    localStorage.setItem("paquete_viaje", JSON.stringify({ fecha: hoyLocalISO(), lista: lista }));
+  } catch (e) {
+    setEstado("No pude guardar la lista de viaje en este navegador.");
+    return;
+  }
+  setEstado("Lista de viaje guardada: " + lista.length + " películas. Funciona sin internet.");
+  abrirModoViaje();
+}
+
+function abrirModoViaje() {
+  let paq = null;
+  try { paq = JSON.parse(localStorage.getItem("paquete_viaje") || "null"); } catch (e) {}
+  if (!paq || !paq.lista) {
+    abrirVentanaSimple("modoViaje", "Modo viaje",
+      '<p class="meta">Aún no tienes una lista de viaje. Usa «Preparar viaje» cuando tengas internet.</p>');
+    return;
+  }
+  const pendientes = paq.lista.filter(x => !((marcas[x.titulo] || {}).vista));
+  const cuerpo = '<p class="meta">Preparada el ' + esc(paq.fecha) + ' · ' + pendientes.length + ' por ver</p>' +
+    (pendientes.length
+      ? pendientes.map(x => '<div class="viaje-fila"><div><b>' + esc(x.titulo) + '</b>' +
+          '<div class="meta">' + esc([x.genero, x.duracion, x["año"]].filter(Boolean).join(" · ")) + '</div></div>' +
+          '<button type="button" class="pildora" data-vista="' + esc(x.titulo) + '">✓ Vista</button></div>').join("")
+      : '<p class="meta">Ya viste todo lo de tu lista. ¡Buen viaje!</p>');
+  abrirVentanaSimple("modoViaje", "Modo viaje", cuerpo);
+  document.querySelectorAll("#modoViaje [data-vista]").forEach(b => b.addEventListener("click", () => {
+    cambiarEstado(b.dataset.vista, { vista: true });
+    setEstado("Marcada como vista. Se sincronizará cuando vuelva la conexión.");
+    document.querySelector("#modoViaje [data-cerrar]").click();
+    abrirModoViaje();
+  }));
+}
+
+/* ---------- Etapa 4b: alertas de estreno (columna «estreno» con fecha AAAA-MM-DD en la hoja) ---------- */
+function sumarDiasEt(iso, dias) {
+  const d = new Date(iso + "T12:00:00");
+  d.setDate(d.getDate() + dias);
+  return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+}
+
+function alertasDeEstreno() {
+  const hoy = hoyLocalISO();
+  const limite = sumarDiasEt(hoy, 30);
+  const fechaOk = f => /^\d{4}-\d{2}-\d{2}$/.test(String(f || ""));
+  const todas = pendientesNoVistas().filter(p => fechaOk(p.estreno));
+  return {
+    hoy: todas.filter(p => p.estreno === hoy || p.estreno < hoy).sort((a, b) => a.estreno.localeCompare(b.estreno)),
+    proximas: todas.filter(p => p.estreno > hoy && p.estreno <= limite).sort((a, b) => a.estreno.localeCompare(b.estreno))
+  };
+}
+
+function renderAlertasEstreno() {
+  const { hoy, proximas } = alertasDeEstreno();
+  if (!hoy.length && !proximas.length) return "";
+  return '<div class="alertas-estreno">' +
+    hoy.map(p => '<p>🎬 Ya se estrenó y tienes pendiente: <b>' + esc(p.titulo) + '</b> (' + esc(p.estreno) + ')</p>').join("") +
+    proximas.map(p => '<p>📅 Se estrena el ' + esc(p.estreno) + ': <b>' + esc(p.titulo) + '</b></p>').join("") +
+    '</div>';
+}
+
+/* ---------- Pantalla de inicio: «Hoy» ---------- */
+function saludoHoy() {
+  const h = new Date().getHours();
+  return h < 12 ? "Buenos días" : h < 19 ? "Buenas tardes" : "Buenas noches";
+}
+
+function retoActual() {
+  const hoy = new Date();
+  const mes = hoy.getFullYear() + "-" + String(hoy.getMonth() + 1).padStart(2, "0");
+  const vistasMes = peliculas.filter(p => ((marcas[p.titulo] || {}).historial || [])
+    .some(h => h.a === "vista" && String(h.f).startsWith(mes)));
+  const reto = RETOS_MES[hoy.getMonth() % RETOS_MES.length];
+  return { texto: reto.texto, hecho: Math.min(reto.cuenta(vistasMes), reto.meta), meta: reto.meta };
+}
+
+function renderHoy() {
+  const sec = $("hoy");
+  if (!sec) return;
+  if (hayFiltros() || pestana !== "catalogo") {
+    sec.style.display = "none";
+    return;
+  }
+  const pend = pendientesNoVistas().length;
+  const conAlguien = peliculas.filter(p => (marcas[p.titulo] || {}).conAlguien && !(marcas[p.titulo] || {}).vista).length;
+  const r = retoActual();
+  const resumenPend = pend ? pend + " pendiente" + (pend === 1 ? "" : "s") : "Aún no tienes pendientes";
+  const extra = conAlguien ? " · " + conAlguien + " para ver con alguien" : "";
+  sec.style.display = "block";
+  sec.innerHTML =
+    '<p class="hoy-saludo">' + saludoHoy() + '</p>' +
+    '<h2 class="hoy-titulo">¿Qué vemos hoy?</h2>' +
+    '<p class="hoy-sub">' + esc(resumenPend + extra) + '</p>' +
+    '<div class="hoy-acciones">' +
+      '<button type="button" class="pildora destacado" id="hoyNoche">🎡 Noche temática</button>' +
+      '<button type="button" class="pildora" id="hoyAzar">🎲 Al azar</button>' +
+      '<button type="button" class="pildora" id="hoyAnimo">🎭 ¿Cómo te sientes?</button>' +
+    '</div>' +
+    '<div class="hoy-reto"><span>🏆 ' + esc(r.texto) + '</span>' +
+      '<div class="reto-barra"><span style="width:' + Math.round(r.hecho / r.meta * 100) + '%"></span></div></div>' +
+    renderAlertasEstreno();
+  $("hoyNoche").addEventListener("click", nocheTematica);
+  $("hoyAzar").addEventListener("click", sugerirAleatoria);
+  $("hoyAnimo").addEventListener("click", abrirAnimo);
+}
+
+/* ---------- Deshacer general (Ctrl/Cmd+Z o botón) ---------- */
+let pilaDeshacer = [];
+let ultimaCopiaMarcas = null;
+let deshaciendo = false;
+
+function registrarDeshacer() {
+  if (deshaciendo) return;
+  const actual = JSON.stringify(marcas);
+  if (ultimaCopiaMarcas !== null && ultimaCopiaMarcas !== actual && ultimaCopiaMarcas !== "{}") {
+    pilaDeshacer.push(ultimaCopiaMarcas);
+    if (pilaDeshacer.length > 30) pilaDeshacer.shift();
+  }
+  ultimaCopiaMarcas = actual;
+}
+
+function deshacerUltimo() {
+  if (!pilaDeshacer.length) {
+    setEstado("No hay cambios recientes que deshacer.");
+    return;
+  }
+  const previa = pilaDeshacer.pop();
+  deshaciendo = true;
+  try {
+    marcas = JSON.parse(previa);
+    programarGuardado();
+  } finally {
+    deshaciendo = false;
+  }
+  ultimaCopiaMarcas = previa;
+  pintar();
+  setEstado("Cambio deshecho. Puedes deshacer " + pilaDeshacer.length + " más.");
+}
+
+/* ---------- Atajos de teclado (computadora) ---------- */
+function enCampoDeTexto(t) {
+  return !!t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName));
+}
+
+function ventanaAbierta() {
+  const m = document.getElementById("modal");
+  const c = document.getElementById("chatPanel");
+  const a = document.getElementById("ayudaAtajos");
+  return (m && m.classList.contains("abierto")) || (c && c.classList.contains("abierto")) || !!a;
+}
+
+function toggleAyudaAtajos() {
+  const previa = document.getElementById("ayudaAtajos");
+  if (previa) { previa.remove(); return; }
+  const div = document.createElement("div");
+  div.id = "ayudaAtajos";
+  div.className = "ayuda-atajos";
+  div.innerHTML = '<div class="ayuda-caja" role="dialog" aria-label="Atajos de teclado">' +
+    '<h3>Atajos de teclado</h3>' +
+    '<dl><dt>/</dt><dd>Ir a la búsqueda</dd>' +
+    '<dt>A</dt><dd>Sugerir una película al azar</dd>' +
+    '<dt>N</dt><dd>Qué ver esta noche</dd>' +
+    '<dt>Ctrl/Cmd + Z</dt><dd>Deshacer el último cambio</dd>' +
+    '<dt>Esc</dt><dd>Cerrar la ventana abierta</dd>' +
+    '<dt>?</dt><dd>Mostrar u ocultar esta ayuda</dd></dl>' +
+    '<button type="button" class="pildora" id="cerrarAyudaAtajos">Entendido</button></div>';
+  div.addEventListener("click", e => { if (e.target === div) div.remove(); });
+  document.body.appendChild(div);
+  document.getElementById("cerrarAyudaAtajos").addEventListener("click", () => div.remove());
+}
+
+document.addEventListener("keydown", e => {
+  const ctrl = e.ctrlKey || e.metaKey;
+  if (ctrl && !e.shiftKey && !e.altKey && e.key.toLowerCase() === "z" && !enCampoDeTexto(e.target)) {
+    e.preventDefault();
+    deshacerUltimo();
+    return;
+  }
+  if (e.key === "Escape" && document.getElementById("ayudaAtajos")) {
+    document.getElementById("ayudaAtajos").remove();
+    return;
+  }
+  if (ctrl || e.altKey || enCampoDeTexto(e.target) || ventanaAbierta()) return;
+  if (e.key === "/") {
+    e.preventDefault();
+    const b = document.getElementById("buscar");
+    if (b) b.focus();
+  } else if (e.key === "a" || e.key === "A") {
+    document.getElementById("aleatorio").click();
+  } else if (e.key === "n" || e.key === "N") {
+    document.getElementById("queVerNoche").click();
+  } else if (e.key === "?") {
+    toggleAyudaAtajos();
+  }
+});
+
 function programarGuardado() {
+  registrarDeshacer();
   syncPendiente = true;
   syncGuardarLocal();
   clearTimeout(guardadoTimer);
@@ -5927,20 +7070,7 @@ document.getElementById("salirDispositivo").addEventListener("click", salirDeEst
 </script>
 
 
-<style>
-  #guia { position:fixed; inset:0; z-index:50; display:none; align-items:center; justify-content:center; padding:16px; background:rgba(0,0,0,.35); }
-  #guia.abierta { display:flex; animation:aparecer .25s var(--ease) both; }
-  #guia .caja { background:var(--tarjeta); color:var(--texto); width:min(560px,100%); max-height:86vh; display:flex; flex-direction:column; border-radius:var(--radio-grande); box-shadow:var(--sombra); overflow:hidden; }
-  #guia .cab { padding:16px 18px 6px 20px; display:flex; justify-content:space-between; align-items:center; }
-  #guia .cab h2 { margin:0; font-size:17px; font-weight:600; }
-  #guia .cerrar { background:none; border:none; font-size:22px; line-height:1; color:var(--gris); cursor:pointer; padding:4px 8px; }
-  #guia .cuerpo { overflow-y:auto; padding:4px 20px 8px; font-size:14px; line-height:1.5; }
-  #guia .intro { color:var(--gris); margin:0 0 4px; }
-  #guia .seccion { padding:12px 0 4px; }
-  #guia .seccion h3 { margin:0 0 4px; font-size:12px; font-weight:600; color:var(--gris); text-transform:uppercase; letter-spacing:.4px; }
-  #guia .seccion p { margin:0; }
-  #guia .pie { padding:12px 20px 16px; display:flex; justify-content:flex-end; }
-</style>
+
 <div id="guia" role="dialog" aria-modal="true" aria-labelledby="guiaTitulo">
   <div class="caja">
     <div class="cab">
@@ -6002,56 +7132,7 @@ document.getElementById("salirDispositivo").addEventListener("click", salirDeEst
   document.getElementById("verGuia").addEventListener("click", abrirGuia);
 })();
 </script>
-<style>
-#chatAbrir{position:fixed;right:16px;bottom:96px;z-index:11;width:52px;height:52px;border-radius:50%;border:0;background:var(--azul);color:#fff;font-size:24px;cursor:pointer;box-shadow:var(--sombra)}
-#chatPanel{display:none;position:fixed;right:12px;left:12px;bottom:160px;max-width:420px;margin-left:auto;z-index:12;background:var(--tarjeta);color:var(--texto);border-radius:var(--radio-grande);box-shadow:var(--sombra);flex-direction:column;height:min(560px,70vh);overflow:hidden}
-#chatPanel.abierto{display:flex}
-#chatCab{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-bottom:1px solid var(--borde)}
-#chatCerrar{background:none;border:0;font-size:22px;color:var(--gris);cursor:pointer}
-.chat-uso{font-size:12px;color:var(--gris);padding:6px 14px;border-bottom:1px solid var(--borde)}
-.banner-offline{position:fixed;top:0;left:0;right:0;z-index:80;background:#ff9f0a;color:#1c1c1e;text-align:center;font-size:13px;padding:7px 12px}
-.banner-offline[hidden]{display:none}
-.chat-uso.alerta{color:var(--error)}
-#chatGenero{background:var(--boton-suave);color:var(--texto);border:0;border-radius:999px;padding:4px 8px;font-size:12px;margin-left:auto}
-#chatContinuo{background:none;border:0;font-size:18px;cursor:pointer;margin-left:6px;padding:2px 6px;border-radius:999px;opacity:.55}
-#chatContinuo.activo{opacity:1;background:var(--boton-suave)}
-#chatContinuo.escuchando{opacity:1;background:#ff453a;color:#fff;animation:pulsoVoz 1s ease-in-out infinite}
-#chatContinuo[hidden]{display:none}
-#chatVozOn{background:none;border:0;font-size:18px;color:var(--gris);cursor:pointer;margin-left:8px;margin-right:10px}
-#chatMensajes{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px}
-.chat-burbuja{max-width:85%;padding:9px 12px;border-radius:16px;font-size:14px;line-height:1.45;white-space:pre-wrap;word-wrap:break-word}
-.chat-burbuja.yo{align-self:flex-end;background:var(--azul);color:#fff}
-.chat-burbuja.ia{align-self:flex-start;background:var(--boton-suave);color:var(--texto)}
-.chat-burbuja.error{align-self:flex-start;border:1px solid var(--error);color:var(--error)}
-.chat-pensando{align-self:flex-start;color:var(--gris);font-size:13px;font-style:italic}
-#chatSugerencias{display:flex;flex-wrap:wrap;gap:6px;padding:0 14px 8px}
-#chatSugerencias button{background:var(--boton-suave);border:0;border-radius:999px;padding:6px 11px;font-size:12px;color:var(--texto);cursor:pointer}
-#chatForm{display:flex;gap:8px;padding:10px 12px 12px;border-top:1px solid var(--borde)}
-#chatInput{flex:1;min-width:0;padding:10px 14px;border:1px solid var(--borde);border-radius:999px;background:var(--fondo);color:var(--texto);font-size:14px;outline:none}
-#chatForm button{border:0;border-radius:999px;background:var(--azul);color:#fff;padding:0 16px;font-size:14px;cursor:pointer}
-#chatForm button:disabled{opacity:.5}
-.chat-acciones{display:flex;flex-wrap:wrap;gap:6px;align-self:flex-start}
-.chat-stats{align-self:stretch;background:linear-gradient(135deg,#0a84ff,#5e5ce6);color:#fff;border-radius:18px;padding:16px 18px;font-size:14px;line-height:1.5}
-.chat-stats h4{margin:0 0 6px;font-size:17px}
-.chat-stats p{margin:0}
-.chat-stats .chat-acciones button{background:rgba(255,255,255,.22);color:#fff}
-.chat-acciones button{border:0;border-radius:999px;padding:6px 12px;font-size:13px;background:var(--azul);color:#fff;cursor:pointer}
-.chat-acciones button.secundario{background:var(--boton-suave);color:var(--texto)}
-.chat-posters{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 6px;align-self:stretch;-webkit-overflow-scrolling:touch}
-.chat-poster{flex:0 0 96px;background:var(--tarjeta);border:1px solid var(--borde);border-radius:12px;padding:0;cursor:pointer;text-align:left;overflow:hidden;font:inherit;color:var(--texto)}
-.chat-poster img,.chat-poster .chat-sinposter{width:100%;height:136px;object-fit:cover;display:block}
-.chat-poster .chat-sinposter{display:grid;place-items:center;font-size:30px;background:var(--boton-suave)}
-.chat-poster span{display:block;padding:6px 7px;font-size:12px;line-height:1.25}
-.chat-poster-col{flex:0 0 96px;display:flex;flex-direction:column;gap:4px}
-.chat-poster-col .chat-poster{flex:none;width:100%}
-.chat-marcar{display:flex;gap:4px}
-.chat-marcar button{flex:1;font-size:11px;padding:4px 2px;border:0;border-radius:999px;background:var(--boton-suave);color:var(--texto);cursor:pointer;white-space:nowrap}
-.chat-marcar button.activo{background:var(--azul);color:#fff}
-.chat-marcar button:disabled{opacity:.6;cursor:default}
-#chatVoz{background:var(--boton-suave);color:var(--texto);padding:0 12px;font-size:16px}
-#chatVoz[hidden]{display:none}
-#chatVoz.escuchando{background:#ff453a;color:#fff}
-</style>
+
 <button id="chatAbrir" style="display:none" aria-label="Abrir el compañero peliculero" title="Hablar con Rolo"><span class="orbe" aria-hidden="true"></span></button>
 <div id="chatPanel" role="dialog" aria-label="Compañero peliculero">
   <div id="chatCab">
@@ -6847,7 +7928,7 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
       const r = await fetch(CHAT_URL, {
         method: "POST",
         headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify({ token: accessToken, pregunta: texto, historial: historial, catalogo: catalogo })
+        body: JSON.stringify({ token: accessToken, pregunta: texto + "\n\n[Perfil de gustos del usuario: " + perfilGustos() + ".]", historial: historial, catalogo: catalogo, gustos: perfilGustos() })
       });
       const j = await r.json();
       pensando.remove();
@@ -7387,84 +8468,9 @@ document.querySelectorAll("input[type=range]").forEach(r => {
   pintar();
 });
 </script>
-<style id="chat-pulido">
-#chatAbrir{right:20px;bottom:calc(104px + env(safe-area-inset-bottom,0px));width:56px;height:56px;border-radius:50%;box-shadow:0 8px 24px rgba(0,113,227,.35);font-size:22px}
-#chatPanel{right:16px;left:auto;bottom:calc(164px + env(safe-area-inset-bottom,0px));width:min(380px,calc(100vw - 32px));max-width:380px;max-height:min(72vh,640px);border-radius:24px;background:var(--tarjeta);box-shadow:0 20px 50px rgba(0,0,0,.18);border:1px solid var(--borde);overflow:hidden;flex-direction:column}
-#chatCab{padding:14px 16px 10px;border-bottom:0}
-.chat-titulo{display:flex;align-items:center;gap:10px;min-width:0}
-.chat-titulo b{font-size:16px;letter-spacing:-.2px}
-.chat-avatar{width:32px;height:32px;border-radius:50%;background:var(--tema-bg);display:grid;place-items:center;font-size:17px}
-#chatCerrar{width:32px;height:32px;border-radius:50%;background:var(--boton-suave);color:var(--gris);font-size:18px;line-height:1;display:grid;place-items:center;padding:0}
-.chat-ajustes{display:flex;align-items:center;gap:6px;padding:0 16px 10px;border-bottom:1px solid var(--borde)}
-#chatVelocidad{flex:0 0 auto;background:var(--boton-suave);color:var(--texto);border:0;border-radius:999px;padding:6px 10px;font-size:12px;margin:0}
-#chatGenero{flex:1;min-width:0;background:var(--boton-suave);color:var(--texto);border:0;border-radius:999px;padding:6px 12px;font-size:12px;margin:0}
-#chatContinuo,#chatVozOn{width:34px;height:34px;border-radius:50%;margin:0;padding:0;font-size:16px;display:grid;place-items:center;background:var(--boton-suave);opacity:1;border:0}
-#chatContinuo:not(.activo){opacity:.6}
-#chatUso{padding:8px 16px;font-size:12px;border-bottom:0;background:transparent}
-#chatMensajes{padding:6px 14px 10px;gap:10px}
-.chat-burbuja{font-size:15px;line-height:1.5;padding:10px 14px;border-radius:20px;max-width:88%}
-.chat-burbuja.yo{border-bottom-right-radius:6px}
-.chat-burbuja.ia{border-bottom-left-radius:6px}
-.chat-pensando{font-size:13px}
-.chat-posters{padding:2px 0 4px;gap:10px}
-#chatSugerencias{flex-wrap:nowrap;overflow-x:auto;padding:0 16px 10px;gap:6px;scrollbar-width:none}
-#chatSugerencias::-webkit-scrollbar{display:none}
-#chatSugerencias button{flex:0 0 auto;padding:7px 12px;font-size:13px}
-#chatForm{padding:10px 12px 12px;gap:8px;border-top:1px solid var(--borde);align-items:center}
-#chatVoz{width:40px;height:40px;border-radius:50%;padding:0;font-size:16px;flex:0 0 auto;background:var(--boton-suave);color:var(--texto)}
-#chatInput{padding:11px 16px;font-size:15px;background:var(--boton-suave);border:0;border-radius:999px}
-#chatInput:focus{box-shadow:0 0 0 3px rgba(10,132,255,.25)}
-#chatForm button[type=submit]{width:40px;height:40px;padding:0;border-radius:50%;font-size:0;flex:0 0 auto;display:grid;place-items:center}
-#chatForm button[type=submit]::before{content:"↑";font-size:20px;line-height:1}
-#chatEnviar:disabled{opacity:.4}
-@media (min-width:900px){#chatPanel{right:24px}}
-</style>
-<style id="asistente-orbe">
-#chatAbrir{position:fixed;left:50%;right:auto;top:auto;transform:translateX(-50%);bottom:calc(78px + env(safe-area-inset-bottom,0px));width:68px;height:68px;border-radius:50%;border:0;background:transparent;padding:0;z-index:12;cursor:pointer;box-shadow:0 12px 32px rgba(94,92,230,.45);-webkit-tap-highlight-color:transparent;transition:transform .2s ease}
-#chatAbrir:active{transform:translateX(-50%) scale(.94)}
-#chatAbrir .orbe{position:absolute;inset:0;border-radius:50%;background:
-  radial-gradient(circle at 30% 28%, rgba(255,255,255,.95) 0 8%, rgba(255,255,255,0) 30%),
-  conic-gradient(from 0deg, #0a84ff, #5e5ce6, #bf5af2, #ff375f, #ff9f0a, #30d158, #64d2ff, #0a84ff);
-  animation:orbeGira 7s linear infinite, orbePulso 3.2s ease-in-out infinite;overflow:hidden}
-#chatAbrir .orbe::after{content:"";position:absolute;inset:12px;border-radius:50%;background:radial-gradient(circle at 35% 30%, rgba(255,255,255,.75), rgba(255,255,255,.12) 70%);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
-#chatAbrir.escuchando .orbe{animation:orbeGira 2.2s linear infinite, orbePulso .9s ease-in-out infinite}
-#chatAbrir.escuchando{box-shadow:0 0 0 8px rgba(255,69,58,.18),0 12px 32px rgba(255,69,58,.45)}
-@keyframes orbeGira{to{transform:rotate(360deg)}}
-@keyframes orbePulso{0%,100%{filter:brightness(1) saturate(1.1)}50%{filter:brightness(1.18) saturate(1.4)}}
-#chatPanel{bottom:calc(164px + env(safe-area-inset-bottom,0px))}
-@media (prefers-reduced-motion:reduce){#chatAbrir .orbe{animation:none}}
-</style>
-<style id="ajustes-finales">
-/* Orbe discreto: blanco y azul suave, sin colores fuertes */
-#chatAbrir{left:auto;right:16px;transform:none;bottom:calc(100px + env(safe-area-inset-bottom,0px));width:52px;height:52px;z-index:12;box-shadow:0 8px 22px rgba(0,0,0,.16)}
-#chatAbrir:active{transform:scale(.94)}
-#chatAbrir .orbe{animation:orbePulsoSuave 3.6s ease-in-out infinite;background:radial-gradient(circle at 35% 30%, #ffffff 0%, #eef1f6 45%, #c9d0dc 100%)}
-#chatAbrir .orbe::before{content:"";position:absolute;inset:9px;border-radius:50%;background:radial-gradient(circle, rgba(10,132,255,.55) 0%, rgba(10,132,255,0) 70%);animation:orbeRespira 3.6s ease-in-out infinite}
-#chatAbrir .orbe::after{inset:11px;background:radial-gradient(circle at 35% 30%, rgba(255,255,255,.9), rgba(255,255,255,0) 65%)}
-#chatAbrir.escuchando .orbe{animation:orbePulsoSuave .9s ease-in-out infinite}
-#chatAbrir.escuchando .orbe::before{background:radial-gradient(circle, rgba(255,69,58,.7) 0%, rgba(255,69,58,0) 70%);animation:orbeRespira .9s ease-in-out infinite}
-#chatAbrir.escuchando{box-shadow:0 0 0 6px rgba(255,69,58,.18),0 8px 22px rgba(0,0,0,.16)}
-@keyframes orbePulsoSuave{0%,100%{transform:scale(1)}50%{transform:scale(1.04)}}
-@keyframes orbeRespira{0%,100%{opacity:.45}50%{opacity:1}}
 
-/* Fondo: al tocarlo se cierra el chat */
-#chatFondo{position:fixed;inset:0;z-index:11;background:transparent;display:none}
-#chatFondo.visible{display:block}
 
-/* Panel del asistente: más grande y siempre completo en pantalla */
-#chatPanel{right:16px;left:auto;bottom:calc(166px + env(safe-area-inset-bottom,0px));width:min(420px,calc(100vw - 32px));max-width:420px;max-height:min(72vh,calc(100dvh - 200px));z-index:13}
-#chatMensajes{min-height:120px}
 
-/* Botón ⋯ en el centro de la barra (en la parte superior ya no aparece) */
-#toggleMas{display:none !important}
-#tabbar button#tabMas{font-size:12px}
-#tabbar button#tabMas .ico{font-size:22px;font-weight:700}
-
-/* Menú ⋯: hoja flotante centrada sobre la barra, con botones más grandes */
-#panelMas.abierto{position:fixed !important;top:auto !important;right:auto !important;left:50% !important;transform:translateX(-50%) !important;bottom:calc(100px + env(safe-area-inset-bottom,0px)) !important;width:min(420px,calc(100vw - 24px)) !important;max-width:min(420px,calc(100vw - 24px)) !important;max-height:min(70vh,calc(100dvh - 200px)) !important;overflow:auto !important;z-index:14 !important;border-radius:24px !important;padding:16px !important;box-shadow:0 20px 50px rgba(0,0,0,.2) !important;display:flex !important}
-#panelMas .grupo-menu > .pildora,
-#panelMas .grupo-menu > button{font-size:15px !important;padding:12px 14px !important;white-space:normal !important}
-</style>
 <script>
 /* El menú ⋯ se saca del encabezado para que flote sobre la barra inferior */
 (function () {
@@ -7476,52 +8482,8 @@ document.querySelectorAll("input[type=range]").forEach(r => {
   });
 })();
 </script>
-<style id="chat-claro">
-/* Orbe visible sobre fondo blanco: azul suave con brillo, no colorido */
-#chatAbrir{width:56px;height:56px;background:transparent;border:0;padding:0;box-shadow:0 10px 24px rgba(59,124,244,.38);right:16px;bottom:calc(100px + env(safe-area-inset-bottom,0px));z-index:12}
-#chatAbrir .orbe{background:radial-gradient(circle at 32% 28%, #ffffff 0%, #bcd6ff 30%, #5b93ff 68%, #2f6fe8 100%);box-shadow:inset 0 0 0 1px rgba(255,255,255,.55);animation:orbePulsoSuave 3.6s ease-in-out infinite}
-#chatAbrir .orbe::before{content:"";position:absolute;inset:14px;border-radius:50%;background:radial-gradient(circle, rgba(255,255,255,.85) 0%, rgba(255,255,255,0) 70%);animation:orbeRespira 3.6s ease-in-out infinite}
-#chatAbrir .orbe::after{inset:9px;background:radial-gradient(circle at 35% 28%, rgba(255,255,255,.7), rgba(255,255,255,0) 55%)}
-#chatAbrir.escuchando .orbe{background:radial-gradient(circle at 32% 28%, #ffffff 0%, #ffc4bf 30%, #ff5a4f 68%, #e0352b 100%);animation:orbePulsoSuave .9s ease-in-out infinite}
-#chatAbrir.escuchando{box-shadow:0 0 0 6px rgba(255,69,58,.2),0 10px 24px rgba(255,69,58,.35)}
 
-/* Panel: más información visible, texto más compacto */
-#chatPanel{right:12px;left:auto;bottom:calc(166px + env(safe-area-inset-bottom,0px));width:min(400px,calc(100vw - 24px));max-width:400px;max-height:min(80vh,calc(100dvh - 190px));flex-direction:column;font-size:14px;z-index:13}
-#chatPanel:not(.abierto){display:none !important}
-#chatPanel.abierto{display:flex !important}
-#chatCab{padding:10px 14px 8px}
-.chat-avatar{width:28px;height:28px;font-size:15px}
-.chat-titulo b{font-size:15px}
-#chatCerrar{width:28px;height:28px;font-size:16px}
-.chat-ajustes{padding:0 14px 8px;gap:6px}
-#chatGenero,#chatVelocidad{font-size:12px;padding:5px 10px}
-#chatContinuo,#chatVozOn{width:30px;height:30px;font-size:15px}
-#chatUso{padding:6px 14px;font-size:11px;line-height:1.35}
-#chatMensajes{flex:1 1 auto;min-height:0;overflow-y:auto;padding:8px 12px}
-.chat-burbuja{font-size:14px;line-height:1.45;padding:9px 13px;max-width:90%}
-#chatSugerencias{flex:0 0 auto;padding:4px 12px 8px}
-#chatSugerencias button{font-size:12px;padding:6px 11px}
-#chatForm{flex:0 0 auto;padding:8px 10px 10px}
-#chatVoz,#chatForm button[type=submit]{width:36px;height:36px}
-#chatInput{font-size:14px;padding:9px 14px}
 
-/* Recomendaciones: la portada se ve al instante, bajo el texto */
-.chat-posters{padding:4px 0 6px;gap:10px}
-.chat-poster-col{flex:0 0 118px;gap:5px}
-.chat-poster{flex:0 0 auto;width:100%;border-radius:14px}
-.chat-poster img,.chat-poster .chat-sinposter{height:164px}
-.chat-poster span{font-size:11px;padding:5px 7px;line-height:1.2}
-.chat-marcar button{font-size:11px;padding:5px 2px}
-</style>
-<style id="ajustes-barra-orbe">
-/* Las recomendaciones no se encogen: se ven completas y se puede bajar hasta el final */
-#chatMensajes > *{flex-shrink:0}
-.chat-posters{flex:0 0 auto;min-height:auto;overflow-x:auto;overflow-y:visible}
-.chat-poster-col{min-height:max-content}
-
-/* Barra inferior y orbe a la misma altura: el orbe queda al lado derecho de la barra */
-#chatAbrir:active{transform:scale(.94) !important}
-</style>
 <script>
 /* El orbe se coloca justo en el centro de la barra, encima de su hueco */
 (function () {
@@ -7540,16 +8502,8 @@ document.querySelectorAll("input[type=range]").forEach(r => {
   window.addEventListener("resize", colocar);
 })();
   </script>
-<style id="menu-mas-encima">
-/* El menú ⋯ va por encima del velo de fondo y de la barra, para poder tocarlo */
-#panelMas,
-#panelMas.abierto{z-index:31 !important}
-#velo{z-index:29}
-</style>
-<style>
-#panelAvanzados .grupo-menu{grid-column:1/-1}
-#panelMas{display:none!important}
-</style>
+
+
 <script>
 (function(){
   const mas = document.getElementById("panelMas");
@@ -7557,40 +8511,24 @@ document.querySelectorAll("input[type=range]").forEach(r => {
   if (mas && av) { while (mas.firstChild) av.appendChild(mas.firstChild); }
 })();
 </script>
-<style id="panel-flotante">
-/* Panel de ajustes flotante, al centro, con esquinas redondeadas y entrada suave */
-#panelAvanzados.abierto,
-#panelMas.abierto{position:fixed !important;left:50% !important;right:auto !important;top:50% !important;bottom:auto !important;transform:translate(-50%,-50%) !important;width:min(440px, calc(100vw - 28px)) !important;max-width:none !important;max-height:min(78dvh, 640px) !important;margin:0 !important;border-radius:28px !important;box-shadow:0 24px 60px rgba(0,0,0,.22) !important;padding:20px !important;overflow-y:auto !important;z-index:31 !important;animation:aparecerFlotante .28s cubic-bezier(.2,.8,.2,1) both !important}
-@keyframes aparecerFlotante{from{opacity:0;transform:translate(-50%,-46%) scale(.96)}to{opacity:1;transform:translate(-50%,-50%) scale(1)}}
-#velo{z-index:29}
-</style>
-<style id="asistente-grande">
-/* Panel del asistente más grande y centrado sobre la barra: aprovecha la pantalla */
-#chatPanel{left:50% !important;right:auto !important;transform:translateX(-50%) !important;bottom:calc(104px + env(safe-area-inset-bottom,0px)) !important;width:min(480px, calc(100vw - 20px)) !important;max-width:480px !important;max-height:min(80dvh, calc(100dvh - 150px)) !important;height:min(80dvh, 720px);border-radius:28px !important;font-size:15px !important}
-#chatCab{padding:14px 18px 10px}
-.chat-titulo b{font-size:17px}
-.chat-avatar{width:34px;height:34px;font-size:18px}
-#chatCerrar{width:34px;height:34px;font-size:18px}
-.chat-ajustes{padding:0 18px 10px;gap:8px}
-#chatGenero,#chatVelocidad{font-size:13px;padding:7px 12px}
-#chatContinuo,#chatVozOn{width:36px;height:36px;font-size:17px}
-#chatUso{padding:8px 18px;font-size:12px}
-#chatMensajes{flex:1 1 auto;min-height:220px;padding:10px 16px}
-.chat-burbuja{font-size:15px;line-height:1.5;padding:11px 15px;max-width:88%}
-#chatSugerencias{padding:6px 16px 10px}
-#chatSugerencias button{font-size:13px;padding:7px 13px}
-#chatForm{padding:10px 14px 14px}
-#chatVoz,#chatForm button[type=submit]{width:42px;height:42px}
-#chatInput{font-size:15px;padding:11px 16px}
-.chat-poster-col{flex:0 0 128px}
-.chat-poster img,.chat-poster .chat-sinposter{height:186px}
-.chat-poster span{font-size:12px}
-@media (max-width:420px){#chatPanel{width:calc(100vw - 16px) !important;bottom:calc(100px + env(safe-area-inset-bottom,0px)) !important}}
-</style>
-<style id="asistente-altura">
-/* La altura se calcula para que el panel quepa completo: encabezado arriba y campo de texto sobre la barra */
-#chatPanel{height:min(720px, calc(100dvh - 150px - env(safe-area-inset-top,0px))) !important;max-height:min(720px, calc(100dvh - 150px)) !important;min-height:0 !important;overflow:hidden}
-#chatMensajes{min-height:120px !important;flex:1 1 0 !important}
-</style>
+
+
+
+<script id="iconos-menu">
+document.addEventListener("DOMContentLoaded", () => {
+  const re = /^(\p{Extended_Pictographic}\uFE0F?)\s*/u;
+  document.querySelectorAll("#panelMas button.pildora, #panelMas .pildora").forEach(b => {
+    if (b.querySelector(".ico")) return;
+    const m = b.textContent.match(re);
+    if (!m) return;
+    const resto = b.textContent.slice(m[0].length);
+    b.textContent = "";
+    const ico = document.createElement("span");
+    ico.className = "ico"; ico.setAttribute("aria-hidden", "true"); ico.textContent = m[1];
+    b.appendChild(ico);
+    b.appendChild(document.createTextNode(resto));
+  });
+});
+</script>
 </body>
 </html>
