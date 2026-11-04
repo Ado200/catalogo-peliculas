@@ -5819,7 +5819,7 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
     return null;
   }
 
-  const normalizarChat = String(t || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+  const normalizarChat = t => String(t || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
   const elegir = arr => arr[Math.floor(Math.random() * arr.length)];
   const listaTitulos = arr => arr.slice(0, 5).map(p => "• " + p.titulo + (p["año"] ? " (" + p["año"] + ")" : "")).join("\n");
   const pendientesDe = () => peliculas.filter(p => estadoDe(p).pendiente && !(marcas[p.titulo] || {}).descartada);
