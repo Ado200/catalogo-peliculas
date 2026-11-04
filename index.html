@@ -867,6 +867,7 @@ input[type=range]:focus-visible { outline:2px solid var(--azul); outline-offset:
   <button data-tab="inicio" class="activa"><span class="ico">🏠</span>Inicio</button>
   <button data-tab="catalogo"><span class="ico">🎬</span>Películas</button>
   <button data-tab="notas"><span class="ico">📝</span>Notas</button>
+  <button type="button" id="tabMas" aria-label="Más opciones"><span class="ico">⋯</span>Más</button>
   <button data-tab="pendientes"><span class="ico">⏳</span>Pendientes</button>
   <button data-tab="vistas"><span class="ico">✓</span>Vistas</button>
 </nav>
@@ -6258,6 +6259,16 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
   })();
 
   // Consultas con IA por persona al día. Al llegar al límite, el chat pasa solo a modo sin IA.
+  const fondoChat = document.createElement("div");
+  fondoChat.id = "chatFondo";
+  document.body.appendChild(fondoChat);
+  fondoChat.addEventListener("click", () => {
+    panel.classList.remove("abierto");
+    fondoChat.classList.remove("visible");
+    if (vozSoportada) speechSynthesis.cancel();
+    detenerEscuchaConv();
+  });
+
   const LIMITE_IA_PERSONAL_DIA = 20;
   let avisoOffline = false;
   let usoGrupo = null;
@@ -7032,6 +7043,7 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
 
   document.getElementById("chatAbrir").addEventListener("click", () => {
     panel.classList.add("abierto");
+    fondoChat.classList.add("visible");
     if (!notasCargadas) notasCargar();
     consultarUso();
     saludar();
@@ -7039,6 +7051,7 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
   });
   document.getElementById("chatCerrar").addEventListener("click", () => {
     panel.classList.remove("abierto");
+    fondoChat.classList.remove("visible");
     if (vozSoportada) speechSynthesis.cancel();
     detenerEscuchaConv();
   });
@@ -7213,5 +7226,47 @@ document.querySelectorAll("input[type=range]").forEach(r => {
 #chatPanel{bottom:calc(164px + env(safe-area-inset-bottom,0px))}
 @media (prefers-reduced-motion:reduce){#chatAbrir .orbe{animation:none}}
 </style>
+<style id="ajustes-finales">
+/* Orbe discreto: blanco y azul suave, sin colores fuertes */
+#chatAbrir{left:auto;right:16px;transform:none;bottom:calc(100px + env(safe-area-inset-bottom,0px));width:52px;height:52px;z-index:12;box-shadow:0 8px 22px rgba(0,0,0,.16)}
+#chatAbrir:active{transform:scale(.94)}
+#chatAbrir .orbe{animation:orbePulsoSuave 3.6s ease-in-out infinite;background:radial-gradient(circle at 35% 30%, #ffffff 0%, #eef1f6 45%, #c9d0dc 100%)}
+#chatAbrir .orbe::before{content:"";position:absolute;inset:9px;border-radius:50%;background:radial-gradient(circle, rgba(10,132,255,.55) 0%, rgba(10,132,255,0) 70%);animation:orbeRespira 3.6s ease-in-out infinite}
+#chatAbrir .orbe::after{inset:11px;background:radial-gradient(circle at 35% 30%, rgba(255,255,255,.9), rgba(255,255,255,0) 65%)}
+#chatAbrir.escuchando .orbe{animation:orbePulsoSuave .9s ease-in-out infinite}
+#chatAbrir.escuchando .orbe::before{background:radial-gradient(circle, rgba(255,69,58,.7) 0%, rgba(255,69,58,0) 70%);animation:orbeRespira .9s ease-in-out infinite}
+#chatAbrir.escuchando{box-shadow:0 0 0 6px rgba(255,69,58,.18),0 8px 22px rgba(0,0,0,.16)}
+@keyframes orbePulsoSuave{0%,100%{transform:scale(1)}50%{transform:scale(1.04)}}
+@keyframes orbeRespira{0%,100%{opacity:.45}50%{opacity:1}}
+
+/* Fondo: al tocarlo se cierra el chat */
+#chatFondo{position:fixed;inset:0;z-index:11;background:transparent;display:none}
+#chatFondo.visible{display:block}
+
+/* Panel del asistente: más grande y siempre completo en pantalla */
+#chatPanel{right:16px;left:auto;bottom:calc(166px + env(safe-area-inset-bottom,0px));width:min(420px,calc(100vw - 32px));max-width:420px;max-height:min(72vh,calc(100dvh - 200px));z-index:13}
+#chatMensajes{min-height:120px}
+
+/* Botón ⋯ en el centro de la barra (en la parte superior ya no aparece) */
+#toggleMas{display:none !important}
+#tabbar button#tabMas{font-size:12px}
+#tabbar button#tabMas .ico{font-size:22px;font-weight:700}
+
+/* Menú ⋯: hoja flotante centrada sobre la barra, con botones más grandes */
+#panelMas.abierto{position:fixed !important;top:auto !important;right:auto !important;left:50% !important;transform:translateX(-50%) !important;bottom:calc(100px + env(safe-area-inset-bottom,0px)) !important;width:min(420px,calc(100vw - 24px)) !important;max-width:min(420px,calc(100vw - 24px)) !important;max-height:min(70vh,calc(100dvh - 200px)) !important;overflow:auto !important;z-index:14 !important;border-radius:24px !important;padding:16px !important;box-shadow:0 20px 50px rgba(0,0,0,.2) !important;display:flex !important}
+#panelMas .grupo-menu > .pildora,
+#panelMas .grupo-menu > button{font-size:15px !important;padding:12px 14px !important;white-space:normal !important}
+</style>
+<script>
+/* El menú ⋯ se saca del encabezado para que flote sobre la barra inferior */
+(function () {
+  const menu = document.getElementById("panelMas");
+  if (menu) document.body.appendChild(menu);
+  const tab = document.getElementById("tabMas");
+  if (tab) tab.addEventListener("click", () => {
+    if (typeof alternarPanel === "function") alternarPanel("panelMas");
+  });
+})();
+</script>
 </body>
 </html>
