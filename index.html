@@ -7389,5 +7389,10 @@ document.querySelectorAll("input[type=range]").forEach(r => {
 .chat-poster span{font-size:12px}
 @media (max-width:420px){#chatPanel{width:calc(100vw - 16px) !important;bottom:calc(100px + env(safe-area-inset-bottom,0px)) !important}}
 </style>
+<style id="asistente-altura">
+/* La altura se calcula para que el panel quepa completo: encabezado arriba y campo de texto sobre la barra */
+#chatPanel{height:min(720px, calc(100dvh - 150px - env(safe-area-inset-top,0px))) !important;max-height:min(720px, calc(100dvh - 150px)) !important;min-height:0 !important;overflow:hidden}
+#chatMensajes{min-height:120px !important;flex:1 1 0 !important}
+</style>
 </body>
 </html>
