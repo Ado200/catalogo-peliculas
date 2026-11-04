@@ -722,7 +722,6 @@
       <button id="exportar" class="pildora">⬇ Exportar CSV</button>
       <button id="respaldarMarcas" class="pildora">⬇ Respaldar</button>
       <button id="restaurarMarcas" class="pildora">⬆ Restaurar</button>
-      <button id="guardarPaletas" class="pildora">🎨 Guardar paletas</button>
     </div>
     <div class="grupo-menu">
       <span class="grupo-titulo">Ajustes</span>
@@ -2293,47 +2292,6 @@ async function sheetsFetch(path, metodo, cuerpo) {
   });
   if (!r.ok) throw new Error("Sheets respondió " + r.status);
   return r.json();
-}
-
-async function asegurarColumnaPaleta() {
-  if (COL_PALETA !== -1) return;
-  COL_PALETA = encabezados.length;
-  encabezados.push(NOMBRE_PALETA);
-  await sheetsFetch("values/" + letraColumna(COL_PALETA) + "1?valueInputOption=RAW", "PUT", {
-    values: [[NOMBRE_PALETA]]
-  });
-}
-
-async function guardarPaletasEnHoja() {
-  const pendientes = peliculas.filter(p => !paletaDeTexto(p[NOMBRE_PALETA]).length && p.portada);
-  if (!pendientes.length) {
-    setEstado("Todas las portadas ya tienen paleta guardada.");
-    return;
-  }
-  setEstado("Calculando paletas de " + pendientes.length + " películas...");
-  const cambios = [];
-  for (const p of pendientes) {
-    const calc = await paletaDePoster(p.portada);
-    if (calc.length) {
-      p[NOMBRE_PALETA] = calc.map(rgbAHex).join(",");
-      cambios.push(p);
-    }
-  }
-  if (!cambios.length) {
-    setEstado("No pude leer las portadas en este navegador.");
-    return;
-  }
-  try {
-    await asegurarColumnaPaleta();
-    const data = cambios.map(p => ({
-      range: letraColumna(COL_PALETA) + p._fila,
-      values: [[p[NOMBRE_PALETA]]]
-    }));
-    await sheetsFetch("values:batchUpdate", "POST", { valueInputOption: "RAW", data: data });
-    setEstado("Paletas guardadas en la hoja: " + cambios.length);
-  } catch (e) {
-    setEstado("No pude guardar en la hoja. Esta opción solo funciona con la cuenta dueña de la hoja.");
-  }
 }
 
 /* ---------- Marcas personales en Drive ---------- */
@@ -4091,6 +4049,8 @@ async function cargarHoja() {
 
     $("login").style.display = "none";
     $("app").style.display = "block";
+    const botonChat = document.getElementById("chatAbrir");
+    if (botonChat) botonChat.style.display = "";
     document.body.classList.add("con-sesion");
     llenarFiltros();
     llenarSugerencias();
@@ -4420,7 +4380,6 @@ window.addEventListener("load", () => {
 
   $("aleatorio").addEventListener("click", sugerirAleatoria);
   $("estadisticas").addEventListener("click", abrirEstadisticas);
-  $("guardarPaletas").addEventListener("click", guardarPaletasEnHoja);
   $("cerrarStats").addEventListener("click", cerrarEstadisticas);
   $("statsModal").addEventListener("click", e => { if (e.target.id === "statsModal") cerrarEstadisticas(); });
 
@@ -5580,6 +5539,7 @@ document.getElementById("salirDispositivo").addEventListener("click", salirDeEst
 #chatPanel.abierto{display:flex}
 #chatCab{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-bottom:1px solid var(--borde)}
 #chatCerrar{background:none;border:0;font-size:22px;color:var(--gris);cursor:pointer}
+#chatVozOn{background:none;border:0;font-size:18px;color:var(--gris);cursor:pointer;margin-left:auto;margin-right:10px}
 #chatMensajes{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px}
 .chat-burbuja{max-width:85%;padding:9px 12px;border-radius:16px;font-size:14px;line-height:1.45;white-space:pre-wrap;word-wrap:break-word}
 .chat-burbuja.yo{align-self:flex-end;background:var(--azul);color:#fff}
@@ -5592,11 +5552,23 @@ document.getElementById("salirDispositivo").addEventListener("click", salirDeEst
 #chatInput{flex:1;min-width:0;padding:10px 14px;border:1px solid var(--borde);border-radius:999px;background:var(--fondo);color:var(--texto);font-size:14px;outline:none}
 #chatForm button{border:0;border-radius:999px;background:var(--azul);color:#fff;padding:0 16px;font-size:14px;cursor:pointer}
 #chatForm button:disabled{opacity:.5}
+.chat-acciones{display:flex;flex-wrap:wrap;gap:6px;align-self:flex-start}
+.chat-acciones button{border:0;border-radius:999px;padding:6px 12px;font-size:13px;background:var(--azul);color:#fff;cursor:pointer}
+.chat-acciones button.secundario{background:var(--boton-suave);color:var(--texto)}
+.chat-posters{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 6px;align-self:stretch;-webkit-overflow-scrolling:touch}
+.chat-poster{flex:0 0 96px;background:var(--tarjeta);border:1px solid var(--borde);border-radius:12px;padding:0;cursor:pointer;text-align:left;overflow:hidden;font:inherit;color:var(--texto)}
+.chat-poster img,.chat-poster .chat-sinposter{width:100%;height:136px;object-fit:cover;display:block}
+.chat-poster .chat-sinposter{display:grid;place-items:center;font-size:30px;background:var(--boton-suave)}
+.chat-poster span{display:block;padding:6px 7px;font-size:12px;line-height:1.25}
+#chatVoz{background:var(--boton-suave);color:var(--texto);padding:0 12px;font-size:16px}
+#chatVoz[hidden]{display:none}
+#chatVoz.escuchando{background:#ff453a;color:#fff}
 </style>
-<button id="chatAbrir" aria-label="Abrir el compañero peliculero">💬</button>
+<button id="chatAbrir" style="display:none" aria-label="Abrir el compañero peliculero">💬</button>
 <div id="chatPanel" role="dialog" aria-label="Compañero peliculero">
   <div id="chatCab">
     <b>🍿 Tu compa peliculero</b>
+    <button id="chatVozOn" aria-label="Voz del asistente" title="Voz del asistente">🔊</button>
     <button id="chatCerrar" aria-label="Cerrar">×</button>
   </div>
   <div id="chatMensajes"></div>
@@ -5605,8 +5577,10 @@ document.getElementById("salirDispositivo").addEventListener("click", salirDeEst
     <button type="button" data-q="¿Qué tengo pendiente?">Mis pendientes</button>
     <button type="button" data-q="Recomiéndame algo parecido a lo que más me ha gustado.">Algo parecido a lo que me gusta</button>
     <button type="button" data-q="¿Qué películas tengo de crimen y cuáles ya vi?">Crimen</button>
+    <button type="button" id="chatSinIA">Sin IA</button>
   </div>
   <form id="chatForm">
+    <button type="button" id="chatVoz" aria-label="Dictar" hidden>🎤</button>
     <input id="chatInput" type="text" maxlength="600" placeholder="Pregúntame sobre tu catálogo…" autocomplete="off">
     <button type="submit" id="chatEnviar">Enviar</button>
   </form>
@@ -5627,32 +5601,498 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
     d.textContent = texto;
     lista.appendChild(d);
     lista.scrollTop = lista.scrollHeight;
+    if (tipo === "ia") hablar(texto);
     return d;
   }
+
+  /* ---------- Voz del asistente (síntesis del navegador, sin costo) ---------- */
+  const vozSoportada = "speechSynthesis" in window && typeof SpeechSynthesisUtterance !== "undefined";
+  const vozActiva = () => { try { return localStorage.getItem("chat_voz") !== "0"; } catch (e) { return true; } };
+
+  function limpiarParaVoz(texto) {
+    let t = String(texto || "")
+      .replace(/\p{Extended_Pictographic}/gu, " ")
+      .replace(/★/g, " estrellas")
+      .replace(/[•«»"]/g, " ")
+      .replace(/\n+/g, ". ")
+      .replace(/\s+/g, " ")
+      .replace(/\.\s*\./g, ".")
+      .trim();
+    if (t.length > 450) {
+      const corte = t.slice(0, 450);
+      const punto = Math.max(corte.lastIndexOf(". "), corte.lastIndexOf("? "), corte.lastIndexOf("! "));
+      t = punto > 150 ? corte.slice(0, punto + 1) : corte;
+    }
+    return t;
+  }
+
+  function vozEspanola() {
+    const vs = speechSynthesis.getVoices();
+    return vs.find(v => /^es[-_]MX/i.test(v.lang)) || vs.find(v => /^es/i.test(v.lang)) || null;
+  }
+
+  function hablar(texto) {
+    if (!vozSoportada || !vozActiva()) return;
+    const limpio = limpiarParaVoz(texto);
+    if (!limpio) return;
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(limpio);
+    u.lang = "es-MX";
+    const voz = vozEspanola();
+    if (voz) u.voice = voz;
+    u.rate = 1.02;
+    u.pitch = 1.04;
+    speechSynthesis.speak(u);
+  }
+
+  function actualizarIconoVoz() {
+    const b = document.getElementById("chatVozOn");
+    if (!b) return;
+    b.textContent = vozActiva() ? "🔊" : "🔇";
+    b.setAttribute("aria-label", vozActiva() ? "Silenciar voz" : "Activar voz");
+  }
+
+  if (!vozSoportada) {
+    const b = document.getElementById("chatVozOn");
+    if (b) b.hidden = true;
+  } else {
+    speechSynthesis.getVoices();
+    speechSynthesis.addEventListener("voiceschanged", () => {});
+    actualizarIconoVoz();
+  }
+
+  document.getElementById("chatVozOn").addEventListener("click", () => {
+    const nuevo = vozActiva() ? "0" : "1";
+    try { localStorage.setItem("chat_voz", nuevo); } catch (e) {}
+    if (nuevo === "0" && vozSoportada) speechSynthesis.cancel();
+    actualizarIconoVoz();
+  });
 
   function saludar() {
     if (saludado) return;
     saludado = true;
-    burbuja("¡Hola! Soy tu compa peliculero. Te ayudo a elegir qué ver, a recordar qué tienes pendiente y a platicar de películas con base en tu catálogo.\n\nSi algo no está en tu lista, te lo diré. Pregúntame lo que quieras.", "ia");
+    const nombre = nombreUsuario();
+    burbuja("¡Hola" + (nombre ? ", " + nombre : "") + "! Soy " + NOMBRE_COMPA + ", tu compa peliculero. Te ayudo a elegir qué ver, a recordar qué tienes pendiente y a platicar de películas con base en tu catálogo.\n\nSi algo no está en tu lista, te lo diré. Pregúntame lo que quieras.", "ia");
+    burbuja("Tus marcas, notas y preferencias son solo tuyas. Las preguntas, tus preferencias y los datos de tu lista se envían a Gemini a través del script del administrador. Si aparece «código 429», se agotó la cuota diaria compartida; vuelve mañana.", "ia");
   }
 
   function catalogoParaIA() {
-    return peliculas.map(p => {
+    const base = peliculas.map(p => {
       const e = estadoDe(p);
       return {
-        titulo: p.titulo, año: p["año"], tipo: p.tipo, duracion: p.duracion,
-        genero: p.genero, director: p.director, reparto: p.reparto, temas: p.temas,
+        titulo: p.titulo, año: p["año"], tipo: p.tipo,
+        genero: p.genero, director: p.director,
         vista: e.vista, pendiente: e.pendiente, estrellas: e.estrellas, conAlguien: e.conAlguien
       };
     });
+    if (notas.length) base.unshift({ preferencias_del_usuario: notas });
+    return base;
   }
 
-  async function preguntar(texto) {
+  function listaCampo(p, campo) {
+    return String(p[campo] || "").split(",").map(x => x.trim()).filter(Boolean);
+  }
+
+  function recomendarSinIA(n = 3) {
+    if (!peliculas.length) return "Primero necesito que tu catálogo cargue.";
+    const perfil = { genero: {}, director: {}, reparto: {} };
+    const sumar = (mapa, claves, peso) => claves.forEach(c => { mapa[c] = (mapa[c] || 0) + peso; });
+
+    // Lo que ya viste pesa según tus estrellas (sin calificar cuenta como 1)
+    peliculas.forEach(p => {
+      const e = estadoDe(p);
+      if (!e.vista) return;
+      const peso = e.estrellas || 1;
+      sumar(perfil.genero, listaCampo(p, "genero"), peso);
+      sumar(perfil.director, listaCampo(p, "director"), peso);
+      sumar(perfil.reparto, listaCampo(p, "reparto").slice(0, 5), peso);
+    });
+
+    const candidatos = peliculas.filter(p => {
+      const m = marcas[p.titulo] || {};
+      return !estadoDe(p).vista && !m.descartada;
+    }).map(p => {
+      const e = estadoDe(p);
+      const porGenero = listaCampo(p, "genero").filter(g => perfil.genero[g]);
+      const porDirector = listaCampo(p, "director").filter(d => perfil.director[d]);
+      const porReparto = listaCampo(p, "reparto").slice(0, 5).filter(r => perfil.reparto[r]);
+      let score = 0;
+      porGenero.forEach(g => score += perfil.genero[g]);
+      porDirector.forEach(d => score += perfil.director[d] * 2);
+      porReparto.forEach(r => score += perfil.reparto[r]);
+      if (e.pendiente) score += 1;
+      return { p, score, porGenero, porDirector, porReparto };
+    }).sort((a, b) => b.score - a.score);
+
+    const elegidos = candidatos.filter(c => c.score > 0).slice(0, n);
+    if (!elegidos.length) return "Aún no tengo suficientes datos de tus gustos. Marca algunas películas como vistas y vuelve a intentar.";
+
+    const lineas = elegidos.map(c => {
+      const motivos = [];
+      if (c.porDirector.length) motivos.push("dirigida por " + c.porDirector[0]);
+      if (c.porGenero.length) motivos.push("del género " + c.porGenero.slice(0, 2).join(" y ").toLowerCase());
+      if (c.porReparto.length) motivos.push("con " + c.porReparto[0]);
+      const año = c.p["año"] ? " (" + c.p["año"] + ")" : "";
+      return "• " + c.p.titulo + año + (motivos.length ? ": " + motivos.join(", ") : "");
+    });
+    return "Según tus gustos, sin usar IA:\n\n" + lineas.join("\n");
+  }
+
+  function titulosEnTexto(texto) {
+    const t = String(texto || "").toLowerCase();
+    const hallados = [];
+    peliculas.forEach(p => {
+      const titulo = String(p.titulo || "").toLowerCase();
+      if (titulo.length < 2) return;
+      const pos = t.indexOf(titulo);
+      if (pos !== -1) hallados.push({ p, pos });
+    });
+    hallados.sort((a, b) => a.pos - b.pos);
+    const unicos = [];
+    hallados.forEach(h => { if (!unicos.includes(h.p)) unicos.push(h.p); });
+    return unicos.slice(0, 4);
+  }
+
+  function mostrarPosters(texto) {
+    const lista_ = titulosEnTexto(texto);
+    if (!lista_.length) return;
+    const fila = document.createElement("div");
+    fila.className = "chat-posters";
+    const sinDatos = typeof datosLimitados === "function" && datosLimitados();
+    lista_.forEach(p => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "chat-poster";
+      b.title = p.titulo;
+      const img = (p.portada && !sinDatos)
+        ? (() => { const i = document.createElement("img"); i.src = p.portada; i.alt = ""; i.loading = "lazy"; return i; })()
+        : (() => { const d = document.createElement("div"); d.className = "chat-sinposter"; d.textContent = "🎬"; return d; })();
+      const etiqueta = document.createElement("span");
+      etiqueta.textContent = p.titulo + (p["año"] ? " (" + p["año"] + ")" : "");
+      b.append(img, etiqueta);
+      b.addEventListener("click", () => { if (typeof abrirDetalle === "function") abrirDetalle(p); });
+      fila.appendChild(b);
+    });
+    lista.appendChild(fila);
+    lista.scrollTop = lista.scrollHeight;
+  }
+
+  // Dictado: llena el campo para que revises antes de enviar
+  (function () {
+    const Rec = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const vozBtn = document.getElementById("chatVoz");
+    if (!Rec || !vozBtn) return;
+    vozBtn.hidden = false;
+    const rec = new Rec();
+    rec.lang = "es-MX";
+    rec.interimResults = false;
+    rec.maxAlternatives = 1;
+    rec.onresult = e => {
+      const t = (e.results[0] && e.results[0][0] && e.results[0][0].transcript || "").trim();
+      if (t) { input.value = t; input.focus(); }
+    };
+    rec.onend = () => vozBtn.classList.remove("escuchando");
+    rec.onerror = () => vozBtn.classList.remove("escuchando");
+    vozBtn.addEventListener("click", () => {
+      if (vozBtn.classList.contains("escuchando")) { rec.stop(); return; }
+      vozBtn.classList.add("escuchando");
+      try { rec.start(); } catch (e) { vozBtn.classList.remove("escuchando"); }
+    });
+  })();
+
+  // Consultas con IA por persona al día. Al llegar al límite, el chat pasa solo a modo sin IA.
+  const LIMITE_IA_PERSONAL_DIA = 20;
+
+  // Cambio automático a modo sin IA, avisando una sola vez en el chat
+  function caeASinIA(motivo) {
+    burbuja(motivo + "\n\nCambié automáticamente al modo sin IA. Pregúntame lo que quieras.", "ia");
+  }
+
+  // Identidad del compañero: cámbialo aquí y en SISTEMA_CHAT del Apps Script
+  const NOMBRE_COMPA = "Rolo";
+  // Nombre del usuario, si lo guardó con «recuerda que me llamo …»
+  function nombreUsuario() {
+    for (const n of notas) {
+      const m = String(n).match(/me llamo\s+([A-Za-zÁÉÍÓÚáéíóúÑñ]+)/i);
+      if (m) return m[1].charAt(0).toUpperCase() + m[1].slice(1).toLowerCase();
+    }
+    return null;
+  }
+
+  const normalizarChat = String(t || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+  const elegir = arr => arr[Math.floor(Math.random() * arr.length)];
+  const listaTitulos = arr => arr.slice(0, 5).map(p => "• " + p.titulo + (p["año"] ? " (" + p["año"] + ")" : "")).join("\n");
+  const pendientesDe = () => peliculas.filter(p => estadoDe(p).pendiente && !(marcas[p.titulo] || {}).descartada);
+  const vistasDe = () => peliculas.filter(p => estadoDe(p).vista);
+
+  // ----- Recomendador local con memoria de la sesión -----
+  const sesionSugeridas = new Set();
+  let ultimoFiltro = null;
+  let ultimasSugeridas = [];
+
+  function perfilGustos() {
+    const perfil = { genero: {}, director: {} };
+    vistasDe().forEach(p => {
+      const peso = estadoDe(p).estrellas || 1;
+      generosDe(p).forEach(g => { perfil.genero[g] = (perfil.genero[g] || 0) + peso; });
+      directoresDe(p).forEach(d => { perfil.director[d] = (perfil.director[d] || 0) + peso; });
+    });
+    return perfil;
+  }
+
+  function puntuar(p, perfil) {
+    let s = 0;
+    generosDe(p).forEach(g => { s += perfil.genero[g] || 0; });
+    directoresDe(p).forEach(d => { s += (perfil.director[d] || 0) * 2; });
+    if (estadoDe(p).pendiente) s += 1;
+    return s;
+  }
+
+  function razonDe(p, perfil) {
+    const dir = directoresDe(p).find(d => perfil.director[d]);
+    if (dir) return elegir(["dirigida por " + dir + ", que ya te gustó", "de " + dir + ", a quien ya le has dado buenas calificaciones"]);
+    const gen = generosDe(p).find(g => perfil.genero[g]);
+    if (gen) return elegir(["de " + gen.toLowerCase() + ", un género que te llena", "te va el " + gen.toLowerCase() + ", así que encaja"]);
+    return elegir(["está en tu lista y no la has visto", "es de las que quedan pendientes y puede sorprenderte"]);
+  }
+
+  function sugerirLocal(filtro, n = 2) {
+    const perfil = perfilGustos();
+    const candidatos = peliculas
+      .filter(p => !estadoDe(p).vista && !(marcas[p.titulo] || {}).descartada && !sesionSugeridas.has(p.titulo) && (!filtro || filtro(p)))
+      .map(p => ({ p, s: puntuar(p, perfil) }))
+      .sort((a, b) => b.s - a.s);
+    if (!candidatos.length) return null;
+    const elegidos = candidatos.slice(0, n).map(c => c.p);
+    elegidos.forEach(p => sesionSugeridas.add(p.titulo));
+    ultimasSugeridas = elegidos;
+    return elegidos.map(p => "• " + p.titulo + (p["año"] ? " (" + p["año"] + ")" : "") + ": " + razonDe(p, perfil)).join("\n");
+  }
+
+  const animosLocal = [
+    { re: /triste|melancolic|deprim|bajon|llorar/, gen: ["animacion", "comedia", "familia", "drama"], intro: "Para ese ánimo, algo que abrace un poco:" },
+    { re: /aburrid|flojo|sin ganas/, gen: ["accion", "aventura", "ciencia ficcion", "suspenso"], intro: "Para sacudirte el aburrimiento:" },
+    { re: /miedo|susto|escalof/, gen: ["terror", "suspenso"], intro: "Si buscas que se te pare el corazón:" },
+    { re: /romant|enamorad|pareja|cita/, gen: ["romance", "comedia romantica", "drama"], intro: "Para una noche romántica:" },
+    { re: /relaj|tranquil|cansad|estresad/, gen: ["comedia", "animacion", "familia"], intro: "Para desconectar sin pensar mucho:" },
+    { re: /feliz|contento|emocionad|alegr/, gen: ["comedia", "aventura", "musical"], intro: "Para mantener esa energía:" }
+  ];
+
+  function respuestaSugerencia(intro, filtro) {
+    ultimoFiltro = filtro;
+    const texto = sugerirLocal(filtro);
+    if (!texto) return "Ya te propuse todo lo que encaja con tu lista. Marca algunas películas más como vistas y afino las sugerencias.";
+    return intro + "\n\n" + texto;
+  }
+
+  function respuestaLocal(t) {
+    const n = normalizarChat(t);
+    const pend = pendientesDe();
+    const vistas = vistasDe();
+
+    // Conversación: "otra", "no me gustó", ánimo, género
+    if (/^(otra|otras|dame otra|y otra|otra mas|mas|siguiente|y de esas)\b/.test(n)) {
+      const texto = sugerirLocal(ultimoFiltro);
+      if (!texto) return "Esas son todas las que encajan ahorita. ¿Probamos con otro género o un ánimo distinto?";
+      return elegir(["Va otra:", "Esta también podría gustarte:", "Otra que encaja:"]) + "\n\n" + texto;
+    }
+    // Conversación natural: películas que menciona, despedidas, clima, planes, respuestas cortas
+    const titulo = peliculas.filter(p => String(p.titulo).length > 3).find(p => n.includes(normalizarChat(p.titulo)));
+    if (titulo) {
+      const est = estadoDe(titulo);
+      const gens = generosDe(titulo);
+      if (/me gusto|me encanto|me encanta|buenisim|excelente|la ame|me fascin/.test(n)) {
+        return respuestaSugerencia("¡Qué bueno que te gustó «" + titulo.titulo + "»! Si quieres más en esa línea:", p => generosDe(p).some(g => gens.includes(g)));
+      }
+      if (/no me gusto|aburri|no me convenc|mala/.test(n)) {
+        return elegir(["Gracias por decírmelo, no todas pegan con todos. ¿Seguimos con algo distinto?", "Va, anotado que no te convenció «" + titulo.titulo + "». ¿Qué te late ahora?"]);
+      }
+      const estado = est.vista
+        ? "la tienes como vista" + (est.estrellas ? " y le diste " + est.estrellas + " estrellas" : "")
+        : (est.pendiente ? "la tienes en pendientes" : "todavía no la has marcado");
+      return "«" + titulo.titulo + "»: " + estado + ". ¿Qué quieres saber de ella?";
+    }
+    if (/adios|bye|nos vemos|hasta luego|me voy|chao/.test(n)) {
+      const nom = nombreUsuario();
+      return elegir(["¡Nos vemos" + (nom ? ", " + nom : "") + "! Que disfrutes la peli.", "¡Hasta luego" + (nom ? ", " + nom : "") + "! Aquí estaré cuando vuelvas."]);
+    }
+    if (/llueve|lluvia|frio|fresco/.test(n)) {
+      return respuestaSugerencia("Con la lluvia, algo acogedor:", p => generosDe(p).some(g => /comedia|drama|animacion|romance/i.test(g)));
+    }
+    if (/fin de semana|sabado|domingo|viernes/.test(n)) {
+      return respuestaSugerencia("Para el fin de semana, algo que se disfrute con calma:", null);
+    }
+    if (/palomitas|hambre|comer|antojo/.test(n)) {
+      return elegir(["Palomitas listas. ¿Qué tal algo de comedia para acompañarlas?", "Yo la acompaño con palomitas. ¿Qué te antojas ver?"]);
+    }
+    if (/que opinas|tu opinion|tu favorita|cual es tu favorita/.test(n)) {
+      return "Mi favorita cambia según el día, pero me encanta cuando alguien descubre una película que lo sorprende. ¿Cuál es la tuya?";
+    }
+    if (/^(si|sí|claro|dale|va|ok|orale|simon)\b/.test(n) && ultimasSugeridas.length) {
+      return "¡Buena! Cuando la veas, dime y la marco como vista con tu calificación.";
+    }
+    if (/^(no|nel|nop)\b/.test(n)) {
+      return elegir(["Va, sin problema. ¿Buscamos otra cosa?", "Ok, no pasa nada. ¿Qué te late ahora?"]);
+    }
+    if (/no me (gusto|late|convence|interesa|va)|no quiero esa|otra cosa|paso de esa/.test(n)) {
+      if (!ultimasSugeridas.length) return "¿Cuál no te gustó? Dime el título y no la vuelvo a sugerir en esta sesión.";
+      ultimasSugeridas.forEach(p => sesionSugeridas.add(p.titulo));
+      const texto = sugerirLocal(ultimoFiltro);
+      return "Anotado, no la repito. " + (texto ? "Pruebo con otras:\n\n" + texto : "Ya no tengo más que encajen con eso.");
+    }
+    const animo = animosLocal.find(a => a.re.test(n));
+    if (animo) {
+      return respuestaSugerencia(animo.intro, p => generosDe(p).some(g => animo.gen.some(x => normalizarChat(g).includes(x))));
+    }
+    const generoTexto = [...new Set(peliculas.flatMap(p => generosDe(p)))].find(g => n.includes(normalizarChat(g)));
+    if (generoTexto) {
+      return respuestaSugerencia(elegir(["Buena elección. De " + generoTexto.toLowerCase() + " te propongo:", "¡Me gusta tu gusto! Va de " + generoTexto.toLowerCase() + ":"]), p => generosDe(p).includes(generoTexto));
+    }
+    if (/que veo|sugier|recomie|algo para ver|que pongo|sorprend|algo bueno/.test(n)) {
+      return respuestaSugerencia(elegir(["Te propongo esta:", "Esta me late para ti:", "Va una, según tus gustos:"]), null);
+    }
+
+    if (/^(hola|hey|hi|hello|buenas|buenos dias|buenas tardes|buenas noches|que onda|que tal)\b/.test(n)) {
+      const nom = nombreUsuario();
+      const saludo = nom ? "¡Hola, " + nom + "!" : "¡Hola!";
+      return elegir([
+        saludo + " ¿Qué vemos hoy? Puedo sugerirte algo o revisar tus pendientes.",
+        saludo + " Dime si quieres algo nuevo, algo de tu lista o una sorpresa.",
+        saludo + " ¿Ya tienes en mente algo o te ayudo a elegir?"
+      ]);
+    }
+    if (/gracias|thank/.test(n)) {
+      return elegir(["¡Con gusto! Aquí ando cuando quieras.", "De nada. Que disfrutes la peli.", "Para eso estoy. ¿Otra recomendación?"]);
+    }
+    if (/como estas|como vas|que tal tu dia/.test(n)) {
+      return elegir(["Muy bien, gracias por preguntar. Me pongo contento cuando hay películas de por medio. ¿Y tú qué tal?", "Bien por aquí. ¿Tú cómo vas? ¿Buscas algo para esta noche?"]);
+    }
+    if (/eres (humano|una persona|real|de carne)|eres (un )?robot/.test(n)) {
+      return "No soy humano: soy un asistente de IA. Pero el gusto por el cine sí es real, y eso lo comparto contigo.";
+    }
+    if (/como te llamas|cual es tu nombre|tu nombre/.test(n)) {
+      return "Me llamo " + NOMBRE_COMPA + ". ¿Y tú? Si me dices tu nombre, lo guardo: escribe «recuerda que me llamo…».";
+    }
+    if (/quien eres|que eres|de donde eres|que haces|sobre ti/.test(n)) {
+      return "Soy " + NOMBRE_COMPA + ", tu compa peliculero. Soy un asistente de IA: no vivo fuera del chat, pero me encanta platicar de cine y conozco tu catálogo. En modo sin IA sigo aquí con tus marcas, tus gustos y tus pendientes.";
+    }
+    if (/ayuda|que puedes hacer|que haces|como funciona/.test(n)) {
+      return "Puedo hacer varias cosas: sugerirte algo («sugiéreme algo»), mostrarte tus pendientes («qué tengo pendiente»), lo que ya viste («qué he visto»), tus favoritas («mis favoritas»), buscar por género o director («algo de terror», «películas de Nolan») o darte números («cuántas tengo»).";
+    }
+    if (/que veo|sugier|recomie|algo para ver|que pongo|sorprend|algo bueno/.test(n)) {
+      if (!vistas.length && !pend.length) return "Todavía no tengo suficientes datos de tus gustos. Marca algunas películas como vistas y te sugiero con gusto.";
+      const linea = recomendarSinIA(3).split("\n").filter(l => l.startsWith("•"));
+      if (!linea.length) return "Aún no tengo una buena sugerencia. Marca algunas vistas con calificación y lo intento de nuevo.";
+      return elegir(["Te propongo esta:", "Esta me late para ti:", "Va una, según tus gustos:"]) + "\n\n" + linea.slice(0, 2).join("\n");
+    }
+    if (/pendiente|por ver|me falta/.test(n)) {
+      if (!pend.length) return "No tienes pendientes. ¿Agregamos alguna a tu lista?";
+      return elegir(["Tienes " + pend.length + " en tu lista de pendientes:", "Esto es lo que tienes pendiente (" + pend.length + " en total):"]) + "\n\n" + listaTitulos(pend);
+    }
+    if (/mejor|favorit|mas me gust|top/.test(n)) {
+      const top = vistas.filter(p => estadoDe(p).estrellas).sort((a, b) => estadoDe(b).estrellas - estadoDe(a).estrellas);
+      if (!top.length) return "Aún no has calificado películas. Dales estrellas y te cuento cuáles son tus favoritas.";
+      return "Tus favoritas hasta ahora:\n\n" + top.slice(0, 4).map(p => "• " + p.titulo + " (" + estadoDe(p).estrellas + "★)").join("\n");
+    }
+    if (/he visto|ya vi|que vi|vistas/.test(n)) {
+      if (!vistas.length) return "Todavía no marcas ninguna como vista. Cuando lo hagas, te puedo decir qué tanto te ha gustado.";
+      return "Has visto " + vistas.length + " películas. Las más recientes:\n\n" + listaTitulos(vistas.slice(-5).reverse());
+    }
+    if (/cuantas|cuantos|total|tengo en total/.test(n)) {
+      return "Tienes " + peliculas.length + " películas en tu catálogo: " + vistas.length + " vistas y " + pend.length + " pendientes.";
+    }
+
+    // Género o director mencionados en la pregunta
+    const generos = [...new Set(peliculas.flatMap(p => generosDe(p)))];
+    const genero = generos.find(g => n.includes(normalizarChat(g)));
+    if (genero) {
+      const de = peliculas.filter(p => generosDe(p).includes(genero) && !estadoDe(p).vista);
+      if (!de.length) return "No tengo películas pendientes de " + genero.toLowerCase() + ". ¿Quieres que busque en lo que ya viste?";
+      return elegir(["Buena elección. De " + genero.toLowerCase() + " tienes:", "¡Me gusta tu gusto! Estas son de " + genero.toLowerCase() + ":"]) + "\n\n" + listaTitulos(de);
+    }
+    const directores = [...new Set(peliculas.flatMap(p => directoresDe(p)))];
+    const director = directores.filter(d => d.length > 3).find(d => n.includes(normalizarChat(d)));
+    if (director) {
+      const de = peliculas.filter(p => directoresDe(p).includes(director));
+      return "De " + director + " tienes " + de.length + ":\n\n" + listaTitulos(de);
+    }
+
+    return elegir([
+      "Eso no lo puedo resolver sin IA, pero sí con tus marcas. Prueba con «sugiéreme algo», «qué tengo pendiente» o «algo de comedia».",
+      "Esa no la entendí del todo sin IA. Intenta con «qué he visto», «cuántas tengo» o «algo de terror»."
+    ]);
+  }
+
+  async function responderLocal(t) {
+    const escribiendo = document.createElement("div");
+    escribiendo.className = "chat-pensando";
+    escribiendo.textContent = "Escribiendo…";
+    lista.appendChild(escribiendo);
+    lista.scrollTop = lista.scrollHeight;
+    await new Promise(r => setTimeout(r, 450 + Math.random() * 500));
+    escribiendo.remove();
+    const texto = respuestaLocal(t);
+    burbuja(texto, "ia");
+    mostrarPosters(texto);
+  }
+
+  function modoSinIAActivo() {
+    if (consultasPersonalesHoy() >= LIMITE_IA_PERSONAL_DIA) return true;
+    try { return localStorage.getItem("cuota_agotada_" + fechaPacifico()) === "1"; } catch (e) { return false; }
+  }
+
+  const respuestasCache = new Map();
+
+  function hashTexto(t) {
+    let h = 5381;
+    for (let i = 0; i < t.length; i++) h = ((h << 5) + h + t.charCodeAt(i)) | 0;
+    return (h >>> 0).toString(36);
+  }
+
+  function fechaPacifico() {
+    return new Date().toLocaleDateString("en-CA", { timeZone: "America/Los_Angeles" });
+  }
+
+  function tiempoParaReinicio() {
+    const ahora = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Los_Angeles" }));
+    const medianoche = new Date(ahora);
+    medianoche.setHours(24, 0, 0, 0);
+    const min = Math.max(0, Math.round((medianoche - ahora) / 60000));
+    return Math.floor(min / 60) + " h " + (min % 60) + " min";
+  }
+
+  function contarConsultaPersonal() {
+    const clave = "chat_consultas_" + fechaPacifico();
+    try {
+      const n = Number(localStorage.getItem(clave) || 0) + 1;
+      localStorage.setItem(clave, String(n));
+      return n;
+    } catch (e) { return null; }
+  }
+
+  function consultasPersonalesHoy() {
+    try { return Number(localStorage.getItem("chat_consultas_" + fechaPacifico()) || 0); } catch (e) { return null; }
+  }
+
+  function mensajeCuota() {
+    const n = consultasPersonalesHoy();
+    let t = "Se agotó la cuota diaria gratuita del chat (compartida por todas las cuentas).\n\n";
+    if (n !== null) t += "Tus consultas de hoy: " + n + ".\n";
+    t += "Se reinicia en " + tiempoParaReinicio() + " (medianoche, hora del Pacífico).\nMientras tanto, el catálogo sigue funcionando normalmente.";
+    return t;
+  }
+
+  async function preguntar(texto, oculta = false) {
     if (!accessToken || !peliculas.length) {
       burbuja("Primero necesito que tu catálogo cargue. Intenta en unos segundos.", "error");
       return;
     }
-    burbuja(texto, "yo");
+    if (!oculta) burbuja(texto, "yo");
+    if (!oculta && consultasPersonalesHoy() >= LIMITE_IA_PERSONAL_DIA) {
+      burbuja("Hoy ya usaste tus " + LIMITE_IA_PERSONAL_DIA + " consultas con IA. Sigo contigo en modo sin IA; la IA vuelve a medianoche (hora del Pacífico).", "ia");
+      responderLocal(texto);
+      return;
+    }
     const pensando = document.createElement("div");
     pensando.className = "chat-pensando";
     pensando.textContent = "Pensando…";
@@ -5661,46 +6101,246 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
     enviar.disabled = true;
 
     try {
+      const catalogo = catalogoParaIA();
+      const clave = hashTexto(JSON.stringify({ p: texto, h: historial, c: catalogo }));
+      if (respuestasCache.has(clave)) {
+        pensando.remove();
+        const previa = respuestasCache.get(clave);
+        if (!oculta) {
+          burbuja(previa, "ia");
+          mostrarPosters(previa);
+          historial.push({ role: "user", content: texto });
+          historial.push({ role: "assistant", content: previa });
+          historial = historial.slice(-8);
+        }
+        return previa;
+      }
       const r = await fetch(CHAT_URL, {
         method: "POST",
         headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify({ token: accessToken, pregunta: texto, historial: historial, catalogo: catalogoParaIA() })
+        body: JSON.stringify({ token: accessToken, pregunta: texto, historial: historial, catalogo: catalogo })
       });
       const j = await r.json();
       pensando.remove();
       if (j.error) {
-        burbuja(j.error, "error");
+        const cuota = String(j.error).includes("429");
+        if (cuota) { try { localStorage.setItem("cuota_agotada_" + fechaPacifico(), "1"); } catch (e) {} }
+        const motivo = cuota ? mensajeCuota() : "La IA no está disponible ahora (" + j.error + ").";
+        if (oculta) burbuja(motivo, "error");
+        else caeASinIA(motivo);
       } else {
-        burbuja(j.respuesta, "ia");
-        historial.push({ role: "user", content: texto });
-        historial.push({ role: "assistant", content: j.respuesta });
-        historial = historial.slice(-8);
+        contarConsultaPersonal();
+        respuestasCache.set(clave, j.respuesta);
+        if (!oculta) {
+          burbuja(j.respuesta, "ia");
+          mostrarPosters(j.respuesta);
+          historial.push({ role: "user", content: texto });
+          historial.push({ role: "assistant", content: j.respuesta });
+          historial = historial.slice(-8);
+        }
+        return j.respuesta;
       }
     } catch (e) {
       pensando.remove();
-      burbuja("No pude conectar con el asistente. Revisa tu conexión y que la URL esté bien configurada.", "error");
+      if (oculta) burbuja("No pude conectar con el asistente. Revisa tu conexión.", "error");
+      else caeASinIA("No pude conectar con la IA. Revisa tu conexión.");
     } finally {
       enviar.disabled = false;
     }
   }
 
+  /* ---------- Preferencias (Drive, carpeta privada de la app) ---------- */
+  let notas = [];
+  let notasId = null;
+  let notasCargadas = false;
+
+  async function notasCargar() {
+    if (!accessToken) return;
+    try {
+      const q = encodeURIComponent("name='chat_notas.json'");
+      const r = await driveFetch("https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q=" + q + "&fields=files(id)");
+      const j = await r.json();
+      notasId = (j.files && j.files[0] && j.files[0].id) || null;
+      if (notasId) {
+        const c = await driveFetch("https://www.googleapis.com/drive/v3/files/" + notasId + "?alt=media");
+        const d = await c.json();
+        notas = Array.isArray(d) ? d.filter(x => typeof x === "string").slice(0, 20) : [];
+      }
+      notasCargadas = true;
+    } catch (e) { notasCargadas = false; }
+  }
+
+  async function notasGuardar() {
+    const cuerpo = JSON.stringify(notas);
+    if (notasId) {
+      await driveFetch("https://www.googleapis.com/upload/drive/v3/files/" + notasId + "?uploadType=media", {
+        method: "PATCH", headers: { "Content-Type": "application/json" }, body: cuerpo
+      });
+      return;
+    }
+    const f = "chat_notas_frontera";
+    const meta = JSON.stringify({ name: "chat_notas.json", parents: ["appDataFolder"] });
+    const partes = "--" + f + "\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n" + meta + "\r\n" +
+      "--" + f + "\r\nContent-Type: application/json\r\n\r\n" + cuerpo + "\r\n--" + f + "--";
+    const r = await driveFetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart", {
+      method: "POST", headers: { "Content-Type": "multipart/related; boundary=" + f }, body: partes
+    });
+    const j = await r.json();
+    notasId = j.id;
+  }
+
+  /* ---------- Acciones con confirmación ---------- */
+  function preguntarConfirmacion(texto, textoSi, alSi) {
+    burbuja(texto, "ia");
+    const fila = document.createElement("div");
+    fila.className = "chat-acciones";
+    const si = document.createElement("button");
+    si.type = "button";
+    si.textContent = textoSi;
+    const no = document.createElement("button");
+    no.type = "button";
+    no.className = "secundario";
+    no.textContent = "Cancelar";
+    si.addEventListener("click", () => { fila.remove(); alSi(); });
+    no.addEventListener("click", () => { fila.remove(); burbuja("Cancelado. No cambié nada.", "ia"); });
+    fila.append(si, no);
+    lista.appendChild(fila);
+    lista.scrollTop = lista.scrollHeight;
+  }
+
+  function proponerNota(texto) {
+    if (!texto || texto.length > 200) {
+      burbuja("Escríbelo en menos de 200 caracteres, por favor.", "error");
+      return;
+    }
+    preguntarConfirmacion("¿Guardo esta preferencia para tus próximas recomendaciones?\n\n«" + texto + "»", "Guardar", async () => {
+      notas.push(texto);
+      try {
+        await notasGuardar();
+        burbuja("Guardado. Lo tendré en cuenta.", "ia");
+      } catch (e) {
+        notas.pop();
+        burbuja("No pude guardarlo en tu Drive. Intenta de nuevo más tarde.", "error");
+      }
+    });
+  }
+
+  function mostrarNotas() {
+    if (!notas.length) {
+      burbuja("Aún no tienes preferencias guardadas. Escribe «recuerda que…» seguido de lo que quieres que tenga en cuenta.", "ia");
+      return;
+    }
+    burbuja("Tus preferencias guardadas:\n\n" + notas.map((n, i) => (i + 1) + ". " + n).join("\n"), "ia");
+    const fila = document.createElement("div");
+    fila.className = "chat-acciones";
+    notas.forEach((n, i) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "secundario";
+      b.textContent = "Borrar " + (i + 1);
+      b.addEventListener("click", async () => {
+        notas.splice(i, 1);
+        fila.remove();
+        try { await notasGuardar(); burbuja("Preferencia borrada.", "ia"); }
+        catch (e) { burbuja("No pude actualizar tu Drive. Intenta más tarde.", "error"); }
+      });
+      fila.appendChild(b);
+    });
+    lista.appendChild(fila);
+    lista.scrollTop = lista.scrollHeight;
+  }
+
+  function proponerMarca(titulo, estado) {
+    const p = peliculas.find(x => String(x.titulo).toLowerCase() === titulo.toLowerCase());
+    if (!p) {
+      burbuja("No encontré «" + titulo + "» en tu catálogo. Revisa que el título esté escrito igual.", "error");
+      return;
+    }
+    preguntarConfirmacion("¿Marco «" + p.titulo + "» como " + estado + "?", "Sí, marcar", () => {
+      if (estado === "vista") cambiarEstado(p.titulo, { vista: true });
+      else cambiarEstado(p.titulo, { pendiente: true, vista: false });
+      if (typeof refrescarTodo === "function") refrescarTodo();
+      burbuja("Listo: «" + p.titulo + "» quedó como " + estado + ".", "ia");
+    });
+  }
+
+  function proponerNotaPelicula(titulo, texto) {
+    const p = peliculas.find(x => String(x.titulo).toLowerCase() === titulo.toLowerCase());
+    if (!p) {
+      burbuja("No encontré «" + titulo + "» en tu catálogo. Revisa que el título esté escrito igual.", "error");
+      return;
+    }
+    const t = String(texto || "").trim();
+    if (!t || t.length > 1000) {
+      burbuja("La nota debe tener entre 1 y 1000 caracteres.", "error");
+      return;
+    }
+    const previa = (marcas[p.titulo] || {}).nota || "";
+    const aviso = previa ? "\n\nSe agregará debajo de tu nota actual, sin borrarla." : "";
+    preguntarConfirmacion("¿Guardo esta nota en «" + p.titulo + "»?\n\n«" + t + "»" + aviso, "Guardar nota", () => {
+      guardarNota(p.titulo, previa ? previa + "\n" + t : t);
+      if (typeof refrescarTodo === "function") refrescarTodo();
+      burbuja("Nota guardada en «" + p.titulo + "».", "ia");
+    });
+  }
+
+  async function redactarNotaIA(titulo) {
+    const p = peliculas.find(x => String(x.titulo).toLowerCase() === titulo.toLowerCase());
+    if (!p) {
+      burbuja("No encontré «" + titulo + "» en tu catálogo. Revisa que el título esté escrito igual.", "error");
+      return;
+    }
+    burbuja("Redacta una nota para «" + p.titulo + "»", "yo");
+    const instruccion = "Redacta una nota personal breve (máximo 300 caracteres, en español) sobre la película «" + p.titulo +
+      "», usando solo los datos de su ficha del catálogo. Responde únicamente con el texto de la nota, sin comillas ni introducción.";
+    const texto = await preguntar(instruccion, true);
+    if (!texto) return;
+    const limpio = texto.replace(/^["«»]+|["«»]+$/g, "").trim().slice(0, 1000);
+    burbuja(limpio, "ia");
+    preguntarConfirmacion("¿Guardo esta nota en «" + p.titulo + "»?", "Guardar nota", () => {
+      const previa = (marcas[p.titulo] || {}).nota || "";
+      guardarNota(p.titulo, previa ? previa + "\n" + limpio : limpio);
+      if (typeof refrescarTodo === "function") refrescarTodo();
+      burbuja("Nota guardada en «" + p.titulo + "».", "ia");
+    });
+  }
+
+  function procesarEntrada(t) {
+    let m;
+    if ((m = t.match(/^recuerda que\s+(.+)$/i))) return proponerNota(m[1].trim());
+    if (/^(mis preferencias|qué recuerdas|que recuerdas)\??$/i.test(t)) return mostrarNotas();
+    if ((m = t.match(/^marca\s+(.+?)\s+como\s+(vista|pendiente)\.?$/i))) return proponerMarca(m[1].trim(), m[2].toLowerCase());
+    if ((m = t.match(/^(?:agrega|añade|pon)?\s*(?:una\s+)?nota\s+(?:a|en|para|sobre|de)\s+(.+?)\s*:\s*([\s\S]+)$/i))) return proponerNotaPelicula(m[1].trim(), m[2]);
+    if ((m = t.match(/^(?:redacta|escribe|sugiere)\s+(?:una\s+)?nota\s+(?:sobre|para|de|en)\s+(.+?)\.?$/i))) return redactarNotaIA(m[1].trim());
+    if (modoSinIAActivo()) { responderLocal(t); return; }
+    return preguntar(t);
+  }
+
   document.getElementById("chatAbrir").addEventListener("click", () => {
     panel.classList.add("abierto");
+    if (!notasCargadas) notasCargar();
     saludar();
     input.focus();
   });
-  document.getElementById("chatCerrar").addEventListener("click", () => panel.classList.remove("abierto"));
+  document.getElementById("chatCerrar").addEventListener("click", () => {
+    panel.classList.remove("abierto");
+    if (vozSoportada) speechSynthesis.cancel();
+  });
 
   form.addEventListener("submit", e => {
     e.preventDefault();
     const t = input.value.trim();
     if (!t || enviar.disabled) return;
     input.value = "";
-    preguntar(t);
+    procesarEntrada(t);
   });
 
-  document.querySelectorAll("#chatSugerencias button").forEach(b => {
+  document.querySelectorAll("#chatSugerencias button[data-q]").forEach(b => {
     b.addEventListener("click", () => preguntar(b.dataset.q));
+  });
+  document.getElementById("chatSinIA").addEventListener("click", () => {
+    burbuja("Recomiéndame (sin IA)", "yo");
+    responderLocal("sugiéreme algo");
   });
 })();
 </script>
