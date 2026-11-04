@@ -7052,6 +7052,11 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
   }
 
   document.getElementById("chatAbrir").addEventListener("click", () => {
+    // Tocar el mismo botón con el panel abierto lo cierra
+    if (panel.classList.contains("abierto")) {
+      document.getElementById("chatCerrar").click();
+      return;
+    }
     panel.classList.add("abierto");
     fondoChat.classList.add("visible");
     if (!notasCargadas) notasCargar();
