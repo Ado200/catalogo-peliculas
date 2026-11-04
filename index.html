@@ -6269,7 +6269,7 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
   // Panel y botón se llevan a la raíz de la página: así siempre quedan encima del fondo y reciben los toques
   document.body.appendChild(panel);
   const botonAbrirChat = document.getElementById("chatAbrir");
- 
+  if (botonAbrirChat) document.body.appendChild(botonAbrirChat);
   fondoChat.addEventListener("click", () => {
     panel.classList.remove("abierto");
     fondoChat.classList.remove("visible");
@@ -7324,12 +7324,24 @@ document.querySelectorAll("input[type=range]").forEach(r => {
 #chatAbrir{right:max(12px, calc(50% - 348px)) !important;left:auto !important;transform:none !important;bottom:calc(24px + env(safe-area-inset-bottom,0px)) !important;width:56px;height:56px}
 #chatAbrir:active{transform:scale(.94) !important}
 </style>
-<style>
-#tabbar{justify-content:space-between !important}
-#tabbar button{flex:1 1 0 !important;min-width:0 !important}
-#tabbar .tab-rolo{flex:0 0 58px !important;width:58px !important;min-width:58px !important;margin:0 4px !important}
-#chatAbrir{position:static !important;left:auto !important;top:auto !important;right:auto !important;bottom:auto !important;transform:none !important;margin:0 !important}
-</style>
+<script>
+/* El orbe se coloca justo en el centro de la barra, encima de su hueco */
+(function () {
+  const slot = document.getElementById("tabRolo");
+  const orbe = document.getElementById("chatAbrir");
+  if (!slot || !orbe) return;
+  const colocar = () => {
+    const r = slot.getBoundingClientRect();
+    if (!r.width) return;
+    const t = 58;
+    orbe.style.left = (r.left + (r.width - t) / 2) + "px"; orbe.style.setProperty("left", (r.left + (r.width - t) / 2) + "px", "important");
+    orbe.style.top = (r.top + (r.height - t) / 2) + "px"; orbe.style.setProperty("top", (r.top + (r.height - t) / 2) + "px", "important");
+  };
+  colocar();
+  setInterval(colocar, 400);
+  window.addEventListener("resize", colocar);
+})();
+  </script>
 <style id="menu-mas-encima">
 /* El menú ⋯ va por encima del velo de fondo y de la barra, para poder tocarlo */
 #panelMas,
