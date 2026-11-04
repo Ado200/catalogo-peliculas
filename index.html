@@ -642,6 +642,93 @@ input[type=range]:focus-visible { outline:2px solid var(--azul); outline-offset:
 #chatAbrir{position:fixed !important;left:0;top:0;right:auto !important;bottom:auto !important;transform:none !important;width:58px;height:58px;margin:0;z-index:30;box-shadow:0 6px 16px rgba(59,124,244,.35)}
 #chatAbrir:active{transform:scale(.94) !important}
 </style>
+<style id="filtros-pulidos">
+/* Panel de filtros: todo redondeado, con cabecera, rejilla de dos columnas y desplazamiento suave */
+#panelAvanzados {
+  border-radius: 28px;
+  padding: 22px 20px 20px;
+  max-height: min(82vh, 760px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: var(--gris, #9a9a9a) transparent;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px 14px;
+}
+#panelAvanzados::before {
+  content: "Filtros";
+  grid-column: 1 / -1;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -.01em;
+  margin-bottom: -4px;
+}
+#panelAvanzados::-webkit-scrollbar { width: 8px; }
+#panelAvanzados::-webkit-scrollbar-track { background: transparent; margin: 18px 0; border-radius: 999px; }
+#panelAvanzados::-webkit-scrollbar-thumb {
+  background: var(--gris, #9a9a9a);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+#panelAvanzados .campo { min-width: 0; }
+#panelAvanzados .campo label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gris);
+  margin: 0 0 6px 14px;
+}
+#panelAvanzados select {
+  -webkit-appearance: none; appearance: none;
+  width: 100%;
+  border-radius: 999px;
+  border: 1px solid var(--borde);
+  background-color: var(--tarjeta);
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path d='M1 1.5l5 5 5-5' fill='none' stroke='%238a8a8e' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 16px center;
+  padding: 12px 42px 12px 16px;
+  font-size: 15px;
+  color: var(--texto);
+  transition: box-shadow .2s ease, border-color .2s ease;
+}
+#panelAvanzados select:focus { outline: none; border-color: transparent; box-shadow: 0 0 0 3px var(--boton-suave); }
+#panelAvanzados .fila-preset { display: flex; gap: 8px; align-items: center; }
+#panelAvanzados .fila-preset select { flex: 1; min-width: 0; }
+#panelAvanzados .fila-preset .pildora {
+  flex: 0 0 auto;
+  width: 44px; height: 44px; padding: 0;
+  border-radius: 999px;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+#panelAvanzados .pildora { border-radius: 999px; transition: transform .15s ease, background .2s ease; }
+#panelAvanzados .pildora:active { transform: scale(.97); }
+#panelAvanzados .acciones-panel,
+#panelAvanzados > .campo:has(#presetsSel) { grid-column: 1 / -1; }
+#panelAvanzados .acciones-panel {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  align-items: end;
+  margin-top: 4px;
+}
+#panelAvanzados .acciones-panel .campo { grid-column: 1 / -1; }
+#panelAvanzados #presetGuardar,
+#panelAvanzados #limpiar {
+  width: 100%;
+  padding: 13px 14px;
+  font-size: 15px;
+  font-weight: 600;
+  border: none;
+}
+#panelAvanzados #presetGuardar { background: var(--azul, #0a84ff); color: #fff; }
+#panelAvanzados #limpiar { background: var(--boton-suave); color: var(--texto); }
+@media (max-width: 420px) {
+  #panelAvanzados { grid-template-columns: 1fr; }
+}
+</style>
 </head>
 <body>
 <div id="bannerSinConexion" class="banner-offline" hidden></div>
