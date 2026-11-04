@@ -7359,5 +7359,35 @@ document.querySelectorAll("input[type=range]").forEach(r => {
   if (mas && av) { while (mas.firstChild) av.appendChild(mas.firstChild); }
 })();
 </script>
+<style id="panel-flotante">
+/* Panel de ajustes flotante, al centro, con esquinas redondeadas y entrada suave */
+#panelAvanzados.abierto,
+#panelMas.abierto{position:fixed !important;left:50% !important;right:auto !important;top:50% !important;bottom:auto !important;transform:translate(-50%,-50%) !important;width:min(440px, calc(100vw - 28px)) !important;max-width:none !important;max-height:min(78dvh, 640px) !important;margin:0 !important;border-radius:28px !important;box-shadow:0 24px 60px rgba(0,0,0,.22) !important;padding:20px !important;overflow-y:auto !important;z-index:31 !important;animation:aparecerFlotante .28s cubic-bezier(.2,.8,.2,1) both !important}
+@keyframes aparecerFlotante{from{opacity:0;transform:translate(-50%,-46%) scale(.96)}to{opacity:1;transform:translate(-50%,-50%) scale(1)}}
+#velo{z-index:29}
+</style>
+<style id="asistente-grande">
+/* Panel del asistente más grande y centrado sobre la barra: aprovecha la pantalla */
+#chatPanel{left:50% !important;right:auto !important;transform:translateX(-50%) !important;bottom:calc(104px + env(safe-area-inset-bottom,0px)) !important;width:min(480px, calc(100vw - 20px)) !important;max-width:480px !important;max-height:min(80dvh, calc(100dvh - 150px)) !important;height:min(80dvh, 720px);border-radius:28px !important;font-size:15px !important}
+#chatCab{padding:14px 18px 10px}
+.chat-titulo b{font-size:17px}
+.chat-avatar{width:34px;height:34px;font-size:18px}
+#chatCerrar{width:34px;height:34px;font-size:18px}
+.chat-ajustes{padding:0 18px 10px;gap:8px}
+#chatGenero,#chatVelocidad{font-size:13px;padding:7px 12px}
+#chatContinuo,#chatVozOn{width:36px;height:36px;font-size:17px}
+#chatUso{padding:8px 18px;font-size:12px}
+#chatMensajes{flex:1 1 auto;min-height:220px;padding:10px 16px}
+.chat-burbuja{font-size:15px;line-height:1.5;padding:11px 15px;max-width:88%}
+#chatSugerencias{padding:6px 16px 10px}
+#chatSugerencias button{font-size:13px;padding:7px 13px}
+#chatForm{padding:10px 14px 14px}
+#chatVoz,#chatForm button[type=submit]{width:42px;height:42px}
+#chatInput{font-size:15px;padding:11px 16px}
+.chat-poster-col{flex:0 0 128px}
+.chat-poster img,.chat-poster .chat-sinposter{height:186px}
+.chat-poster span{font-size:12px}
+@media (max-width:420px){#chatPanel{width:calc(100vw - 16px) !important;bottom:calc(100px + env(safe-area-inset-bottom,0px)) !important}}
+</style>
 </body>
 </html>
