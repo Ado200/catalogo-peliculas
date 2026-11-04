@@ -5834,7 +5834,12 @@ document.getElementById("salirDispositivo").addEventListener("click", salirDeEst
 .banner-offline{position:fixed;top:0;left:0;right:0;z-index:80;background:#ff9f0a;color:#1c1c1e;text-align:center;font-size:13px;padding:7px 12px}
 .banner-offline[hidden]{display:none}
 .chat-uso.alerta{color:var(--error)}
-#chatVozOn{background:none;border:0;font-size:18px;color:var(--gris);cursor:pointer;margin-left:auto;margin-right:10px}
+#chatGenero{background:var(--boton-suave);color:var(--texto);border:0;border-radius:999px;padding:4px 8px;font-size:12px;margin-left:auto}
+#chatContinuo{background:none;border:0;font-size:18px;cursor:pointer;margin-left:6px;padding:2px 6px;border-radius:999px;opacity:.55}
+#chatContinuo.activo{opacity:1;background:var(--boton-suave)}
+#chatContinuo.escuchando{opacity:1;background:#ff453a;color:#fff;animation:pulsoVoz 1s ease-in-out infinite}
+#chatContinuo[hidden]{display:none}
+#chatVozOn{background:none;border:0;font-size:18px;color:var(--gris);cursor:pointer;margin-left:8px;margin-right:10px}
 #chatMensajes{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px}
 .chat-burbuja{max-width:85%;padding:9px 12px;border-radius:16px;font-size:14px;line-height:1.45;white-space:pre-wrap;word-wrap:break-word}
 .chat-burbuja.yo{align-self:flex-end;background:var(--azul);color:#fff}
@@ -5873,6 +5878,11 @@ document.getElementById("salirDispositivo").addEventListener("click", salirDeEst
 <div id="chatPanel" role="dialog" aria-label="Compañero peliculero">
   <div id="chatCab">
     <b>🍿 Tu compa peliculero</b>
+    <select id="chatGenero" aria-label="Tipo de voz" title="Tipo de voz">
+      <option value="mujer">Voz de mujer</option>
+      <option value="hombre">Voz de hombre</option>
+    </select>
+    <button id="chatContinuo" aria-label="Conversación continua" title="Conversación continua (sin tocar el micrófono)" hidden>🎙</button>
     <button id="chatVozOn" aria-label="Voz del asistente" title="Voz del asistente">🔊</button>
     <button id="chatCerrar" aria-label="Cerrar">×</button>
   </div>
@@ -5906,16 +5916,30 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
   function burbuja(texto, tipo) {
     const d = document.createElement("div");
     d.className = "chat-burbuja " + tipo;
-    d.textContent = texto;
+    const visible = tipo === "ia" ? limpiarMarkdown(texto) : texto;
+    d.textContent = visible;
     lista.appendChild(d);
     lista.scrollTop = lista.scrollHeight;
-    if (tipo === "ia") hablar(texto);
+    if (tipo === "ia") hablar(visible);
     return d;
   }
 
   /* ---------- Voz del asistente (síntesis del navegador, sin costo) ---------- */
   const vozSoportada = "speechSynthesis" in window && typeof SpeechSynthesisUtterance !== "undefined";
   const vozActiva = () => { try { return localStorage.getItem("chat_voz") !== "0"; } catch (e) { return true; } };
+
+  // Quita el formato de Markdown que a veces devuelve la IA (**negritas**, *cursivas*, # títulos, viñetas)
+  function limpiarMarkdown(texto) {
+    return String(texto || "")
+      .replace(/\*\*(.+?)\*\*/g, "$1")
+      .replace(/__(.+?)__/g, "$1")
+      .replace(/\*(.+?)\*/g, "$1")
+      .replace(/`+/g, "")
+      .replace(/^#+\s*/gm, "")
+      .replace(/^\s*[-•*]\s+/gm, "• ")
+      .replace(/\*/g, "")
+      .trim();
+  }
 
   function limpiarParaVoz(texto) {
     let t = String(texto || "")
@@ -5934,23 +5958,68 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
     return t;
   }
 
-  function vozEspanola() {
-    const vs = speechSynthesis.getVoices();
-    return vs.find(v => /^es[-_]MX/i.test(v.lang)) || vs.find(v => /^es/i.test(v.lang)) || null;
+  const NOMBRES_MUJER = /paulina|sabina|dalia|monica|mónica|helena|marisol|paloma|luciana|sofia|sofía|valeria|camila|female|mujer/i;
+  const NOMBRES_HOMBRE = /jorge|diego|juan|carlos|pablo|raul|raúl|enrique|alonso|andres|andrés|male|hombre/i;
+  const CALIDAD_VOZ = /natural|neural|premium|enhanced|google|mejorad|plus/i;
+
+  const generoVoz = () => { try { return localStorage.getItem("chat_genero") || "mujer"; } catch (e) { return "mujer"; } };
+
+  function puntuarVoz(v, genero) {
+    let s = 0;
+    if (/^es[-_]MX/i.test(v.lang)) s += 4; else if (/^es/i.test(v.lang)) s += 2;
+    if (CALIDAD_VOZ.test(v.name)) s += 3;
+    const esMujer = NOMBRES_MUJER.test(v.name), esHombre = NOMBRES_HOMBRE.test(v.name);
+    if (genero === "mujer") { if (esMujer) s += 5; if (esHombre) s -= 5; }
+    if (genero === "hombre") { if (esHombre) s += 5; if (esMujer) s -= 5; }
+    return s;
+  }
+
+  function elegirVoz() {
+    const vs = speechSynthesis.getVoices().filter(v => /^es/i.test(v.lang));
+    if (!vs.length) return null;
+    const g = generoVoz();
+    return vs.slice().sort((a, b) => puntuarVoz(b, g) - puntuarVoz(a, g))[0];
   }
 
   function hablar(texto) {
     if (!vozSoportada || !vozActiva()) return;
     const limpio = limpiarParaVoz(texto);
     if (!limpio) return;
+    if (escuchandoConv && recConv) { try { recConv.abort(); } catch (e) {} escuchandoConv = false; }
     speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(limpio);
-    u.lang = "es-MX";
-    const voz = vozEspanola();
-    if (voz) u.voice = voz;
-    u.rate = 1.02;
-    u.pitch = 1.04;
-    speechSynthesis.speak(u);
+    const voz = elegirVoz();
+    const genero = generoVoz();
+    // Frase por frase: las pausas entre frases se oyen más naturales
+    const frases = limpio.match(/[^.!?]+[.!?]*/g) || [limpio];
+    frases.forEach(f => {
+      const frase = f.trim();
+      if (!frase) return;
+      const u = new SpeechSynthesisUtterance(frase);
+      u.lang = voz ? voz.lang : "es-MX";
+      if (voz) u.voice = voz;
+      u.rate = 0.96;
+      u.pitch = genero === "hombre" ? 0.92 : 1.06;
+      u.onend = () => {
+        if (typeof conversacionActiva !== "undefined" && conversacionActiva && frase === frases[frases.length - 1].trim()) {
+          setTimeout(() => { if (typeof escucharConv === "function") escucharConv(); }, 350);
+        }
+      };
+      speechSynthesis.speak(u);
+    });
+  }
+
+  if (vozSoportada) {
+    speechSynthesis.addEventListener("voiceschanged", () => {});
+  }
+
+  const selectGenero = document.getElementById("chatGenero");
+  if (selectGenero) {
+    selectGenero.value = generoVoz();
+    selectGenero.addEventListener("change", () => {
+      try { localStorage.setItem("chat_genero", selectGenero.value); } catch (e) {}
+      if (vozSoportada) speechSynthesis.cancel();
+      hablar("Así suena mi voz ahora.");
+    });
   }
 
   function actualizarIconoVoz() {
@@ -6289,6 +6358,16 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
       if (!texto) return "Esas son todas las que encajan ahorita. ¿Probamos con otro género o un ánimo distinto?";
       return elegir(["Va otra:", "Esta también podría gustarte:", "Otra que encaja:"]) + "\n\n" + texto;
     }
+    // Seguimiento: por qué, decide por mí
+    if (/por que|porque|y eso|razon/.test(n) && ultimasSugeridas.length) {
+      return "Te la sugerí porque " + razonDe(ultimasSugeridas[0], perfilGustos()) + ". ¿Te late esa línea o prefieres otra?";
+    }
+    if (/decide tu|decides tu|no se|sorprendeme|elige tu|tu eliges/.test(n)) {
+      const texto = sugerirLocal(null, 1);
+      if (!texto) return "Ya no tengo qué elegir por ti. Marca algunas vistas y lo intento de nuevo.";
+      return elegir(["Me arriesgo con esta:", "Mi elección va por aquí:"]) + "\n\n" + texto + "\n\nSi no te convence, dime «otra».";
+    }
+
     // Tiempo disponible: "tengo una hora", "tengo 90 minutos", "poco tiempo", "mucho tiempo"
     let minutosDisponibles = 0;
     const horas = n.match(/(\d+)\s*(horas?|h)\b/);
@@ -6334,6 +6413,16 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
       const estado = est.vista
         ? "la tienes como vista" + (est.estrellas ? " y le diste " + est.estrellas + " estrellas" : "")
         : (est.pendiente ? "la tienes en pendientes" : "todavía no la has marcado");
+      if (/dime mas|cuentame|de que trata|como es|de que va|que tal/.test(n)) {
+        const datos = [];
+        if (titulo["año"]) datos.push("salió en " + titulo["año"]);
+        if (gens.length) datos.push("es de " + gens.slice(0, 2).join(" y ").toLowerCase());
+        if (directoresDe(titulo).length) datos.push("la dirigió " + directoresDe(titulo).join(" y "));
+        if (titulo.duracion) datos.push("dura " + titulo.duracion);
+        const rep = listaCampo(titulo, "reparto").slice(0, 2);
+        if (rep.length) datos.push("actúan " + rep.join(" y "));
+        return "«" + titulo.titulo + "» " + (datos.length ? datos.join(", ") : "no tengo más datos de ella") + ". Y " + estado + ". ¿La quieres ver o ya la viste?";
+      }
       return "«" + titulo.titulo + "»: " + estado + ". ¿Qué quieres saber de ella?";
     }
     if (/adios|bye|nos vemos|hasta luego|me voy|chao/.test(n)) {
@@ -6907,6 +6996,7 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
   document.getElementById("chatCerrar").addEventListener("click", () => {
     panel.classList.remove("abierto");
     if (vozSoportada) speechSynthesis.cancel();
+    detenerEscuchaConv();
   });
 
   form.addEventListener("submit", e => {
@@ -6920,6 +7010,94 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
   document.querySelectorAll("#chatSugerencias button[data-q]").forEach(b => {
     b.addEventListener("click", () => preguntar(b.dataset.q));
   });
+  /* ---------- Conversación continua: escucha, responde y vuelve a escuchar ---------- */
+  const RecConv = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const botonContinuo = document.getElementById("chatContinuo");
+  let conversacionActiva = false;
+  let escuchandoConv = false;
+  let recConv = null;
+
+  function conversacionGuardada() {
+    try { return localStorage.getItem("chat_conversacion") === "1"; } catch (e) { return false; }
+  }
+  function pintarContinuo() {
+    if (!botonContinuo) return;
+    botonContinuo.classList.toggle("activo", conversacionActiva);
+    botonContinuo.classList.toggle("escuchando", escuchandoConv);
+    botonContinuo.setAttribute("aria-pressed", conversacionActiva ? "true" : "false");
+  }
+  function asistenteHablando() {
+    return vozSoportada && (speechSynthesis.speaking || speechSynthesis.pending);
+  }
+  function crearRecConv() {
+    const r = new RecConv();
+    r.lang = "es-MX";
+    r.interimResults = false;
+    r.continuous = false;
+    r.maxAlternatives = 1;
+    r.onresult = e => {
+      const t = ((e.results[0] && e.results[0][0] && e.results[0][0].transcript) || "").trim();
+      escuchandoConv = false;
+      pintarContinuo();
+      if (t) {
+        input.value = t;
+        form.dispatchEvent(new Event("submit", { cancelable: true, bubbles: true }));
+      }
+    };
+    r.onerror = e => {
+      escuchandoConv = false;
+      pintarContinuo();
+      if (e.error === "not-allowed" || e.error === "service-not-allowed") {
+        conversacionActiva = false;
+        pintarContinuo();
+        burbuja("No tengo permiso para usar el micrófono. Revisa el permiso del navegador y vuelve a activar la conversación.", "error");
+      }
+    };
+    r.onend = () => {
+      escuchandoConv = false;
+      pintarContinuo();
+      // Vuelve a escuchar si la conversación sigue activa y el asistente ya no está hablando
+      setTimeout(() => {
+        if (conversacionActiva && panel.classList.contains("abierto") && !asistenteHablando()) escucharConv();
+      }, 500);
+    };
+    return r;
+  }
+  function escucharConv() {
+    if (!RecConv || !conversacionActiva || escuchandoConv || asistenteHablando()) return;
+    if (!recConv) recConv = crearRecConv();
+    try {
+      recConv.start();
+      escuchandoConv = true;
+      pintarContinuo();
+    } catch (e) { /* ya estaba escuchando */ }
+  }
+  function detenerEscuchaConv() {
+    escuchandoConv = false;
+    pintarContinuo();
+    if (recConv) { try { recConv.abort(); } catch (e) {} }
+  }
+
+  if (botonContinuo) {
+    if (RecConv && vozSoportada) botonContinuo.hidden = false;
+    conversacionActiva = RecConv && conversacionGuardada();
+    pintarContinuo();
+    botonContinuo.addEventListener("click", () => {
+      if (conversacionActiva) {
+        conversacionActiva = false;
+        try { localStorage.setItem("chat_conversacion", "0"); } catch (e) {}
+        detenerEscuchaConv();
+        return;
+      }
+      conversacionActiva = true;
+      try { localStorage.setItem("chat_conversacion", "1"); } catch (e) {}
+      // La conversación continua necesita la voz encendida para no escucharse a sí misma
+      if (!vozActiva()) { try { localStorage.setItem("chat_voz", "1"); } catch (e) {} actualizarIconoVoz(); }
+      escucharConv();
+      pintarContinuo();
+    });
+  }
+
   document.getElementById("chatNumeros").addEventListener("click", () => {
     burbuja("Mis números", "yo");
     mostrarEstadisticas();
