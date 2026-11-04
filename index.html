@@ -729,9 +729,16 @@ input[type=range]:focus-visible { outline:2px solid var(--azul); outline-offset:
   #panelAvanzados { grid-template-columns: 1fr; }
 }
 </style>
-<style id="buscar-rolo-css">
-.buscar-rolo { width:34px; height:34px; border-radius:50%; border:none; background:var(--boton-suave); font-size:16px; cursor:pointer; flex-shrink:0; display:flex; align-items:center; justify-content:center; margin-left:4px; transition:transform .15s ease; }
-.buscar-rolo:active { transform:scale(.94); }
+<style id="fila-superior">
+#app > header .fila-titulo { display:flex; align-items:center; gap:10px; }
+#app > header .fila-titulo h1 { flex:0 0 auto; margin:0; }
+#app > header .buscar.buscar-titulo { flex:1 1 auto; min-width:0; margin:0 4px; padding:7px 12px; gap:6px; }
+#app > header .buscar.buscar-titulo input { min-width:0; }
+#app > header .buscar.buscar-titulo input::placeholder { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+#app > header .botones-barra { flex:0 0 auto; }
+@media (max-width: 520px) {
+  #app > header .buscar.buscar-titulo span[aria-hidden="true"] { display:none; }
+}
 </style>
 </head>
 <body>
@@ -761,13 +768,13 @@ input[type=range]:focus-visible { outline:2px solid var(--azul); outline-offset:
 <header>
   <div class="fila-titulo">
     <h1>Películas</h1>
+    <div class="buscar buscar-titulo"><span aria-hidden="true">⌕</span><input id="buscar" type="search" list="sugerencias" placeholder="Busca por título, director o actor"><datalist id="sugerencias"></datalist><button id="voz" class="boton-voz" title="Buscar por voz" aria-label="Buscar por voz" hidden>🎤</button></div>
     <div class="botones-barra">
     <button type="button" class="boton-circular" id="aleatorio" aria-label="Sugerir una película al azar" title="Aleatorio">🎲</button>
     <button type="button" class="boton-circular" id="queVerNoche" aria-label="Qué ver esta noche" title="Qué ver esta noche">🍿</button>
     <button type="button" class="boton-circular" id="toggleAvanzados" aria-label="Filtros avanzados">⚙</button>
        </div>
   </div>
-    <div class="buscar"><span aria-hidden="true">⌕</span><input id="buscar" type="search" list="sugerencias" placeholder="Busca por título, director o actor"><datalist id="sugerencias"></datalist><button id="voz" class="boton-voz" title="Buscar por voz" aria-label="Buscar por voz" hidden>🎤</button><button type="button" id="buscarRolo" class="buscar-rolo" aria-label="Preguntarle a Rolo" title="Preguntarle a Rolo">🍿</button></div>
   <div id="selectorZona" class="segmentado selector-zona" role="group" aria-label="Secciones" style="display:none"></div>
   <div class="colapsable">
   <div class="segmentado solo-catalogo" data-zona="lista" role="group" aria-label="Filtrar películas">
@@ -7197,7 +7204,6 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
     input.value = t;
     form.dispatchEvent(new Event("submit", { cancelable: true, bubbles: true }));
   }
-  document.getElementById("buscarRolo").addEventListener("click", () => preguntarARolo(buscarPrincipal.value));
   buscarPrincipal.addEventListener("keydown", e => {
     if (e.key !== "Enter") return;
     const t = buscarPrincipal.value.trim();
