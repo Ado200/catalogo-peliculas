@@ -740,11 +740,10 @@ input[type=range]:focus-visible { outline:2px solid var(--azul); outline-offset:
   #app > header .buscar.buscar-titulo span[aria-hidden="true"] { display:none; }
 }
 </style>
-<style id="pildoras-deslizables">
-/* Filas de botones tipo píldora: no saltan de línea; se deslizan en horizontal con barra visible */
-.aviso-opciones,
-.acciones-rapidas,
-.aviso-item .aviso-opciones {
+<style id="pendientes-deslizable">
+/* Dentro de Pendientes: las filas de botones tipo píldora se deslizan en horizontal, sin saltar de línea */
+body[data-pestana="pendientes"] .acciones-rapidas,
+body[data-pestana="pendientes"] .aviso-opciones {
   flex-wrap: nowrap !important;
   overflow-x: auto;
   overflow-y: hidden;
@@ -756,14 +755,14 @@ input[type=range]:focus-visible { outline:2px solid var(--azul); outline-offset:
   padding-bottom: 6px;
   max-width: 100%;
 }
-.aviso-opciones > *,
-.acciones-rapidas > * { flex: 0 0 auto; white-space: nowrap; }
-.aviso-opciones::-webkit-scrollbar,
-.acciones-rapidas::-webkit-scrollbar { height: 6px; }
-.aviso-opciones::-webkit-scrollbar-track,
-.acciones-rapidas::-webkit-scrollbar-track { background: transparent; border-radius: 999px; }
-.aviso-opciones::-webkit-scrollbar-thumb,
-.acciones-rapidas::-webkit-scrollbar-thumb { background: var(--gris, #9a9a9a); border-radius: 999px; }
+body[data-pestana="pendientes"] .acciones-rapidas > *,
+body[data-pestana="pendientes"] .aviso-opciones > * { flex: 0 0 auto; white-space: nowrap; }
+body[data-pestana="pendientes"] .acciones-rapidas::-webkit-scrollbar,
+body[data-pestana="pendientes"] .aviso-opciones::-webkit-scrollbar { height: 6px; }
+body[data-pestana="pendientes"] .acciones-rapidas::-webkit-scrollbar-track,
+body[data-pestana="pendientes"] .aviso-opciones::-webkit-scrollbar-track { background: transparent; border-radius: 999px; }
+body[data-pestana="pendientes"] .acciones-rapidas::-webkit-scrollbar-thumb,
+body[data-pestana="pendientes"] .aviso-opciones::-webkit-scrollbar-thumb { background: var(--gris, #9a9a9a); border-radius: 999px; }
 </style>
 </head>
 <body>
@@ -3677,6 +3676,7 @@ function descartarSeleccionadas() {
 
 /* ---------- Pintado principal ---------- */
 function pintar() {
+  document.body.dataset.pestana = pestana;
   if (pestana !== "catalogo") { pintarPestana(); return; }
   $("tagsNotas").style.display = "none";
 
