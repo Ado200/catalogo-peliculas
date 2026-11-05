@@ -1204,6 +1204,12 @@ h1 { letter-spacing:-.02em; }
 #chatForm #chatEnviar svg{display:block}
 @media (min-width:700px){ .actores-grid{grid-template-columns:repeat(5,1fr)} .actor-films{grid-template-columns:repeat(5,1fr)} }
 </style>
+<style id="rolo-gemini">
+#chatAbrir { background:radial-gradient(circle at 50% 35%, #ffffff 0%, #f3f5fa 70%, #e9edf5 100%) !important; border:1px solid rgba(60,60,67,.12) !important; box-shadow:0 6px 18px rgba(60,64,90,.18), inset 0 1px 0 rgba(255,255,255,.9) !important; border-radius:50% !important; }
+body.oscuro #chatAbrir { background:radial-gradient(circle at 50% 35%, #2c2c30 0%, #1c1c1e 100%) !important; border-color:rgba(255,255,255,.1) !important; box-shadow:0 6px 18px rgba(0,0,0,.45) !important; }
+#chatAbrir .rolo-ia { filter:drop-shadow(0 2px 4px rgba(120,90,240,.25)); }
+#chatAbrir.escuchando { box-shadow:0 0 0 6px rgba(255,69,58,.18), 0 6px 18px rgba(60,64,90,.18) !important; }
+</style>
 </head>
 <body>
 <div id="bannerSinConexion" class="banner-offline" hidden></div>
@@ -2349,7 +2355,10 @@ function renderSagas() {
 
 /* ---------- Actores (desde la columna reparto; sin llamadas nuevas) ---------- */
 function nombresReparto(p) {
-  return String(p.reparto || "").split(",").map(x => x.trim()).filter(Boolean);
+  const de_reparto = String(p.reparto || "").split(",").map(x => x.trim()).filter(Boolean);
+  let de_info = [];
+  try { de_info = Object.keys(JSON.parse(p.actores_info || "{}") || {}); } catch (e) { de_info = []; }
+  return [...new Set([...de_reparto, ...de_info])];
 }
 
 function actoresAgrupados() {
@@ -2358,9 +2367,7 @@ function actoresAgrupados() {
     nombresReparto(p).forEach(n => { (mapa[n] = mapa[n] || []).push(p); });
   });
   return Object.entries(mapa)
-    .filter(([, lista]) => lista.length >= 2)
-    .sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0], "es"))
-    .slice(0, 30);
+    .sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0], "es"));
 }
 
 function infoActores() {
@@ -2382,6 +2389,18 @@ function fotoDeActor(nombre, info) {
 
 function inicialesDe(nombre) {
   return nombre.split(/\s+/).slice(0, 2).map(x => x[0] || "").join("").toUpperCase();
+}
+
+function bioHtml(info) {
+  const es = info.bio || "";
+  const en = info.bio_original || "";
+  if (!es && !en) return '<p class="meta">Todavía no tenemos la biografía de esta persona.</p>';
+  const texto = es || en;
+  const aviso = (!info.bio && en) ? ' <span class="meta">(traducción automática)</span>' : '';
+  return '<p class="actor-bio" id="actorBio" data-es="' + esc(es || en) + '" data-en="' + esc(en) + '" data-vista="es">' +
+    esc(texto.slice(0, 280)) + (texto.length > 280 ? '…' : '') + aviso + '</p>' +
+    (texto.length > 280 ? '<button type="button" class="pildora" id="actorBioMas">Leer más</button> ' : '') +
+    (en && es ? '<button type="button" class="pildora" id="actorBioIdioma">🌐 Ver original en inglés</button>' : '');
 }
 
 function fechaLarga(iso) {
@@ -2421,10 +2440,7 @@ function abrirActor(nombre) {
     ? (calificadas.reduce((a, p) => a + estadoDe(p).estrellas, 0) / calificadas.length).toFixed(1)
     : "—";
   const nacio = info.nacimiento ? "Nació el " + fechaLarga(info.nacimiento) + (info.lugar ? " en " + info.lugar : "") : (info.lugar ? "Nació en " + info.lugar : "");
-  const bio = info.bio
-    ? '<p class="actor-bio" id="actorBio">' + esc(info.bio.slice(0, 280)) + (info.bio.length > 280 ? '…' : '') + '</p>' +
-      (info.bio.length > 280 ? '<button type="button" class="pildora" id="actorBioMas" data-completa="' + esc(info.bio) + '">Leer más</button>' : '')
-    : '<p class="meta">Sin biografía todavía. Se llena al correr completarActoresInfo en Apps Script.</p>';
+  const bio = bioHtml(info);
   $("actorTitulo").textContent = nombre;
   $("actorBody").innerHTML =
     '<div class="actor-cabecera">' +
@@ -2450,10 +2466,22 @@ function abrirActor(nombre) {
         (s2.estrellas ? ' · ' + s2.estrellas + '★' : '') + '</span></button>';
     }).join("") + '</div>';
   $("actorBody").onclick = e => {
+    const bioEl = $("actorBio");
+    if (!bioEl) return;
     const mas = e.target.closest("#actorBioMas");
     if (mas) {
-      $("actorBio").textContent = mas.dataset.completa;
+      bioEl.textContent = bioEl.dataset.vista === "en" ? bioEl.dataset.en : bioEl.dataset.es;
       mas.remove();
+      return;
+    }
+    const idioma = e.target.closest("#actorBioIdioma");
+    if (idioma) {
+      const verEn = bioEl.dataset.vista !== "en";
+      bioEl.dataset.vista = verEn ? "en" : "es";
+      bioEl.textContent = verEn ? bioEl.dataset.en : bioEl.dataset.es;
+      idioma.textContent = verEn ? "🌐 Ver en español" : "🌐 Ver original en inglés";
+      const mas2 = document.getElementById("actorBioMas");
+      if (mas2) mas2.remove();
     }
   };
   $("actorModal").classList.add("abierto");
@@ -7459,7 +7487,7 @@ document.getElementById("salirDispositivo").addEventListener("click", salirDeEst
 })();
 </script>
 
-<button id="chatAbrir" style="display:none" aria-label="Abrir Rolo, el asistente de IA" title="Rolo · asistente de IA"><span class="rolo-ia" aria-hidden="true"><svg viewBox="0 0 24 24" width="26" height="26"><path d="M12 2.5l1.9 5.6 5.6 1.9-5.6 1.9L12 17.5l-1.9-5.6-5.6-1.9 5.6-1.9z" fill="#fff"/><path d="M18.5 15.5l.9 2.4 2.4.9-2.4.9-.9 2.4-.9-2.4-2.4-.9 2.4-.9z" fill="#fff" opacity=".9"/></svg></span></button>
+<button id="chatAbrir" style="display:none" aria-label="Abrir Rolo, el asistente de IA" title="Rolo · asistente de IA"><span class="rolo-ia" aria-hidden="true"><svg viewBox="0 0 24 24" width="30" height="30"><defs><linearGradient id="rolo-g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4f8cff"/><stop offset=".55" stop-color="#8f6cf2"/><stop offset="1" stop-color="#e8739a"/></linearGradient></defs><path d="M12 2.8c.5 4.6 2.6 6.7 7.2 7.2-4.6.5-6.7 2.6-7.2 7.2-.5-4.6-2.6-6.7-7.2-7.2 4.6-.5 6.7-2.6 7.2-7.2z" fill="url(#rolo-g)"/><path d="M19.2 1.8c.2 1.6.9 2.3 2.5 2.5-1.6.2-2.3.9-2.5 2.5-.2-1.6-.9-2.3-2.5-2.5 1.6-.2 2.3-.9 2.5-2.5z" fill="url(#rolo-g)"/></svg></span></button>
 <div id="chatPanel" role="dialog" aria-label="Compañero peliculero">
   <div id="chatCab">
     <div class="chat-titulo"><span class="chat-avatar">🍿</span><b>Rolo</b></div>
