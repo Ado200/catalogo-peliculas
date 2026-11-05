@@ -1328,7 +1328,7 @@ body.oscuro .toast-app { background:rgba(245,245,247,.94) !important; color:#1c1
 body.oscuro #tabbar, body.oscuro #app > header { color:#f5f5f7; }
 body.oscuro #tabbar button:not(.activa) { color:#c7c7cc; }
 /* Mini reproductor flotante: se ve sobre la página sin cubrirla */
-#miniReproductor { position:fixed; left:50%; transform:translateX(-50%); bottom:calc(96px + env(safe-area-inset-bottom, 0px)); width:min(960px, calc(100vw - 16px)); z-index:40; border-radius:18px; overflow:hidden; background:#000; box-shadow:0 14px 40px rgba(0,0,0,.4); }
+#miniReproductor { position:fixed; left:50%; top:50%; transform:translate(-50%,-50%); bottom:auto; width:min(960px, calc(100vw - 16px)); max-height:calc(100vh - 24px); z-index:40; border-radius:18px; overflow:hidden; background:#000; box-shadow:0 14px 40px rgba(0,0,0,.4); }
 #miniReproductor .mr-barra { display:flex; justify-content:space-between; align-items:center; gap:8px; padding:8px 10px; background:rgba(28,28,30,.92); color:#fff; font-size:13px; }
 #miniReproductor .mr-titulo { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:600; }
 #miniReproductor .mr-barra button { background:none; border:0; color:#fff; font-size:16px; padding:2px 8px; cursor:pointer; }
@@ -1349,6 +1349,19 @@ body.oscuro #tabbar button:not(.activa) { color:#c7c7cc; }
 #miniReproductor.mr-completa { inset:0 0 calc(92px + env(safe-area-inset-bottom, 0px)) 0; left:0; right:0; width:auto; height:auto; transform:none; }
 #miniReproductor.mr-completa .mr-nota { display:none; }
 body.con-reproductor #chatAbrir, body.con-reproductor #chatPanel { display:none !important; }
+/* Barra compacta: título, pestañas y botones en una sola fila */
+#miniReproductor .mr-barra { padding:6px 8px; gap:6px; }
+#miniReproductor .mr-titulo { flex:1; min-width:0; font-size:13px; }
+#miniReproductor .mr-pestanas { display:flex; gap:4px; flex:0 0 auto; }
+#miniReproductor .mr-chip { border:0; border-radius:999px; padding:4px 10px; font-size:12px; background:rgba(255,255,255,.14); color:#fff; cursor:pointer; }
+#miniReproductor .mr-chip.activo { background:#0a84ff; }
+#miniReproductor .mr-botones { display:flex; flex:0 0 auto; }
+#miniReproductor .mr-botones button { padding:2px 6px; }
+#miniReproductor .mr-pestanas + .mr-botones { margin-left:2px; }
+#miniReproductor .mr-pestanas:empty { display:none; }
+/* Centrado vertical y horizontal; si la altura no cabe, el video se ajusta */
+#miniReproductor.mr-min { top:auto; bottom:calc(96px + env(safe-area-inset-bottom, 0px)); transform:translateX(-50%); }
+#miniReproductor .mr-caja { max-height:calc(100vh - 110px); }
 </style>
 </head>
 <body>
@@ -4656,13 +4669,13 @@ function abrirVerPelicula(titulo, es, en, link) {
   div.dataset.peli = peli;
   div.innerHTML =
     '<div class="mr-barra"><span class="mr-titulo">▶ ' + esc(titulo) + '</span>' +
-      '<span><button type="button" data-mr="tamano" aria-label="Cambiar tamaño">⤢</button>' +
+      '<span class="mr-pestanas">' +
+        (peli ? '<button type="button" class="mr-chip activo" data-mr="peli">Película</button>' : '') +
+        (codigo ? '<button type="button" class="mr-chip' + (peli ? '' : ' activo') + '" data-mr="trailer">Tráiler</button>' : '') +
+      '</span>' +
+      '<span class="mr-botones"><button type="button" data-mr="tamano" aria-label="Cambiar tamaño">⤢</button>' +
       '<button type="button" data-mr="min" aria-label="Minimizar">▁</button>' +
       '<button type="button" data-mr="cerrar" aria-label="Cerrar">✕</button></span></div>' +
-    '<div class="mr-pestanas">' +
-      (peli ? '<button type="button" class="chipc activo" data-mr="peli">Película</button>' : '') +
-      (codigo ? '<button type="button" class="chipc' + (peli ? '' : ' activo') + '" data-mr="trailer">Tráiler</button>' : '') +
-    '</div>' +
     '<div class="mr-caja" id="mrCaja"></div>' +
     '<p class="mr-nota" id="mrNota"></p>';
   const caja = div.querySelector("#mrCaja");
