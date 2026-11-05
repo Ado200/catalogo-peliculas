@@ -1550,6 +1550,8 @@ body.con-reproductor #chatAbrir, body.con-reproductor #chatPanel { display:none 
       <button id="respaldarMarcas" class="pildora">⬇ Respaldar</button>
       <button id="restaurarMarcas" class="pildora">⬆ Restaurar</button>
       <p id="estadoRespaldo" class="estado-respaldo"></p>
+      <button id="verRegistro" class="pildora">🩺 Registro de errores</button>
+      <button id="verPrivacidad" class="pildora">📄 Aviso de privacidad</button>
       <div class="fila-estado estado-datos"><div id="contador"></div><div id="estadoGuardado"></div></div>
     </div>
     <div class="grupo-menu">
@@ -5120,7 +5122,11 @@ function elegirNoche(otra) {
     elegirNoche(true);
   });
 
-  acciones.append(verFicha, otraBtn, vista);
+  const cine = document.createElement("button");
+  cine.type = "button";
+  cine.textContent = "Modo cine";
+  cine.addEventListener("click", () => abrirModoCine(p));
+  acciones.append(verFicha, otraBtn, vista, cine);
   info.append(h, meta, acciones);
   tarjeta.appendChild(info);
   res.appendChild(tarjeta);
@@ -8483,6 +8489,17 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
       if (!texto) return "Esas son todas las que encajan ahorita. ¿Probamos con otro género o un ánimo distinto?";
       return elegir(["Va otra:", "Esta también podría gustarte:", "Otra que encaja:"]) + "\n\n" + texto;
     }
+    // Recomendaciones por ocasión
+    if (/para ver con (mi|mis|un|una|la|el)|en familia|con ninos|con mis ninos|con mi mama|con mi papa/.test(n)) {
+      return respuestaSugerencia("Para ver en familia, te propongo:", p => generosDe(p).some(g => /familia|animacion|comedia|aventura/.test(normalizarChat(g))));
+    }
+    if (/noche de (terror|miedo|sustos)|peli de miedo|algo de miedo/.test(n)) {
+      return respuestaSugerencia("Noche de sustos, va:", p => generosDe(p).some(g => /terror|suspenso/.test(normalizarChat(g))));
+    }
+    if (/noche de (risas|reir|reirme)|para reirme|para reir|algo gracioso/.test(n)) {
+      return respuestaSugerencia("Para reírte un rato:", p => generosDe(p).some(g => /comedia/.test(normalizarChat(g))));
+    }
+
     // Seguimiento: por qué, decide por mí
     if (/por que|porque|y eso|razon/.test(n) && ultimasSugeridas.length) {
       return "Te la sugerí porque " + razonDe(ultimasSugeridas[0], perfilGustos()) + ". ¿Te late esa línea o prefieres otra?";
@@ -8615,7 +8632,7 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
       return "Soy " + NOMBRE_COMPA + ", tu compa peliculero. Soy un asistente de IA: no vivo fuera del chat, pero me encanta platicar de cine y conozco tu catálogo. En modo sin IA sigo aquí con tus marcas, tus gustos y tus pendientes.";
     }
     if (/ayuda|que puedes hacer|que haces|como funciona/.test(n)) {
-      return "Puedo hacer varias cosas: sugerirte algo («sugiéreme algo»), mostrarte tus pendientes («qué tengo pendiente»), lo que ya viste («qué he visto»), tus favoritas («mis favoritas»), buscar por género o director («algo de terror», «películas de Nolan») o darte números («cuántas tengo»).";
+      return "Puedo hacer varias cosas: sugerirte algo («sugiéreme algo»), mostrarte tus pendientes («qué tengo pendiente»), lo que ya viste («qué he visto»), tus favoritas («mis favoritas»), buscar por género o director («algo de terror», «películas de Nolan») darte números («cuántas tengo»), recomendarte para una ocasión («para ver con mi mamá», «noche de terror») o contarte tu semana («resumen de mi semana»).";
     }
     if (/que veo|sugier|recomie|algo para ver|que pongo|sorprend|algo bueno/.test(n)) {
       if (!vistas.length && !pend.length) return "Todavía no tengo suficientes datos de tus gustos. Marca algunas películas como vistas y te sugiero con gusto.";
@@ -9092,7 +9109,61 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
     lista.scrollTop = lista.scrollHeight;
   }
 
+  function isoLocal(d) {
+    const z = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
+    return z.toISOString().slice(0, 10);
+  }
+
+  // Resumen de la semana: lo que viste, tu mejor calificación y tus pendientes
+  function resumenSemana() {
+    const hace7 = isoLocal(new Date(Date.now() - 7 * 86400000));
+    const vistasSem = peliculas.filter(p => ((marcas[p.titulo] || {}).historial || []).some(h => h.a === "vista" && String(h.f) >= hace7));
+    const pend = pendientesDe();
+    const calificadas = vistasSem.filter(p => estadoDe(p).estrellas);
+    let t = "Tu semana en cine.\n\n";
+    if (vistasSem.length) {
+      t += "Viste " + vistasSem.length + (vistasSem.length === 1 ? " película" : " películas") + ": " + vistasSem.slice(0, 4).map(p => p.titulo).join(", ") + (vistasSem.length > 4 ? " y algunas más" : "") + ".\n";
+    } else {
+      t += "Esta semana no marcaste películas como vistas.\n";
+    }
+    if (calificadas.length) {
+      const mejor = calificadas.slice().sort((a, b) => estadoDe(b).estrellas - estadoDe(a).estrellas)[0];
+      t += "La que más te gustó fue «" + mejor.titulo + "», con " + estadoDe(mejor).estrellas + " estrellas.\n";
+    }
+    t += "Tienes " + pend.length + (pend.length === 1 ? " pendiente" : " pendientes") + ". " + (pend.length ? "Si quieres, te propongo una para el fin de semana." : "");
+    return t.trim();
+  }
+
+  // Explica en qué se basan las recomendaciones, con los datos que usa
+  function explicarPerfil() {
+    const vistas = vistasDe();
+    if (!vistas.length) return "Todavía no tengo nada en que basarme. Marca algunas películas como vistas y califícalas, y te explico cómo te recomiendo.";
+    const perfil = perfilGustos();
+    const top = obj => Object.entries(obj).sort((a, b) => b[1] - a[1]).slice(0, 3).map(x => x[0]);
+    const generos = top(perfil.genero), directores = top(perfil.director);
+    const calificadas = vistas.filter(p => estadoDe(p).estrellas);
+    let t = "Así te conozco, y en qué me baso.\n\n";
+    t += "• Géneros que más te llenan: " + (generos.length ? generos.join(", ") : "todavía no hay suficientes datos") + ".\n";
+    t += "• Directores que más te gustan: " + (directores.length ? directores.join(", ") : "todavía no hay suficientes datos") + ".\n";
+    if (calificadas.length) {
+      const prom = Math.round(calificadas.reduce((a, p) => a + estadoDe(p).estrellas, 0) / calificadas.length * 10) / 10;
+      t += "• Tu calificación promedio: " + prom + " estrellas, sobre " + calificadas.length + (calificadas.length === 1 ? " película" : " películas") + ".\n";
+    }
+    t += "\nCada película que viste suma a sus géneros y a su director según sus estrellas (sin calificar cuenta como 1). Un director pesa el doble que un género, y las pendientes reciben un pequeño empujón. Con eso elijo lo que te sugiero.";
+    return t;
+  }
+
   function procesarEntrada(t) {
+    const nt = normalizarChat(t);
+    if (/^(resumen|resumen de (mi|la) semana|mi semana|como va mi semana)/.test(nt)) { burbuja(resumenSemana(), "ia"); return; }
+    if (/(que sabes de mi|como me conoces|por que me recomiendas|por que me sugieres|en que te basas)/.test(nt)) { burbuja(explicarPerfil(), "ia"); return; }
+    if (/registro de errores|mis errores|ver errores/.test(nt)) {
+      const reg = window.obtenerRegistro ? window.obtenerRegistro() : [];
+      burbuja(reg.length
+        ? "Estos son los últimos errores que registré:\n\n" + reg.slice(-5).map(x => "• " + x.f.slice(0, 16).replace("T", " ") + " · " + x.msg).join("\n") + "\n\nPuedes verlo completo en Datos → Registro de errores."
+        : "No hay errores registrados. Todo va bien por aquí.", "ia");
+      return;
+    }
     if (/^(mis estadisticas|mi ano|mis numeros|resumen de mi ano|estadisticas)\b/.test(normalizarChat(t))) return mostrarEstadisticas();
     let m;
     if ((m = t.match(/^recuerda que\s+(.+)$/i))) return proponerNota(m[1].trim());
@@ -9439,6 +9510,267 @@ document.addEventListener("DOMContentLoaded", () => {
   todos();
   setInterval(todos, 300);
   window.addEventListener("resize", todos);
+})();
+</script>
+<style id="funciones-nuevas">
+.modal-global{position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.32);display:none;align-items:center;justify-content:center;padding:16px}
+.modal-global.visible{display:flex}
+.modal-tarjeta{background:var(--tarjeta);color:var(--texto);border-radius:28px;max-width:460px;width:100%;max-height:82dvh;display:flex;flex-direction:column;box-shadow:0 24px 60px rgba(0,0,0,.25);animation:aparecerModal .28s cubic-bezier(.2,.8,.2,1) both}
+@keyframes aparecerModal{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:scale(1)}}
+.modal-cab{display:flex;justify-content:space-between;align-items:center;padding:18px 20px 8px;font-size:17px;font-weight:600}
+.modal-x{background:var(--boton-suave);border:0;border-radius:50%;width:32px;height:32px;font-size:18px;color:var(--gris);cursor:pointer}
+.modal-cuerpo{padding:8px 20px 20px;overflow:auto;font-size:14px;line-height:1.5}
+.modal-cuerpo pre{white-space:pre-wrap;word-break:break-word;font-family:inherit;margin:0}
+.modal-btn{border:0;border-radius:999px;padding:10px 16px;background:var(--azul);color:#fff;font-size:14px;cursor:pointer}
+.modal-btn.sec{background:var(--boton-suave);color:var(--texto)}
+.toast-suave{position:fixed;left:50%;bottom:120px;transform:translateX(-50%);width:min(420px, calc(100vw - 24px));background:var(--tarjeta);color:var(--texto);border-radius:22px;box-shadow:0 14px 36px rgba(0,0,0,.18);padding:12px 12px 12px 16px;display:flex;align-items:center;gap:10px;z-index:45;animation:toastEntra .4s cubic-bezier(.2,.8,.2,1) both;transition:opacity .4s ease,transform .4s ease}
+.toast-suave span{flex:1;font-size:14px;line-height:1.4}
+.toast-suave.salir{opacity:0;transform:translate(-50%,10px)}
+@keyframes toastEntra{from{opacity:0;transform:translate(-50%,16px)}to{opacity:1;transform:translate(-50%,0)}}
+.modo-cine{position:fixed;inset:0;z-index:70;background:radial-gradient(circle at 50% 30%, #1b2440 0%, #05070d 75%);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:24px;text-align:center}
+.modo-cine img{max-height:44dvh;max-width:70vw;border-radius:18px;box-shadow:0 20px 60px rgba(0,0,0,.6)}
+.modo-cine .mc-sin{width:180px;height:260px;border-radius:18px;background:rgba(255,255,255,.08);display:grid;place-items:center;font-size:46px}
+.modo-cine h2{margin:0;font-size:22px;font-weight:700}
+.modo-cine .mc-meta{font-size:14px;opacity:.7;margin:0}
+.modo-cine .mc-timer{font-size:40px;font-weight:300;font-variant-numeric:tabular-nums;margin-top:6px}
+.modo-cine .mc-barra{width:min(420px,80vw);height:6px;border-radius:999px;background:rgba(255,255,255,.15);overflow:hidden}
+.modo-cine .mc-fill{height:100%;width:0;background:linear-gradient(90deg,#0a84ff,#64d2ff);border-radius:999px;transition:width .5s linear}
+.modo-cine .mc-estado{font-size:14px;opacity:.8;min-height:20px}
+.modo-cine .mc-acc{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:6px}
+.modo-cine .mc-acc button{border:0;border-radius:999px;padding:11px 18px;font-size:15px;background:rgba(255,255,255,.14);color:#fff;cursor:pointer}
+.modo-cine .mc-acc button.mc-pri{background:#0a84ff}
+.modo-cine .mc-x{position:absolute;top:14px;right:14px;width:40px;height:40px;border-radius:50%;border:0;padding:0;font-size:22px;background:rgba(255,255,255,.14);color:#fff;cursor:pointer}
+</style>
+<script>
+(function () {
+  /* ---------- Registro de errores ---------- */
+  const CLAVE_REG = "registro_errores";
+  function leerRegistro() {
+    try { return JSON.parse(localStorage.getItem(CLAVE_REG) || "[]"); } catch (e) { return []; }
+  }
+  function anotar(tipo, msg, extra) {
+    const r = leerRegistro();
+    r.push({ f: new Date().toISOString(), tipo: tipo, msg: String(msg || "").slice(0, 300), extra: String(extra || "").slice(0, 200) });
+    try { localStorage.setItem(CLAVE_REG, JSON.stringify(r.slice(-40))); } catch (e) {}
+  }
+  window.obtenerRegistro = leerRegistro;
+  window.anotarError = anotar;
+  window.addEventListener("error", e => anotar("error", e.message, (e.filename || "") + ":" + (e.lineno || "")));
+  window.addEventListener("unhandledrejection", e => {
+    const r = e.reason;
+    anotar("promesa", (r && (r.message || r)) || "rechazo sin detalle", "");
+  });
+
+  /* ---------- Modal general ---------- */
+  function boton(txt, fn, sec) {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "modal-btn" + (sec ? " sec" : "");
+    b.textContent = txt;
+    b.addEventListener("click", fn);
+    return b;
+  }
+  function abrirModal(titulo, cuerpo, bloqueado) {
+    let o = document.getElementById("modalGlobal");
+    if (!o) {
+      o = document.createElement("div");
+      o.id = "modalGlobal";
+      o.className = "modal-global";
+      o.innerHTML = '<div class="modal-tarjeta"><div class="modal-cab"><span></span><button type="button" class="modal-x" aria-label="Cerrar">×</button></div><div class="modal-cuerpo"></div></div>';
+      document.body.appendChild(o);
+      o.addEventListener("click", e => {
+        if (o.dataset.bloqueado === "1") return;
+        if (e.target === o || e.target.classList.contains("modal-x")) o.classList.remove("visible");
+      });
+    }
+    o.dataset.bloqueado = bloqueado ? "1" : "";
+    o.querySelector(".modal-cab span").textContent = titulo;
+    const c = o.querySelector(".modal-cuerpo");
+    c.textContent = "";
+    c.appendChild(cuerpo);
+    o.classList.add("visible");
+  }
+  function cerrarModal() {
+    const o = document.getElementById("modalGlobal");
+    if (o) { o.dataset.bloqueado = ""; o.classList.remove("visible"); }
+  }
+
+  /* ---------- Registro en pantalla ---------- */
+  function verRegistro() {
+    const cont = document.createElement("div");
+    const pre = document.createElement("pre");
+    const reg = leerRegistro().slice().reverse();
+    pre.textContent = reg.length
+      ? reg.map(x => x.f.slice(0, 19).replace("T", " ") + " · " + x.tipo + "\n" + x.msg + (x.extra ? "\n" + x.extra : "")).join("\n\n")
+      : "Sin errores registrados.";
+    cont.appendChild(pre);
+    const fila = document.createElement("div");
+    fila.style.cssText = "display:flex;gap:8px;margin-top:14px;flex-wrap:wrap";
+    const copiar = boton("Copiar", async () => {
+      try { await navigator.clipboard.writeText(pre.textContent); copiar.textContent = "Copiado ✓"; }
+      catch (e) { copiar.textContent = "No se pudo copiar"; }
+    });
+    const borrar = boton("Borrar registro", () => {
+      try { localStorage.removeItem(CLAVE_REG); } catch (e) {}
+      pre.textContent = "Sin errores registrados.";
+    }, true);
+    fila.append(copiar, borrar);
+    cont.appendChild(fila);
+    abrirModal("Registro de errores", cont, false);
+  }
+
+  /* ---------- Aviso de privacidad ---------- */
+  const CLAVE_PRIV = "privacidad_v1";
+  const TEXTO_PRIVACIDAD = [
+    "Esto es lo que pasa con tus datos en esta app:",
+    "• Tus marcas (vista, pendiente, estrellas y notas) se guardan en tu navegador y en tu Drive, en una carpeta privada que solo usa esta app. Nadie más del grupo las puede ver.",
+    "• Con el chat con IA, tus preguntas, tus preferencias guardadas y los datos de tu catálogo (títulos, géneros, director, duración y estado de cada película) se envían a Gemini, de Google, a través del script de quien administra el catálogo.",
+    "• Según el código actual, ese script no guarda el contenido de tus preguntas. Google aplica sus propias políticas al procesarlas.",
+    "• Puedes borrar tus preferencias en «Mi memoria» y tus marcas desde Ajustes → Cuenta.",
+    "• Solo entran cuentas institucionales."
+  ];
+  function contenidoPrivacidad(primeraVez) {
+    const d = document.createElement("div");
+    const pre = document.createElement("pre");
+    pre.textContent = TEXTO_PRIVACIDAD.join("\n\n");
+    d.appendChild(pre);
+    if (primeraVez) {
+      const fila = document.createElement("div");
+      fila.style.cssText = "display:flex;gap:8px;margin-top:16px;justify-content:flex-end";
+      fila.appendChild(boton("Entiendo y acepto", () => {
+        try { localStorage.setItem(CLAVE_PRIV, new Date().toISOString()); } catch (e) {}
+        cerrarModal();
+      }));
+      d.appendChild(fila);
+    }
+    return d;
+  }
+  function privacidadAceptada() {
+    try { return !!localStorage.getItem(CLAVE_PRIV); } catch (e) { return true; }
+  }
+
+  /* ---------- Avisos suaves ---------- */
+  function toast(texto, accionTxt, accion) {
+    const t = document.createElement("div");
+    t.className = "toast-suave";
+    const s = document.createElement("span");
+    s.textContent = texto;
+    t.appendChild(s);
+    if (accionTxt) t.appendChild(boton(accionTxt, () => { if (accion) accion(); t.remove(); }));
+    t.appendChild(boton("×", () => t.remove(), true));
+    document.body.appendChild(t);
+    setTimeout(() => { t.classList.add("salir"); setTimeout(() => t.remove(), 450); }, 12000);
+  }
+  function isoHoy() {
+    const d = new Date();
+    return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+  }
+  function avisoPendientesViejos() {
+    try { if (localStorage.getItem("aviso_pend_dia") === isoHoy()) return; } catch (e) {}
+    try { localStorage.setItem("aviso_pend_dia", isoHoy()); } catch (e) {}
+    if (typeof peliculas === "undefined" || !peliculas.length) return;
+    const limite = Date.now() - 30 * 86400000;
+    const viejos = peliculas.filter(p => {
+      const e = estadoDe(p);
+      if (!e.pendiente || e.vista) return false;
+      const h = (marcas[p.titulo] || {}).historial || [];
+      const ev = h.slice().reverse().find(x => x.a === "pendiente");
+      return !!ev && new Date(ev.f).getTime() < limite;
+    });
+    if (!viejos.length) return;
+    toast("Tienes " + viejos.length + (viejos.length === 1 ? " pendiente que lleva" : " pendientes que llevan") + " más de un mes esperando. ¿Vemos alguna esta noche?",
+      "Ver", () => { if (typeof abrirQueVerEstaNoche === "function") abrirQueVerEstaNoche(); });
+  }
+
+  /* ---------- Modo cine en casa ---------- */
+  window.abrirModoCine = function (p) {
+    const previo = document.getElementById("modoCine");
+    if (previo) previo.remove();
+    const noche = document.getElementById("nochePanel");
+    if (noche) noche.remove();
+
+    const total = (minutos(p) || 120) * 60000;
+    let transcurrido = 0, inicio = Date.now(), pausado = false, wake = null;
+
+    const o = document.createElement("div");
+    o.id = "modoCine";
+    o.className = "modo-cine";
+    const x = document.createElement("button");
+    x.type = "button"; x.className = "mc-x"; x.setAttribute("aria-label", "Salir"); x.textContent = "×";
+    if (p.portada) {
+      const img = document.createElement("img"); img.src = p.portada; img.alt = "";
+      o.appendChild(img);
+    } else {
+      const sin = document.createElement("div"); sin.className = "mc-sin"; sin.textContent = "🎬";
+      o.appendChild(sin);
+    }
+    const h = document.createElement("h2"); h.textContent = p.titulo;
+    const meta = document.createElement("p"); meta.className = "mc-meta";
+    meta.textContent = [p["año"], p.duracion, p.director].filter(Boolean).join(" · ");
+    const timer = document.createElement("div"); timer.className = "mc-timer";
+    const barra = document.createElement("div"); barra.className = "mc-barra";
+    const fill = document.createElement("div"); fill.className = "mc-fill"; barra.appendChild(fill);
+    const estado = document.createElement("div"); estado.className = "mc-estado";
+    const acc = document.createElement("div"); acc.className = "mc-acc";
+    const btnPausa = document.createElement("button"); btnPausa.type = "button"; btnPausa.textContent = "Pausar";
+    const btnFin = document.createElement("button"); btnFin.type = "button"; btnFin.className = "mc-pri"; btnFin.textContent = "Terminé: ya la vi";
+    acc.append(btnPausa, btnFin);
+    o.append(x, h, meta, timer, barra, estado, acc);
+    document.body.appendChild(o);
+
+    const fmt = ms => {
+      const s = Math.floor(ms / 1000);
+      const hh = Math.floor(s / 3600), mm = Math.floor((s % 3600) / 60), ss = s % 60;
+      return (hh ? hh + ":" : "") + String(mm).padStart(2, "0") + ":" + String(ss).padStart(2, "0");
+    };
+    const tick = () => {
+      const ahora = pausado ? transcurrido : transcurrido + (Date.now() - inicio);
+      timer.textContent = fmt(ahora) + " / " + fmt(total);
+      fill.style.width = Math.min(100, ahora / total * 100) + "%";
+      if (ahora >= total) estado.textContent = "Ya debería haber terminado. ¿La marcamos como vista?";
+    };
+    const iv = setInterval(tick, 500);
+    tick();
+
+    const cerrar = () => {
+      clearInterval(iv);
+      if (wake) { try { wake.release(); } catch (e) {} }
+      o.remove();
+    };
+    x.addEventListener("click", cerrar);
+    btnPausa.addEventListener("click", () => {
+      if (pausado) { inicio = Date.now(); pausado = false; btnPausa.textContent = "Pausar"; }
+      else { transcurrido += Date.now() - inicio; pausado = true; btnPausa.textContent = "Reanudar"; }
+      tick();
+    });
+    btnFin.addEventListener("click", () => {
+      cambiarEstado(p.titulo, { vista: true });
+      if (typeof refrescarTodo === "function") refrescarTodo();
+      cerrar();
+    });
+    (async () => {
+      try { if (navigator.wakeLock) wake = await navigator.wakeLock.request("screen"); } catch (e) {}
+    })();
+  };
+
+  /* ---------- Conexiones con los botones y avisos ---------- */
+  const br = document.getElementById("verRegistro");
+  if (br) br.addEventListener("click", verRegistro);
+  const bp = document.getElementById("verPrivacidad");
+  if (bp) bp.addEventListener("click", () => abrirModal("Aviso de privacidad", contenidoPrivacidad(false), false));
+
+  let avisoListo = false;
+  setInterval(() => {
+    const app = document.getElementById("app");
+    if (!app || app.style.display !== "block") return;
+    if (!privacidadAceptada()) {
+      if (!document.getElementById("modalGlobal") || !document.getElementById("modalGlobal").classList.contains("visible")) {
+        abrirModal("Antes de empezar", contenidoPrivacidad(true), true);
+      }
+      return;
+    }
+    if (!avisoListo) { avisoListo = true; setTimeout(avisoPendientesViejos, 1500); }
+  }, 1000);
 })();
 </script>
 </body>
