@@ -1,0 +1,27 @@
+name: Versionar la app automáticamente
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  versionar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Poner una versión nueva en sw.js
+        run: |
+          V="catalogo-$(date -u +%Y%m%d%H%M%S)"
+          sed -i "s/const VERSION = \".*\";/const VERSION = \"$V\";/" sw.js
+          if git diff --quiet; then
+            echo "Sin cambios en sw.js"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git commit -am "Versión automática $V [skip ci]"
+          git push
