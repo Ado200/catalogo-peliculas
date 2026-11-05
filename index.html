@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Mi catálogo de películas</title>
+<title>Casa Cano · Colección</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0071e3">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -648,7 +648,7 @@ input[type=range]:focus-visible { outline:2px solid var(--azul); outline-offset:
 #tabbar{left:50% !important;right:auto !important;transform:translateX(-50%) !important;width:min(560px, calc(100% - 24px)) !important;bottom:calc(14px + env(safe-area-inset-bottom,0px)) !important}
 #tabbar{justify-content:space-between !important;padding:8px 10px !important}
 #tabbar > *{flex:1 1 0 !important;min-width:0 !important;width:auto !important;max-width:none !important}
-#tabbar .tab-estela{height:58px;display:block;pointer-events:none}
+#tabbar .tab-rolo{height:58px;display:block;pointer-events:none}
 #chatAbrir{position:fixed !important;left:0;top:0;right:auto !important;bottom:auto !important;transform:none !important;width:58px;height:58px;margin:0;z-index:30;box-shadow:0 6px 16px rgba(59,124,244,.35)}
 #chatAbrir:active{transform:scale(.94) !important}
 
@@ -1153,16 +1153,16 @@ h1 { letter-spacing:-.02em; }
 .explorar-item .meta{font-size:13px}
 #explorarTodo .ventana-larga{max-height:80vh}
 </style>
-<style id="estela-icono-ia">
+<style id="rolo-icono-ia">
 #chatAbrir { border-radius:18px !important; background:linear-gradient(135deg,#0a84ff 0%,#7d5cff 100%) !important; color:#fff !important; border:0 !important; box-shadow:0 8px 22px rgba(90,80,255,.38) !important; }
 #chatAbrir .orbe { display:none !important; }
-#chatAbrir .estela-ia { display:flex; align-items:center; justify-content:center; pointer-events:none; }
-#chatAbrir .estela-ia-badge { position:absolute; top:-6px; right:-6px; background:#fff; color:#6a4cff; font:700 10px/1 system-ui,-apple-system,sans-serif; letter-spacing:.02em; padding:3px 5px; border-radius:999px; box-shadow:0 2px 6px rgba(0,0,0,.2); pointer-events:none; }
+#chatAbrir .rolo-ia { display:flex; align-items:center; justify-content:center; pointer-events:none; }
+#chatAbrir .rolo-ia-badge { position:absolute; top:-6px; right:-6px; background:#fff; color:#6a4cff; font:700 10px/1 system-ui,-apple-system,sans-serif; letter-spacing:.02em; padding:3px 5px; border-radius:999px; box-shadow:0 2px 6px rgba(0,0,0,.2); pointer-events:none; }
 </style>
 <style id="pulido-ronda">
-/* Estela: orbe degradado con destello */
+/* Rolo: orbe degradado con destello */
 #chatAbrir { border-radius:50% !important; background:radial-gradient(circle at 30% 25%, #b6e3ff 0%, #3b82f6 38%, #8b5cf6 68%, #ec4899 100%) !important; box-shadow:0 8px 22px rgba(139,92,246,.42) !important; }
-#chatAbrir .estela-ia-badge { display:none !important; }
+#chatAbrir .rolo-ia-badge { display:none !important; }
 /* Barra del asistente: tres elementos del mismo alto */
 #chatForm { align-items:center !important; }
 #chatForm #chatInput { height:40px !important; box-sizing:border-box !important; padding:0 16px !important; }
@@ -1204,10 +1204,10 @@ h1 { letter-spacing:-.02em; }
 #chatForm #chatEnviar svg{display:block}
 @media (min-width:700px){ .actores-grid{grid-template-columns:repeat(5,1fr)} .actor-films{grid-template-columns:repeat(5,1fr)} }
 </style>
-<style id="estela-gemini">
+<style id="rolo-gemini">
 #chatAbrir { background:radial-gradient(circle at 50% 35%, #ffffff 0%, #f3f5fa 70%, #e9edf5 100%) !important; border:1px solid rgba(60,60,67,.12) !important; box-shadow:0 6px 18px rgba(60,64,90,.18), inset 0 1px 0 rgba(255,255,255,.9) !important; border-radius:50% !important; }
 body.oscuro #chatAbrir { background:radial-gradient(circle at 50% 35%, #2c2c30 0%, #1c1c1e 100%) !important; border-color:rgba(255,255,255,.1) !important; box-shadow:0 6px 18px rgba(0,0,0,.45) !important; }
-#chatAbrir .estela-ia { filter:drop-shadow(0 2px 4px rgba(120,90,240,.25)); }
+#chatAbrir .rolo-ia { filter:drop-shadow(0 2px 4px rgba(120,90,240,.25)); }
 #chatAbrir.escuchando { box-shadow:0 0 0 6px rgba(255,69,58,.18), 0 6px 18px rgba(60,64,90,.18) !important; }
 </style>
 <style id="vidrio-y-fluidez">
@@ -1293,7 +1293,6 @@ body.oscuro .pildora::after, body.oscuro #tabbar button::after, body.oscuro .exp
   position:absolute; top:6px; bottom:6px; left:0; width:0; border-radius:999px; pointer-events:none; z-index:0;
   background:linear-gradient(180deg, rgba(255,255,255,.85), rgba(255,255,255,.45));
   box-shadow:inset 0 1px 0 rgba(255,255,255,.9), 0 4px 14px rgba(0,0,0,.12);
-  transition:transform .55s var(--lg-ease), width .55s var(--lg-ease);
 }
 body.oscuro #tabbar .lg-indicador { background:linear-gradient(180deg, rgba(255,255,255,.2), rgba(255,255,255,.08)); box-shadow:inset 0 1px 0 rgba(255,255,255,.22), 0 4px 14px rgba(0,0,0,.35); }
 #tabbar button { z-index:1; }
@@ -1413,6 +1412,101 @@ body.con-reproductor #chatAbrir, body.con-reproductor #chatPanel { display:none 
 .sg-titulo { font-size:13px; font-weight:600; margin-top:8px; line-height:1.25; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
 .sg-anio { font-size:12px; color:var(--gris); }
 .sg-pie { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; }
+/* Inicio: nuevo aire (hero con degradado, pestañas tipo segmento, secciones con etiqueta) */
+.hoy { margin:16px 16px 10px; padding:24px 20px 20px; border-radius:28px; border:1px solid var(--borde);
+  background:radial-gradient(120% 80% at 100% 0%, color-mix(in srgb, var(--azul) 20%, transparent), transparent 62%), var(--tarjeta);
+  box-shadow:0 18px 44px rgba(0,0,0,.08); }
+.hoy-saludo { font-size:12px; letter-spacing:.09em; }
+.hoy-titulo { font-size:30px; line-height:1.1; margin:6px 0 4px; }
+.hoy-sub { margin-bottom:16px; }
+.hoy-acciones { gap:10px; }
+.hoy-acciones .pildora { border-radius:999px; padding:10px 16px; font-weight:600; }
+.hoy-dia { border-radius:18px; border:0; background:linear-gradient(135deg, color-mix(in srgb, var(--azul) 14%, transparent), var(--boton-suave)); }
+.que-ver { max-width:960px; margin:26px auto 0; padding:0 16px; }
+.que-ver .tabs-ver { display:flex; width:100%; padding:4px; border-radius:999px; background:var(--boton-suave); margin:0 0 14px; gap:4px; }
+.que-ver .tabs-ver .pildora { flex:1; border:0; border-radius:999px; background:transparent; box-shadow:none; color:var(--gris); font-weight:600; }
+.que-ver .tabs-ver .pildora.activa-ver { background:var(--tarjeta); color:var(--texto); box-shadow:0 2px 10px rgba(0,0,0,.12); }
+.que-ver h3, #estaSemana h3, #recomendaciones h3, #pregunta h3, #bienvenida h3 {
+  font-size:13px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--gris); margin:0 0 10px; }
+#estaSemana, #recomendaciones, #pregunta, #bienvenida { margin-top:28px; }
+#estaSemana, #recomendaciones { padding:0 16px; max-width:960px; margin-left:auto; margin-right:auto; }
+/* Vistas y Pendientes: resumen en tarjetas y títulos de bloque más limpios */
+.pest-hero { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin:6px 0 18px; }
+.pest-stat { background:var(--tarjeta); border:1px solid var(--borde); border-radius:20px; padding:14px 12px; box-shadow:var(--sombra); }
+.pest-stat b { display:block; font-size:24px; font-weight:800; letter-spacing:-.02em; font-variant-numeric:tabular-nums; }
+.pest-stat span { font-size:12px; color:var(--gris); }
+.pest-stat.acento { background:linear-gradient(135deg, var(--azul), #64d2ff); border:0; color:#fff; }
+.pest-stat.acento span { color:rgba(255,255,255,.88); }
+.bloque-pend h3 { font-size:13px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--gris); margin:14px 0 10px; }
+/* Películas: mismo tamaño de pósters, con un look más nuevo y aireado */
+#lista .tarjeta.amplia { background:var(--tarjeta); border:1px solid var(--borde); border-radius:22px; padding:8px; box-shadow:0 1px 0 rgba(0,0,0,.03), 0 10px 26px rgba(0,0,0,.07); transition:transform .3s var(--ease), box-shadow .3s var(--ease); }
+#lista .tarjeta.amplia:hover { transform:translateY(-3px); box-shadow:0 16px 36px rgba(0,0,0,.14); }
+#lista .tarjeta.amplia .portada, #lista .tarjeta.amplia .sinportada { border-radius:16px; box-shadow:none; }
+#lista .tarjeta.amplia .sinportada { background:linear-gradient(135deg, var(--boton-suave), color-mix(in srgb, var(--azul) 18%, var(--boton-suave))); font-size:40px; }
+#lista .tarjeta.amplia h2 { font-size:15px; font-weight:700; letter-spacing:-.01em; margin:10px 4px 2px; line-height:1.25; }
+#lista .tarjeta.amplia .meta { margin:0 4px; font-size:12px; color:var(--gris); }
+#lista .tarjeta.amplia .mini-insignias .badge { font-size:11px; font-weight:700; }
+#lista .tarjeta.amplia .acciones-rapidas { margin:8px 4px 2px; }
+#lista .tarjeta.amplia .acciones-rapidas .pildora { font-size:12px; padding:6px 10px; }
+/* Selector de filtro de la pantalla de películas: segmento más moderno */
+#app > header .segmentado { border-radius:999px !important; }
+/* Encabezado de Películas: barra limpia, pestañas tipo chip y filtros con píldoras */
+#app > header { padding:16px 16px 14px !important; border-radius:28px !important; }
+#app > header .fila-titulo { gap:10px !important; align-items:center !important; }
+#app > header h1 { font-size:28px !important; font-weight:800 !important; letter-spacing:-.03em !important; margin:0 6px 0 2px !important; white-space:nowrap; }
+#app > header .buscar { height:44px !important; border-radius:999px !important; background:rgba(118,118,128,.12) !important; border:1px solid transparent !important; box-shadow:inset 0 1px 2px rgba(0,0,0,.04) !important; }
+#app > header .buscar:focus-within { border-color:color-mix(in srgb, var(--azul) 45%, transparent) !important; box-shadow:0 0 0 4px color-mix(in srgb, var(--azul) 14%, transparent) !important; }
+#app > header .botones-barra { gap:8px !important; }
+#app > header .boton-circular { width:42px !important; height:42px !important; border-radius:50% !important; background:var(--tarjeta) !important; box-shadow:0 1px 3px rgba(0,0,0,.1), inset 0 0 0 1px var(--borde) !important; font-size:18px !important; }
+#app > header .segmentado { display:flex !important; overflow-x:auto !important; scrollbar-width:none; gap:8px !important; padding:0 !important; margin:14px 0 0 !important; background:none !important; border-radius:0 !important; justify-content:flex-start !important; }
+#app > header .segmentado::-webkit-scrollbar { display:none; }
+#app > header .segmentado button { flex:0 0 auto !important; border:1px solid var(--borde) !important; background:var(--tarjeta) !important; color:var(--gris) !important; border-radius:999px !important; padding:8px 16px !important; font-size:14px !important; font-weight:600 !important; box-shadow:none !important; transition:background .35s var(--lg-fluido), color .35s var(--lg-fluido), transform .2s var(--ease) !important; }
+#app > header .segmentado button:active { transform:scale(.95) !important; }
+#app > header .segmentado button::after, #app > header .segmentado::before, #app > header .segmentado::after { content:none !important; display:none !important; }
+#app > header .segmentado { background:transparent !important; box-shadow:none !important; }
+#app > header .segmentado button.activa { background:linear-gradient(135deg, var(--azul), #64d2ff) !important; color:#fff !important; border-color:transparent !important; box-shadow:0 6px 16px color-mix(in srgb, var(--azul) 35%, transparent) !important; }
+/* Modo Premiere: sala oscura con acentos dorados, tipografía con serif y brillo de estreno */
+.marca-sub { font-weight:400; color:var(--gris); font-size:.6em; letter-spacing:.02em; }
+body.premiere {
+  --fondo:#0a0908; --tarjeta:#141210; --texto:#f3ead2; --gris:#a69a80;
+  --azul:#d8b25c; --borde:rgba(216,178,92,.22); --boton-suave:#1c1915;
+  --tema-bg:rgba(216,178,92,.14); --tema-texto:#e7c77a;
+  --sombra:0 1px 0 rgba(216,178,92,.08), 0 18px 40px rgba(0,0,0,.55);
+  background:radial-gradient(120% 60% at 50% -10%, rgba(216,178,92,.12), transparent 60%), var(--fondo);
+}
+body.premiere h1, body.premiere h2, body.premiere h3, body.premiere .hoy-titulo, body.premiere .sg-nombre, body.premiere .sg-pct, body.premiere .pest-stat b {
+  font-family:Georgia, "Times New Roman", serif; letter-spacing:.005em;
+}
+body.premiere h1 { font-weight:500 !important; }
+body.premiere .tarjeta.amplia, body.premiere .hoy, body.premiere .pest-stat, body.premiere .dest2 {
+  border:1px solid rgba(216,178,92,.22) !important;
+  box-shadow:0 0 0 1px rgba(216,178,92,.04), 0 18px 40px rgba(0,0,0,.55) !important;
+}
+body.premiere .tarjeta.amplia:hover { box-shadow:0 0 0 1px rgba(216,178,92,.35), 0 22px 46px rgba(0,0,0,.6), 0 0 28px rgba(216,178,92,.12) !important; }
+body.premiere .hoy { background:radial-gradient(120% 90% at 100% 0%, rgba(216,178,92,.22), transparent 60%), #141210 !important; }
+body.premiere .hoy-saludo, body.premiere .que-ver h3, body.premiere #estaSemana h3, body.premiere #recomendaciones h3, body.premiere .bloque-pend h3 { color:#d8b25c; letter-spacing:.14em; }
+body.premiere #app > header .segmentado button.activa, body.premiere .que-ver .tabs-ver .pildora.activa-ver {
+  background:linear-gradient(135deg, #d8b25c, #f4dc9b) !important; color:#1a1405 !important; box-shadow:0 6px 18px rgba(216,178,92,.3) !important;
+}
+body.premiere #tabbar { background:rgba(20,18,16,.82) !important; border:1px solid rgba(216,178,92,.2); }
+body.premiere #tabbar .lg-indicador { background:linear-gradient(180deg, rgba(216,178,92,.45), rgba(216,178,92,.18)) !important; }
+body.premiere #tabbar button.activa { color:#f4dc9b; }
+body.premiere .sg-barra > div { background:linear-gradient(90deg, #d8b25c, #f4dc9b) !important; }
+body.premiere .sg-card.visto .sg-poster { box-shadow:0 0 0 2px #d8b25c, var(--sombra) !important; }
+body.premiere .sg-card.siguiente .sg-poster { box-shadow:0 0 0 2px #f4dc9b, 0 10px 26px rgba(216,178,92,.35) !important; }
+body.premiere .sg-tag { background:linear-gradient(transparent, rgba(216,178,92,.95)) !important; color:#1a1405; }
+body.premiere .dest2-tag.prox { background:#d8b25c !important; color:#1a1405; }
+body.premiere .pest-stat.acento { background:linear-gradient(135deg, #d8b25c, #f4dc9b) !important; color:#1a1405 !important; }
+body.premiere .pest-stat.acento span { color:rgba(26,20,5,.8) !important; }
+body.premiere .boton, body.premiere .pildora.destacado { background:linear-gradient(135deg, #d8b25c, #f4dc9b) !important; color:#1a1405 !important; }
+body.premiere .login-etiqueta { color:#e7c77a; }
+body.premiere #login h1 { font-family:Georgia, serif; font-weight:500; }
+body.premiere #app > header { background:linear-gradient(180deg, rgba(26,23,19,.94), rgba(16,14,12,.9)) !important; border:1px solid rgba(216,178,92,.22) !important; }
+body.premiere #app > header .buscar { background:#1c1915 !important; }
+body.premiere #app > header .buscar input { color:#f3ead2 !important; }
+body.premiere #app > header .buscar input::placeholder { color:#8f8572 !important; opacity:1; }
+body.premiere #app > header .boton-circular { background:#1c1915 !important; color:#e7c77a; box-shadow:inset 0 0 0 1px rgba(216,178,92,.22) !important; }
+body.premiere #app > header .segmentado button { background:#141210 !important; color:#c9bc9b !important; border-color:rgba(216,178,92,.22) !important; }
 </style>
 </head>
 <body>
@@ -1422,9 +1516,9 @@ body.con-reproductor #chatAbrir, body.con-reproductor #chatPanel { display:none 
 
 <div id="login">
   <div class="login-tarjeta">
-    <div class="login-icono" aria-hidden="true">🎬</div>
+    <div class="login-icono" aria-hidden="true"><svg viewBox="0 0 256 256" width="72" height="72" aria-hidden="true" style="border-radius:20px;display:block;margin:0 auto">  <defs>    <linearGradient id="fondo" x1="0" y1="0" x2="1" y2="1">      <stop offset="0" stop-color="#1c1915"/>      <stop offset="1" stop-color="#0a0908"/>    </linearGradient>    <linearGradient id="oro" x1="0" y1="0" x2="1" y2="1">      <stop offset="0" stop-color="#f4dc9b"/>      <stop offset="1" stop-color="#b8923e"/>    </linearGradient>  </defs>  <rect x="8" y="8" width="240" height="240" rx="56" fill="url(#fondo)"/>  <rect x="14" y="14" width="228" height="228" rx="50" fill="none" stroke="url(#oro)" stroke-width="2" opacity=".7"/>  <text x="128" y="150" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="104" font-weight="400" fill="url(#oro)" letter-spacing="-4">CC</text>  <g fill="url(#oro)" opacity=".85">    <rect x="44" y="184" width="10" height="8" rx="2"/><rect x="62" y="184" width="10" height="8" rx="2"/><rect x="80" y="184" width="10" height="8" rx="2"/>    <rect x="98" y="184" width="10" height="8" rx="2"/><rect x="116" y="184" width="10" height="8" rx="2"/><rect x="134" y="184" width="10" height="8" rx="2"/>    <rect x="152" y="184" width="10" height="8" rx="2"/><rect x="170" y="184" width="10" height="8" rx="2"/><rect x="188" y="184" width="10" height="8" rx="2"/>  </g></svg></div>
     <span class="login-etiqueta">🔒 Acceso con cuenta institucional</span>
-    <h1>Mi catálogo de películas</h1>
+    <h1>Casa Cano <span class="marca-sub">· Colección</span></h1>
     <p class="login-texto">Tu catálogo personal: lo que viste, lo que quieres ver y lo que te gustó, con sugerencias hechas a tu medida.</p>
     <ul class="login-cualidades">
       <li><span aria-hidden="true">✓</span>Vistas, pendientes y descartadas en un solo lugar</li>
@@ -1453,7 +1547,7 @@ body.con-reproductor #chatAbrir, body.con-reproductor #chatPanel { display:none 
   <div class="colapsable">
   <div class="segmentado solo-catalogo" data-zona="lista" role="group" aria-label="Filtrar películas">
        <button type="button" data-seg="" class="activa">Todas</button>
-    <button type="button" data-seg="sin_ver">Sin ver</button>
+    <button type="button" data-seg="sin_ver">Por estrenar</button>
     <button type="button" data-seg="favoritas">Favoritas</button>
   </div>
   <div id="chips" class="solo-catalogo" data-zona="lista"></div>
@@ -1550,8 +1644,6 @@ body.con-reproductor #chatAbrir, body.con-reproductor #chatPanel { display:none 
       <button id="respaldarMarcas" class="pildora">⬇ Respaldar</button>
       <button id="restaurarMarcas" class="pildora">⬆ Restaurar</button>
       <p id="estadoRespaldo" class="estado-respaldo"></p>
-      <button id="verRegistro" class="pildora">🩺 Registro de errores</button>
-      <button id="verPrivacidad" class="pildora">📄 Aviso de privacidad</button>
       <div class="fila-estado estado-datos"><div id="contador"></div><div id="estadoGuardado"></div></div>
     </div>
     <div class="grupo-menu">
@@ -1563,6 +1655,7 @@ body.con-reproductor #chatAbrir, body.con-reproductor #chatPanel { display:none 
         <option value="hora">19:00 a 7:00 oscuro</option>
         <option value="claro">Siempre claro</option>
         <option value="oscuro">Siempre oscuro</option>
+        <option value="premiere">Premiere · sala dorada</option>
       </select></div>
     <div class="campo"><label for="vista-modo">Protección de la vista</label>
       <select id="vista-modo">
@@ -1676,9 +1769,9 @@ body.con-reproductor #chatAbrir, body.con-reproductor #chatPanel { display:none 
 <nav id="tabbar">
   <button data-tab="inicio" class="activa"><span class="ico">🏠</span>Inicio</button>
   <button data-tab="catalogo"><span class="ico">🎬</span>Películas</button>
-  <span id="tabEstela" class="tab-estela" aria-hidden="true"></span>
-  <button data-tab="pendientes"><span class="ico">⏳</span>Pendientes</button>
-  <button data-tab="vistas"><span class="ico">✓</span>Vistas</button>
+  <span id="tabRolo" class="tab-rolo" aria-hidden="true"></span>
+  <button data-tab="pendientes"><span class="ico">⏳</span>Por ver</button>
+  <button data-tab="vistas"><span class="ico">✓</span>Historial</button>
 </nav>
 
 <div id="modal">
@@ -3930,6 +4023,7 @@ function esOscuroPorHora() {
 }
 
 function decidirOscuro(modo) {
+  if (modo === "premiere") return true;
   if (modo === "claro") return false;
   if (modo === "oscuro") return true;
   if (modo === "hora") return esOscuroPorHora();
@@ -3939,6 +4033,7 @@ function decidirOscuro(modo) {
 
 function actualizarTema() {
   document.body.classList.toggle("oscuro", decidirOscuro($("tema-modo").value));
+  document.body.classList.toggle("premiere", $("tema-modo").value === "premiere");
 }
 
 function modoGuardado(clave, defecto) {
@@ -4112,6 +4207,21 @@ function filaHtml(p, i) {
 }
 
 // Misma tarjeta compacta que Catálogo; "extra" agrega lo propio de cada pestaña (nota, fechas, etc.)
+function heroPestana(tipo, items, extras) {
+  const tile = (n, t, acento) => '<div class="pest-stat' + (acento ? ' acento' : '') + '"><b>' + n + '</b><span>' + t + '</span></div>';
+  if (tipo === "vistas") {
+    const mes = hoyLocalISO().slice(0, 7);
+    const delMes = items.filter(p => String((marcas[p.titulo] || {}).vistaDesde || "").slice(0, 7) === mes).length;
+    const conNota = items.filter(p => (marcas[p.titulo] || {}).estrellas || estadoDe(p).estrellas);
+    const prom = conNota.length ? (conNota.reduce((a, p) => a + Number(estadoDe(p).estrellas || 0), 0) / conNota.length).toFixed(1) : "–";
+    return '<div class="pest-hero">' + tile(items.length, "vistas", false) + tile(delMes, "este mes", true) + tile("★ " + prom, "promedio", false) + '</div>';
+  }
+  const planeadas = extras.planeadas || 0;
+  const antigua = extras.antigua;
+  return '<div class="pest-hero">' + tile(items.length, "pendientes", true) + tile(planeadas, "para ver con alguien", false) +
+    tile(antigua === null ? "–" : antigua + "d", "la más antigua", false) + '</div>';
+}
+
 function filaPestana(p, i, extra) {
   if (!vistaLista) return tarjetaAmplia(p, i, extra);
   const s = estadoDe(p);
@@ -4739,7 +4849,9 @@ function pintarPestana() {
         resto.map((p, i) => filaPestana(p, i, extra(p))).join("") +
         '</div></div>';
     }
-    lista.innerHTML = htmlCalendario() + html;
+    const diasResto = resto.map(p => diasPendiente(p)).filter(d => d !== null);
+    const antigua = diasResto.length ? Math.max(...diasResto) : null;
+    lista.innerHTML = heroPestana("pendientes", todas, { planeadas: planeadas.length, antigua: antigua }) + htmlCalendario() + html;
     return;
   } else if (pestana === "vistas") {
     titulo = "Vistas";
@@ -4771,7 +4883,8 @@ function pintarPestana() {
     lista.innerHTML = '<p class="vacio">' + msg + '</p>';
     return;
   }
-  lista.innerHTML = items.map((p, i) => filaPestana(p, i, extra ? extra(p) : "")).join("");
+  const heroHtml = pestana === "vistas" ? heroPestana("vistas", items, {}) : "";
+  lista.innerHTML = heroHtml + items.map((p, i) => filaPestana(p, i, extra ? extra(p) : "")).join("");
 }
 
 function iframeTrailer(codigo, titulo) {
@@ -5004,11 +5117,6 @@ estiloNoche.textContent = `
 .noche-vacio{font-size:14px;color:var(--gris);margin:12px 0 0}`;
 document.head.appendChild(estiloNoche);
 
-function cerrarQueVer() {
-  document.getElementById("nochePanel")?.remove();
-  document.getElementById("nocheFondo")?.remove();
-}
-
 function abrirQueVerEstaNoche() {
   let panel = document.getElementById("nochePanel");
   if (panel) panel.remove();
@@ -5024,7 +5132,7 @@ function abrirQueVerEstaNoche() {
   cerrar.type = "button";
   cerrar.setAttribute("aria-label", "Cerrar");
   cerrar.textContent = "×";
-  cerrar.addEventListener("click", cerrarQueVer);
+  cerrar.addEventListener("click", () => panel.remove());
   cab.append(titulo, cerrar);
 
   const sel = document.createElement("select");
@@ -5047,11 +5155,6 @@ function abrirQueVerEstaNoche() {
   const resultado = document.createElement("div");
   resultado.id = "nocheResultado";
   panel.append(cab, sel, elegir, resultado);
-  document.getElementById("nocheFondo")?.remove();
-  const fondo = document.createElement("div");
-  fondo.id = "nocheFondo";
-  fondo.addEventListener("click", cerrarQueVer);
-  document.body.appendChild(fondo);
   document.body.appendChild(panel);
   ultimaNoche = null;
   elegirNoche(false);
@@ -5116,7 +5219,7 @@ function elegirNoche(otra) {
   verFicha.type = "button";
   verFicha.className = "principal";
   verFicha.textContent = "Ver ficha";
-  verFicha.addEventListener("click", () => { cerrarQueVer(); abrirDetalle(p); });
+  verFicha.addEventListener("click", () => { document.getElementById("nochePanel")?.remove(); abrirDetalle(p); });
 
   const otraBtn = document.createElement("button");
   otraBtn.type = "button";
@@ -5132,11 +5235,7 @@ function elegirNoche(otra) {
     elegirNoche(true);
   });
 
-  const cine = document.createElement("button");
-  cine.type = "button";
-  cine.textContent = "Modo cine";
-  cine.addEventListener("click", () => abrirModoCine(p));
-  acciones.append(verFicha, otraBtn, vista, cine);
+  acciones.append(verFicha, otraBtn, vista);
   info.append(h, meta, acciones);
   tarjeta.appendChild(info);
   res.appendChild(tarjeta);
@@ -5150,7 +5249,7 @@ function refrescarTodo() {
   }
 }
 
-const ZONAS_PELICULAS = [["lista","Lista"],["estrenos","Estrenos"],["sagas","Sagas"],["actores","Actores"],["duelo","Duelo"]];
+const ZONAS_PELICULAS = [["lista","Lista"],["estrenos","Estrenos"],["sagas","Colecciones"],["actores","Actores"],["duelo","Duelo"]];
 const ZONAS_VISTAS = [["lista","Películas vistas"],["resumen","Resumen"],["actividad","Actividad"],["mapa","Mapa de gustos"],["descartadas","Descartadas"]];
 
 // Qué pestaña de la barra está activa
@@ -7008,7 +7107,7 @@ function abrirDiario() {
   abrirVentanaSimple("diarioCine", "Diario de cine", html);
 }
 
-/* ---------- Perfil de gustos para Estela (sale de tus marcas) ---------- */
+/* ---------- Perfil de gustos para Rolo (sale de tus marcas) ---------- */
 function perfilGustos() {
   const gen = {}, dir = {}, neg = {};
   let pend = 0;
@@ -7086,193 +7185,39 @@ function nocheTematica() {
   abrirDetalle(elegirAlAzar(del_tema));
 }
 
-/* 3) Maratón: noche con horario, orden, pósters, temas y noches guardadas */
-const GUARDADOS_KEY = "maratones_guardados";
-function leerNochesGuardadas() {
-  try { return JSON.parse(localStorage.getItem(GUARDADOS_KEY) || "[]"); } catch (e) { return []; }
-}
-function escribirNochesGuardadas(v) {
-  try { localStorage.setItem(GUARDADOS_KEY, JSON.stringify(v.slice(-20))); } catch (e) {}
-}
-
+/* 3) Maratón: arma hasta 3 películas que quepan en el tiempo indicado */
 function abrirMaraton() {
   abrirVentanaSimple("maraton", "Maratón",
-    '<p class="meta">¿Cuándo empiezas, cuánto tiempo tienes y qué quieres ver?</p>' +
-    '<div class="fila-form"><input id="maraIni" type="time" value="20:00" aria-label="Hora de inicio">' +
-    '<input id="maraMin" type="number" min="30" step="15" value="240" inputmode="numeric" aria-label="Minutos disponibles">' +
+    '<p class="meta">¿Cuántos minutos tienes para ver películas?</p>' +
+    '<div class="fila-form"><input id="maraMin" type="number" min="30" step="15" value="300" inputmode="numeric">' +
     '<button type="button" class="pildora destacado" id="maraGo">Armar</button></div>' +
-    '<div class="fila-form"><select id="maraTema" aria-label="Tema">' +
-    '<option value="libre">Cualquier tema</option><option value="terror">Terror y suspenso</option>' +
-    '<option value="animacion">Animación</option><option value="comedia">Comedia</option>' +
-    '<option value="director">De un director</option></select>' +
-    '<input id="maraDir" type="text" placeholder="Nombre del director" aria-label="Director"></div>' +
-    '<div id="maraRes"></div>' +
-    '<h4 class="maraton-titulo">Noches guardadas</h4><div id="maraGuardadas"></div>');
-  const armar = () => armarMaraton(
-    Number(document.getElementById("maraMin").value),
-    document.getElementById("maraIni").value,
-    document.getElementById("maraTema").value,
-    document.getElementById("maraDir").value.trim());
-  document.getElementById("maraGo").addEventListener("click", armar);
-  armar();
-  pintarNochesGuardadas();
+    '<div id="maraRes"></div>');
+  document.getElementById("maraGo").addEventListener("click", () => armarMaraton(Number(document.getElementById("maraMin").value)));
+  armarMaraton(300);
 }
 
-// Ligeras primero, después las intensas y al final las tranquilas
-function intensidadMaraton(p) {
-  const g = String(p.genero || "").toLowerCase();
-  if (/animaci|familia|comedia|aventura/.test(g)) return 1;
-  if (/terror|suspenso|crimen|accion|acción|thriller/.test(g)) return 3;
-  return 2;
-}
-
-function horaTexto(d) {
-  return String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
-}
-
-// Arma la noche (sin pintar nada): la usan la ventana del maratón y el chat
-function planearNoche(minutosPedidos, tema, dir) {
-  let base = pendientesNoVistas();
-  let aviso = "";
-  if (!base.length) {
-    base = peliculas.filter(p => !estadoDe(p).vista && !(marcas[p.titulo] || {}).descartada);
-    aviso = "No tienes pendientes, así que armo con películas que no has visto.";
+function armarMaraton(minutosPedidos) {
+  const res = document.getElementById("maraRes");
+  if (!minutosPedidos || minutosPedidos <= 0) { res.innerHTML = '<p class="meta">Escribe un número de minutos.</p>'; return; }
+  const pool = pendientesNoVistas().map(p => ({ p, m: minutos(p) })).filter(x => x.m > 0);
+  if (!pool.length) {
+    res.innerHTML = '<p class="meta">Ninguna pendiente tiene duración escrita. Revisa la columna «duracion» de la hoja, por ejemplo «1 h 45 min».</p>';
+    return;
   }
-  base = base.filter(p => {
-    const g = String(p.genero || "");
-    if (tema === "terror") return /terror|suspenso/i.test(g);
-    if (tema === "animacion") return /animaci/i.test(g);
-    if (tema === "comedia") return /comedia/i.test(g);
-    if (tema === "director") return !!dir && String(p.director || "").toLowerCase().includes(dir.toLowerCase());
-    return true;
-  });
-  if (!base.length) return { error: tema === "libre" ? "No tienes películas sin ver en tu catálogo. Agrega algunas o marca pendientes." : "No tienes películas sin ver de ese tema. Prueba con otro." };
-  const pool = base.map(p => ({ p, m: minutos(p) })).filter(x => x.m > 0);
-  if (!pool.length) return { error: "Ninguna de estas películas tiene duración escrita. Revisa la columna «duracion» de la hoja, por ejemplo «1 h 45 min»." };
-
-  const GAP = 10, MAX = 5;
   const orden = pool.slice().sort(() => Math.random() - 0.5);
   const elegidas = [];
-  let usados = 0;
+  let total = 0;
   for (const x of orden) {
-    if (elegidas.length >= MAX) break;
-    const extra = elegidas.length ? GAP : 0;
-    if (usados + extra + x.m <= minutosPedidos) { elegidas.push(x); usados += extra + x.m; }
+    if (elegidas.length >= 3) break;
+    if (total + x.m <= minutosPedidos) { elegidas.push(x); total += x.m; }
   }
-  if (!elegidas.length) return { error: "Ninguna película cabe en " + minutosPedidos + " minutos. Prueba con más tiempo." };
-  const grupo = n => elegidas.filter(x => intensidadMaraton(x.p) === n);
-  const secuencia = [...grupo(1), ...grupo(3), ...grupo(2)];
-  return { aviso, elegidas, secuencia, usados, sobra: minutosPedidos - usados, GAP };
-}
-
-function armarMaraton(minutosPedidos, inicio, tema, dir) {
-  const res = document.getElementById("maraRes");
-  if (!minutosPedidos || minutosPedidos <= 0) { res.innerHTML = '<p class="meta">Escribe cuántos minutos tienes.</p>'; return; }
-  const plan = planearNoche(minutosPedidos, tema || "libre", dir || "");
-  if (plan.error) { res.innerHTML = '<p class="meta">' + esc(plan.error) + '</p>'; return; }
-  const { secuencia, usados, sobra, GAP } = plan;
-
-  const [hh, mm2] = String(inicio || "20:00").split(":").map(Number);
-  const cursor = new Date();
-  cursor.setHours(isNaN(hh) ? 20 : hh, isNaN(mm2) ? 0 : mm2, 0, 0);
-  const fin = new Date(cursor.getTime());
-  const filas = secuencia.map(x => {
-    const ini = new Date(cursor.getTime());
-    cursor.setMinutes(cursor.getMinutes() + x.m + GAP);
-    const termina = new Date(cursor.getTime() - GAP * 60000);
-    const portada = x.p.portada ? '<img src="' + esc(x.p.portada) + '" alt="" loading="lazy">' : '<div class="mara-sin">🎬</div>';
-    return '<li class="mara-fila">' + portada +
-      '<div class="mara-info"><span class="mara-hora">' + horaTexto(ini) + ' – ' + horaTexto(termina) + '</span>' +
-      '<b>' + esc(x.p.titulo) + '</b>' +
-      '<span class="meta">' + esc([x.p["año"], x.m + " min", x.p.director].filter(Boolean).join(" · ")) + '</span></div></li>';
-  });
-  const terminaNoche = new Date(cursor.getTime() - GAP * 60000);
-  res.innerHTML = (plan.aviso ? '<p class="meta">' + esc(plan.aviso) + '</p>' : '') +
-    '<p class="meta">Noche de ' + secuencia.length + (secuencia.length === 1 ? " película" : " películas") +
-    ' · de ' + horaTexto(fin) + ' a ' + horaTexto(terminaNoche) + (sobra >= 10 ? ' · te sobran ' + sobra + ' min' : '') + '</p>' +
-    '<ol class="mara-lista">' + filas.join("") + '</ol>' +
-    '<div class="fila-form mara-guardar"><input id="maraNombre" type="text" placeholder="Nombre de la noche" aria-label="Nombre de la noche">' +
-    '<button type="button" class="pildora" id="maraGuardar">💾 Guardar</button></div>';
-
-  const btnEmp = document.createElement("button");
-  btnEmp.type = "button";
-  btnEmp.className = "pildora destacado mara-empezar";
-  btnEmp.textContent = "▶ Empezar maratón";
-  btnEmp.addEventListener("click", () => {
-    const ventana = document.querySelector("#maraton [data-cerrar]");
-    if (ventana) ventana.click();
-    if (typeof window.abrirModoCine === "function") window.abrirModoCine(secuencia[0].p, secuencia.map(x => x.p));
-  });
-  res.appendChild(btnEmp);
-  const btnCal = document.createElement("button");
-  btnCal.type = "button";
-  btnCal.className = "pildora";
-  btnCal.textContent = "📅 Agregar al calendario";
-  btnCal.addEventListener("click", () => descargarNocheICS(secuencia, fin, GAP));
-  res.appendChild(btnCal);
-
-  document.getElementById("maraGuardar").addEventListener("click", () => {
-    const nombre = document.getElementById("maraNombre").value.trim() ||
-      ("Noche del " + new Date().toLocaleDateString("es-MX", { day: "numeric", month: "short" }));
-    const lista = leerNochesGuardadas();
-    lista.push({ nombre, fecha: new Date().toISOString(), inicio: inicio || "20:00", titulos: secuencia.map(x => x.p.titulo) });
-    escribirNochesGuardadas(lista);
-    pintarNochesGuardadas();
-    document.getElementById("maraNombre").value = "";
-    document.getElementById("maraGuardar").textContent = "Guardada ✓";
-  });
-}
-
-// Descarga la noche como eventos de calendario (.ics)
-function descargarNocheICS(secuencia, inicio, gap) {
-  const f = d => String(d.getFullYear()) + String(d.getMonth() + 1).padStart(2, "0") + String(d.getDate()).padStart(2, "0") +
-    "T" + String(d.getHours()).padStart(2, "0") + String(d.getMinutes()).padStart(2, "0") + "00";
-  const cursor = new Date(inicio.getTime());
-  const eventos = secuencia.map(function (x, i) {
-    const ini = new Date(cursor.getTime());
-    cursor.setMinutes(cursor.getMinutes() + x.m);
-    const fin2 = new Date(cursor.getTime());
-    cursor.setMinutes(cursor.getMinutes() + gap);
-    return ["BEGIN:VEVENT", "UID:maraton-" + Date.now() + "-" + i + "@catalogo", "DTSTAMP:" + f(new Date()),
-      "DTSTART:" + f(ini), "DTEND:" + f(fin2), "SUMMARY:Película: " + x.p.titulo,
-      "DESCRIPTION:" + [x.p["año"], x.m + " min", x.p.director].filter(Boolean).join(" · "), "END:VEVENT"].join("\r\n");
-  });
-  const ics = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Catalogo de peliculas//ES", "CALSCALE:GREGORIAN"]
-    .concat(eventos).concat(["END:VCALENDAR"]).join("\r\n");
-  const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = "maraton.ics";
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
-}
-
-function pintarNochesGuardadas() {
-  const cont = document.getElementById("maraGuardadas");
-  if (!cont) return;
-  const lista = leerNochesGuardadas();
-  if (!lista.length) { cont.innerHTML = '<p class="meta">Todavía no guardas noches.</p>'; return; }
-  cont.innerHTML = '<ul class="mara-guardadas">' + lista.map((n, i) =>
-    '<li><span><b>' + esc(n.nombre) + '</b><span class="meta">' + n.titulos.length + ' películas · ' + esc(n.inicio) + '</span></span>' +
-    '<span class="mara-acc"><button type="button" class="pildora" data-ver="' + i + '">▶</button>' +
-    '<button type="button" class="pildora" data-borrar="' + i + '">🗑</button></span></li>').join("") + '</ul>';
-  cont.querySelectorAll("[data-ver]").forEach(b => b.addEventListener("click", () => {
-    const n = leerNochesGuardadas()[Number(b.dataset.ver)];
-    if (!n) return;
-    const films = n.titulos.map(t => peliculas.find(p => p.titulo === t)).filter(Boolean);
-    if (!films.length) return;
-    const ventana = document.querySelector("#maraton [data-cerrar]");
-    if (ventana) ventana.click();
-    if (typeof window.abrirModoCine === "function") window.abrirModoCine(films[0], films);
-  }));
-  cont.querySelectorAll("[data-borrar]").forEach(b => b.addEventListener("click", () => {
-    const l = leerNochesGuardadas();
-    l.splice(Number(b.dataset.borrar), 1);
-    escribirNochesGuardadas(l);
-    pintarNochesGuardadas();
-  }));
+  if (!elegidas.length) {
+    res.innerHTML = '<p class="meta">Ninguna pendiente cabe en ' + minutosPedidos + ' minutos. Prueba con más tiempo.</p>';
+    return;
+  }
+  const h = Math.floor(total / 60), mm = total % 60;
+  res.innerHTML = '<p class="meta">Total: ' + h + ' h ' + mm + ' min · ' + elegidas.length + ' películas</p><ol>' +
+    elegidas.map(x => '<li><b>' + esc(x.p.titulo) + '</b> · ' + x.m + ' min</li>').join("") + '</ol>';
 }
 
 /* 8) Modo sorpresa con reglas */
@@ -8029,8 +7974,8 @@ document.getElementById("salirDispositivo").addEventListener("click", salirDeEst
       </div>
 
       <div class="seccion">
-        <h3>🗣 Estela y el micrófono</h3>
-        <p>Estela es tu compañero peliculero: pregúntale qué ver o qué te puede gustar. El 🎤 de la barra de búsqueda y el de Estela te dejan dictar en vez de escribir.</p>
+        <h3>🗣 Rolo y el micrófono</h3>
+        <p>Rolo es tu compañero peliculero: pregúntale qué ver o qué te puede gustar. El 🎤 de la barra de búsqueda y el de Rolo te dejan dictar en vez de escribir.</p>
       </div>
 
       <div class="seccion">
@@ -8109,10 +8054,10 @@ document.getElementById("salirDispositivo").addEventListener("click", salirDeEst
 })();
 </script>
 
-<button id="chatAbrir" style="display:none" aria-label="Abrir Estela, el asistente de IA" title="Estela · asistente de IA"><span class="estela-ia" aria-hidden="true"><svg viewBox="0 0 24 24" width="30" height="30"><defs><linearGradient id="estela-g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4f8cff"/><stop offset=".55" stop-color="#8f6cf2"/><stop offset="1" stop-color="#e8739a"/></linearGradient></defs><path d="M12 2.8c.5 4.6 2.6 6.7 7.2 7.2-4.6.5-6.7 2.6-7.2 7.2-.5-4.6-2.6-6.7-7.2-7.2 4.6-.5 6.7-2.6 7.2-7.2z" fill="url(#estela-g)"/><path d="M19.2 1.8c.2 1.6.9 2.3 2.5 2.5-1.6.2-2.3.9-2.5 2.5-.2-1.6-.9-2.3-2.5-2.5 1.6-.2 2.3-.9 2.5-2.5z" fill="url(#estela-g)"/></svg></span></button>
+<button id="chatAbrir" style="display:none" aria-label="Abrir Rolo, el asistente de IA" title="Rolo · asistente de IA"><span class="rolo-ia" aria-hidden="true"><svg viewBox="0 0 24 24" width="30" height="30"><defs><linearGradient id="rolo-g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4f8cff"/><stop offset=".55" stop-color="#8f6cf2"/><stop offset="1" stop-color="#e8739a"/></linearGradient></defs><path d="M12 2.8c.5 4.6 2.6 6.7 7.2 7.2-4.6.5-6.7 2.6-7.2 7.2-.5-4.6-2.6-6.7-7.2-7.2 4.6-.5 6.7-2.6 7.2-7.2z" fill="url(#rolo-g)"/><path d="M19.2 1.8c.2 1.6.9 2.3 2.5 2.5-1.6.2-2.3.9-2.5 2.5-.2-1.6-.9-2.3-2.5-2.5 1.6-.2 2.3-.9 2.5-2.5z" fill="url(#rolo-g)"/></svg></span></button>
 <div id="chatPanel" role="dialog" aria-label="Compañero peliculero">
   <div id="chatCab">
-    <div class="chat-titulo"><span class="chat-avatar">🍿</span><b>Estela</b></div>
+    <div class="chat-titulo"><span class="chat-avatar">🍿</span><b>Rolo</b></div>
     <button id="chatCerrar" aria-label="Cerrar">×</button>
   </div>
   <div id="chatAjustes" class="chat-ajustes">
@@ -8155,30 +8100,12 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
   let historial = [];
   let saludado = false;
 
-  // Escribe el texto poco a poco, como si lo estuviera diciendo
-  function escribirPoco(el, texto) {
-    el.textContent = "";
-    let i = 0;
-    const paso = () => {
-      i += 2;
-      el.textContent = texto.slice(0, i);
-      lista.scrollTop = lista.scrollHeight;
-      if (i < texto.length) setTimeout(paso, 24);
-      else el.textContent = texto;
-    };
-    paso();
-  }
-
   function burbuja(texto, tipo) {
     const d = document.createElement("div");
     d.className = "chat-burbuja " + tipo;
     const visible = tipo === "ia" ? limpiarMarkdown(texto) : texto;
+    d.textContent = visible;
     lista.appendChild(d);
-    if (tipo === "ia" && visible.length <= 600) {
-      escribirPoco(d, visible);
-    } else {
-      d.textContent = visible;
-    }
     lista.scrollTop = lista.scrollHeight;
     if (tipo === "ia") hablar(visible);
     return d;
@@ -8324,7 +8251,7 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
     if (saludado) return;
     saludado = true;
     const nombre = nombreUsuario();
-    burbuja("Hola" + (nombre ? ", " + nombre : "") + ". Soy " + NOMBRE_COMPA + ", y me encanta platicar de cine contigo. Puedo ayudarte a elegir qué ver, recordar qué tienes pendiente o contarte cómo va tu semana. Pregúntame lo que quieras.", "ia");
+    burbuja("¡Hola" + (nombre ? ", " + nombre : "") + "! Soy " + NOMBRE_COMPA + ", tu compa peliculero. Te ayudo a elegir qué ver, a recordar qué tienes pendiente y a platicar de películas con base en tu catálogo.\n\nSi algo no está en tu lista, te lo diré. Pregúntame lo que quieras.", "ia");
     burbuja("Tus marcas, notas y preferencias son solo tuyas. Las preguntas, tus preferencias y los datos de tu lista se envían a Gemini a través del script del administrador. Si aparece «código 429», se agotó la cuota diaria compartida; vuelve mañana.", "ia");
   }
 
@@ -8518,11 +8445,6 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
   document.body.appendChild(fondoChat);
   // Panel y botón se llevan a la raíz de la página: así siempre quedan encima del fondo y reciben los toques
   document.body.appendChild(panel);
-  const tableroChat = document.createElement("div");
-  tableroChat.id = "chatTablero";
-  tableroChat.className = "chat-tablero";
-  const usoChat = document.getElementById("chatUso");
-  if (usoChat) usoChat.insertAdjacentElement("afterend", tableroChat);
   const botonAbrirChat = document.getElementById("chatAbrir");
   if (botonAbrirChat) document.body.appendChild(botonAbrirChat);
   fondoChat.addEventListener("click", () => {
@@ -8566,7 +8488,7 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
   }
 
   // Identidad del compañero: cámbialo aquí y en SISTEMA_CHAT del Apps Script
-  const NOMBRE_COMPA = "Estela";
+  const NOMBRE_COMPA = "Rolo";
   // Nombre del usuario, si lo guardó con «recuerda que me llamo …»
   function nombreUsuario() {
     for (const n of notas) {
@@ -8594,87 +8516,8 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
       generosDe(p).forEach(g => { perfil.genero[g] = (perfil.genero[g] || 0) + peso; });
       directoresDe(p).forEach(d => { perfil.director[d] = (perfil.director[d] || 0) + peso; });
     });
-    // Tus votos A/B también cuentan: la película elegida suma a sus géneros y director
-    leerVotos().forEach(t => {
-      const p = peliculas.find(x => x.titulo === t);
-      if (!p) return;
-      generosDe(p).forEach(g => { perfil.genero[g] = (perfil.genero[g] || 0) + 1.5; });
-      directoresDe(p).forEach(d => { perfil.director[d] = (perfil.director[d] || 0) + 1; });
-    });
     return perfil;
   }
-
-  // ----- Votos A/B -----
-  function leerVotos() {
-    try { return JSON.parse(localStorage.getItem("votos_gustos") || "[]"); } catch (e) { return []; }
-  }
-  function guardarVoto(titulo) {
-    const v = leerVotos();
-    v.push(titulo);
-    try { localStorage.setItem("votos_gustos", JSON.stringify(v.slice(-60))); } catch (e) {}
-  }
-
-  function votacionAB() {
-    const pool = peliculas.filter(p => !estadoDe(p).vista && !(marcas[p.titulo] || {}).descartada);
-    if (pool.length < 2) { burbuja("Necesito al menos dos películas sin ver para votar.", "ia"); return; }
-    const a = pool[Math.floor(Math.random() * pool.length)];
-    let b = a;
-    while (b === a) b = pool[Math.floor(Math.random() * pool.length)];
-    burbuja("Votemos. ¿Cuál te late más?", "ia");
-    const fila = document.createElement("div");
-    fila.className = "chat-acciones chat-votos";
-    const elegirA = crearBoton("A · " + a.titulo, true, () => { fila.remove(); guardarVoto(a.titulo); burbuja("Anotado: " + a.titulo + ". Ya cuenta para tus gustos.", "ia"); });
-    const elegirB = crearBoton("B · " + b.titulo, true, () => { fila.remove(); guardarVoto(b.titulo); burbuja("Anotado: " + b.titulo + ". Ya cuenta para tus gustos.", "ia"); });
-    const ninguna = crearBoton("Ninguna", false, () => { fila.remove(); burbuja("Va, otra vez cuando quieras.", "ia"); });
-    fila.append(elegirA, elegirB, ninguna);
-    lista.appendChild(fila);
-    lista.scrollTop = lista.scrollHeight;
-  }
-
-  // ----- Racha de semanas con al menos una película vista -----
-  function lunesDe(d) {
-    const dia = (d.getDay() + 6) % 7;
-    const m = new Date(d);
-    m.setDate(d.getDate() - dia);
-    return isoLocal(m);
-  }
-  function rachaSemanas() {
-    const semanas = new Set();
-    let vistasSemana = 0;
-    const lunesEsta = lunesDe(new Date());
-    peliculas.forEach(p => ((marcas[p.titulo] || {}).historial || []).forEach(h => {
-      if (h.a !== "vista") return;
-      semanas.add(lunesDe(new Date(h.f + "T12:00:00")));
-      if (String(h.f) >= lunesEsta) vistasSemana++;
-    }));
-    let cursor = new Date(lunesEsta + "T12:00:00");
-    if (!semanas.has(lunesEsta)) cursor = new Date(cursor.getTime() - 7 * 86400000);
-    let racha = 0;
-    while (semanas.has(lunesDe(cursor))) { racha++; cursor = new Date(cursor.getTime() - 7 * 86400000); }
-    return { racha: racha, vistasSemana: vistasSemana };
-  }
-
-  // ----- Tablero del asistente: modo, racha y vistas de la semana -----
-  function pintarTablero() {
-    const t = document.getElementById("chatTablero");
-    const orbe = document.getElementById("chatAbrir");
-    const local = modoSinIAActivo();
-    if (orbe) { orbe.classList.toggle("modo-ia", !local); orbe.classList.toggle("modo-local", local); }
-    if (!t) return;
-    const r = rachaSemanas();
-    t.innerHTML = "";
-    [
-      [local ? "Sin IA" : "Con IA", local ? "local" : "ia"],
-      ["🔥 " + r.racha + (r.racha === 1 ? " semana" : " semanas") + " de racha", ""],
-      ["✓ " + r.vistasSemana + " esta semana", ""]
-    ].forEach(function (par) {
-      const pill = document.createElement("span");
-      pill.className = "tablero-pill " + par[1];
-      pill.textContent = par[0];
-      t.appendChild(pill);
-    });
-  }
-
 
   function puntuar(p, perfil) {
     let s = 0;
@@ -8744,25 +8587,6 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
     return t;
   }
 
-  let ultimoTitulo = null;
-
-  // Opinión basada en tus gustos, no en una lista genérica
-  function opinionLocal(p) {
-    const perfil = perfilGustos();
-    const ranking = peliculas.map(x => puntuar(x, perfil)).sort((a, b) => a - b);
-    const mediana = ranking[Math.floor(ranking.length / 2)] || 0;
-    const mi = puntuar(p, perfil);
-    const dirs = directoresDe(p).filter(d => perfil.director[d]);
-    const gens = generosDe(p).filter(g => perfil.genero[g]);
-    if (estadoDe(p).vista && estadoDe(p).estrellas) {
-      return "Ya la viste y le diste " + estadoDe(p).estrellas + " estrellas, así que esa es tu opinión. ¿Quieres que te diga algo parecido?";
-    }
-    if (mi > mediana && (dirs.length || gens.length)) {
-      return "Según tus gustos, sí te la recomendaría: " + (dirs.length ? "tiene a " + dirs[0] + ", que ya te gusta" : "es de " + gens[0].toLowerCase() + ", un género que te llena") + ".";
-    }
-    return "Según lo que has calificado, no me jugaría por ella: encaja menos con tus gustos que otras de tu lista. Si aun así te da curiosidad, adelante.";
-  }
-
   function respuestaLocal(t) {
     const n = normalizarChat(t);
     const pend = pendientesDe();
@@ -8774,30 +8598,6 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
       if (!texto) return "Esas son todas las que encajan ahorita. ¿Probamos con otro género o un ánimo distinto?";
       return elegir(["Va otra:", "Esta también podría gustarte:", "Otra que encaja:"]) + "\n\n" + texto;
     }
-    // Recomendaciones por ocasión
-    if (/para ver con (mi|mis|un|una|la|el)|en familia|con ninos|con mis ninos|con mi mama|con mi papa/.test(n)) {
-      return respuestaSugerencia("Para ver en familia, te propongo:", p => generosDe(p).some(g => /familia|animacion|comedia|aventura/.test(normalizarChat(g))));
-    }
-    if (/noche de (terror|miedo|sustos)|peli de miedo|algo de miedo/.test(n)) {
-      return respuestaSugerencia("Noche de sustos, va:", p => generosDe(p).some(g => /terror|suspenso/.test(normalizarChat(g))));
-    }
-    if (/noche de (risas|reir|reirme)|para reirme|para reir|algo gracioso/.test(n)) {
-      return respuestaSugerencia("Para reírte un rato:", p => generosDe(p).some(g => /comedia/.test(normalizarChat(g))));
-    }
-
-    // Estadísticas: género favorito, general o de este año
-    if (/genero favorito|mi genero|que genero veo mas|genero que mas/.test(n)) {
-      const year = String(new Date().getFullYear());
-      const conteo = {};
-      const base = /este ano|este año|de este ano|del ano/.test(n)
-        ? vistasDe().filter(p => ((marcas[p.titulo] || {}).historial || []).some(h => h.a === "vista" && String(h.f).startsWith(year)))
-        : vistasDe();
-      base.forEach(p => generosDe(p).forEach(g => { conteo[g] = (conteo[g] || 0) + 1; }));
-      const top = Object.entries(conteo).sort((a, b) => b[1] - a[1]).slice(0, 2);
-      if (!top.length) return "Todavía no tengo suficientes películas vistas para decir cuál es tu género favorito.";
-      return "Tu género favorito es " + top[0][0].toLowerCase() + (top[1] ? ", seguido de " + top[1][0].toLowerCase() : "") + ", con " + top[0][1] + (top[0][1] === 1 ? " película" : " películas") + (base === vistasDe() ? " en total." : " este año.");
-    }
-
     // Seguimiento: por qué, decide por mí
     if (/por que|porque|y eso|razon/.test(n) && ultimasSugeridas.length) {
       return "Te la sugerí porque " + razonDe(ultimasSugeridas[0], perfilGustos()) + ". ¿Te late esa línea o prefieres otra?";
@@ -8829,14 +8629,6 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
       return respuestaSugerencia("Tienes tiempo, así que algo para disfrutar sin prisa:", p => minutos(p) > 120);
     }
 
-    // Seguimiento: "y su director", "quién la dirigió" sobre la última película mencionada
-    if (ultimoTitulo && /director|quien la dirigio|quien la hizo|quien la dirige/.test(n)) {
-      const dirs = directoresDe(ultimoTitulo);
-      if (!dirs.length) return "No tengo el director de «" + ultimoTitulo.titulo + "» en tu catálogo.";
-      const otras = peliculas.filter(p => p !== ultimoTitulo && directoresDe(p).some(d => dirs.includes(d)));
-      return "«" + ultimoTitulo.titulo + "» es de " + dirs.join(" y ") + "." + (otras.length ? " Otras de él en tu catálogo: " + otras.map(p => p.titulo).slice(0, 4).join(", ") + "." : " No tengo más de él en tu catálogo.");
-    }
-
     // Comparar dos películas de tu catálogo
     const encontradas = peliculas
       .filter(p => String(p.titulo).length > 3 && n.includes(normalizarChat(p.titulo)))
@@ -8849,11 +8641,6 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
 
     // Conversación natural: películas que menciona, despedidas, clima, planes, respuestas cortas
     const titulo = peliculas.filter(p => String(p.titulo).length > 3).find(p => n.includes(normalizarChat(p.titulo)));
-    // Algo parecido a una película de tu catálogo
-    if (titulo && /parecid|como la |como el |similar|algo como/.test(n)) {
-      const gensT = generosDe(titulo);
-      return respuestaSugerencia("Si te gustó «" + titulo.titulo + "», va algo en esa línea:", p => p !== titulo && generosDe(p).some(g => gensT.includes(g)));
-    }
     if (titulo) {
       const est = estadoDe(titulo);
       const gens = generosDe(titulo);
@@ -8866,8 +8653,6 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
       const estado = est.vista
         ? "la tienes como vista" + (est.estrellas ? " y le diste " + est.estrellas + " estrellas" : "")
         : (est.pendiente ? "la tienes en pendientes" : "todavía no la has marcado");
-      ultimoTitulo = titulo;
-      if (/opinas|te gusta|vale la pena|buena|recomiendas|me conviene/.test(n)) return opinionLocal(titulo);
       if (/dime mas|cuentame|de que trata|como es|de que va|que tal/.test(n)) {
         const datos = [];
         if (titulo["año"]) datos.push("salió en " + titulo["año"]);
@@ -8904,11 +8689,7 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
     }
     if (/no me (gusto|late|convence|interesa|va)|no quiero esa|otra cosa|paso de esa/.test(n)) {
       if (!ultimasSugeridas.length) return "¿Cuál no te gustó? Dime el título y no la vuelvo a sugerir en esta sesión.";
-      const genero0 = generosDe(ultimasSugeridas[0])[0];
       ultimasSugeridas.forEach(p => sesionSugeridas.add(p.titulo));
-      if (genero0 && !/^(no me gusta|no quiero)/.test(n)) {
-        setTimeout(() => proponerNota("no me gusta el género " + genero0.toLowerCase()), 600);
-      }
       const texto = sugerirLocal(ultimoFiltro);
       return "Anotado, no la repito. " + (texto ? "Pruebo con otras:\n\n" + texto : "Ya no tengo más que encajen con eso.");
     }
@@ -8921,9 +8702,6 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
       return respuestaSugerencia(elegir(["Buena elección. De " + generoTexto.toLowerCase() + " te propongo:", "¡Me gusta tu gusto! Va de " + generoTexto.toLowerCase() + ":"]), p => generosDe(p).includes(generoTexto));
     }
     if (/que veo|sugier|recomie|algo para ver|que pongo|sorprend|algo bueno/.test(n)) {
-      const hora = new Date().getHours();
-      if (hora >= 6 && hora < 12) return respuestaSugerencia("Para la mañana, algo ligerito:", p => minutos(p) > 0 && minutos(p) <= 100);
-      if (hora >= 21 || hora < 5) return respuestaSugerencia("Ya es noche cerrada, algo para disfrutar con calma:", p => minutos(p) >= 100);
       return respuestaSugerencia(elegir(["Te propongo esta:", "Esta me late para ti:", "Va una, según tus gustos:"]), null);
     }
 
@@ -8932,8 +8710,6 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
       const saludo = nom ? "¡Hola, " + nom + "!" : "¡Hola!";
       return elegir([
         saludo + " ¿Qué vemos hoy? Puedo sugerirte algo o revisar tus pendientes.",
-        saludo + " Qué gusto verte. ¿Buscamos algo para esta noche?",
-        saludo + " Aquí estoy. ¿Qué te apetece ver?",
         saludo + " Dime si quieres algo nuevo, algo de tu lista o una sorpresa.",
         saludo + " ¿Ya tienes en mente algo o te ayudo a elegir?"
       ]);
@@ -8954,7 +8730,7 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
       return "Soy " + NOMBRE_COMPA + ", tu compa peliculero. Soy un asistente de IA: no vivo fuera del chat, pero me encanta platicar de cine y conozco tu catálogo. En modo sin IA sigo aquí con tus marcas, tus gustos y tus pendientes.";
     }
     if (/ayuda|que puedes hacer|que haces|como funciona/.test(n)) {
-      return "Puedo hacer varias cosas: sugerirte algo («sugiéreme algo»), mostrarte tus pendientes («qué tengo pendiente»), lo que ya viste («qué he visto»), tus favoritas («mis favoritas»), buscar por género o director («algo de terror», «películas de Nolan») darte números («cuántas tengo»), recomendarte para una ocasión («para ver con mi mamá», «noche de terror») o contarte tu semana («resumen de mi semana»).";
+      return "Puedo hacer varias cosas: sugerirte algo («sugiéreme algo»), mostrarte tus pendientes («qué tengo pendiente»), lo que ya viste («qué he visto»), tus favoritas («mis favoritas»), buscar por género o director («algo de terror», «películas de Nolan») o darte números («cuántas tengo»).";
     }
     if (/que veo|sugier|recomie|algo para ver|que pongo|sorprend|algo bueno/.test(n)) {
       if (!vistas.length && !pend.length) return "Todavía no tengo suficientes datos de tus gustos. Marca algunas películas como vistas y te sugiero con gusto.";
@@ -9000,21 +8776,6 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
     ]);
   }
 
-  function ponerChips(opciones) {
-    document.querySelectorAll(".chat-chips").forEach(e => e.remove());
-    const fila = document.createElement("div");
-    fila.className = "chat-acciones chat-chips";
-    opciones.forEach(txt => {
-      fila.appendChild(crearBoton(txt, true, () => {
-        fila.remove();
-        burbuja(txt, "yo");
-        procesarEntrada(txt);
-      }));
-    });
-    lista.appendChild(fila);
-    lista.scrollTop = lista.scrollHeight;
-  }
-
   async function responderLocal(t) {
     const escribiendo = document.createElement("div");
     escribiendo.className = "chat-pensando";
@@ -9025,7 +8786,6 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
     escribiendo.remove();
     const texto = respuestaLocal(t);
     burbuja(texto, "ia");
-    if (/•/.test(texto)) ponerChips(["Otra", "¿Por qué?", "Decide tú"]);
     mostrarPosters(texto);
   }
 
@@ -9106,7 +8866,7 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
           mostrarPosters(previa);
           historial.push({ role: "user", content: texto });
           historial.push({ role: "assistant", content: previa });
-          historial = historial.slice(-16);
+          historial = historial.slice(-8);
         }
         return previa;
       }
@@ -9133,7 +8893,7 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
           if (j.accion) proponerAccionIA(j.accion);
           historial.push({ role: "user", content: texto });
           historial.push({ role: "assistant", content: j.respuesta });
-          historial = historial.slice(-16);
+          historial = historial.slice(-8);
         }
         return j.respuesta;
       }
@@ -9284,17 +9044,6 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
     if (!a) return;
     if (a.tipo === "marcar") return proponerMarca(a.titulo, a.estado);
     if (a.tipo === "nota") return proponerNotaPelicula(a.titulo, a.nota);
-    if (a.tipo === "maraton") return proponerMaratonIA(a.titulos);
-  }
-
-  // La IA arma la noche: se confirma antes de abrir el modo cine
-  function proponerMaratonIA(titulos) {
-    const films = (titulos || []).map(t => peliculas.find(p => p.titulo === t)).filter(Boolean).slice(0, 5);
-    if (!films.length) { burbuja("No encontré esas películas en tu catálogo.", "error"); return; }
-    const lista = films.map(f => "• " + f.titulo + " (" + minutos(f) + " min)").join("\n");
-    preguntarConfirmacion("Te armé esta noche:\n\n" + lista + "\n\n¿La empezamos en modo cine?", "Empezar", () => {
-      if (typeof window.abrirModoCine === "function") window.abrirModoCine(films[0], films);
-    });
   }
 
   function proponerMarca(titulo, estado) {
@@ -9458,89 +9207,7 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
     lista.scrollTop = lista.scrollHeight;
   }
 
-  function isoLocal(d) {
-    const z = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
-    return z.toISOString().slice(0, 10);
-  }
-
-  // Resumen de la semana: lo que viste, tu mejor calificación y tus pendientes
-  function resumenSemana() {
-    const hace7 = isoLocal(new Date(Date.now() - 7 * 86400000));
-    const vistasSem = peliculas.filter(p => ((marcas[p.titulo] || {}).historial || []).some(h => h.a === "vista" && String(h.f) >= hace7));
-    const pend = pendientesDe();
-    const calificadas = vistasSem.filter(p => estadoDe(p).estrellas);
-    let t = "Tu semana en cine.\n\n";
-    if (vistasSem.length) {
-      t += "Viste " + vistasSem.length + (vistasSem.length === 1 ? " película" : " películas") + ": " + vistasSem.slice(0, 4).map(p => p.titulo).join(", ") + (vistasSem.length > 4 ? " y algunas más" : "") + ".\n";
-    } else {
-      t += "Esta semana no marcaste películas como vistas.\n";
-    }
-    if (calificadas.length) {
-      const mejor = calificadas.slice().sort((a, b) => estadoDe(b).estrellas - estadoDe(a).estrellas)[0];
-      t += "La que más te gustó fue «" + mejor.titulo + "», con " + estadoDe(mejor).estrellas + " estrellas.\n";
-    }
-    t += "Tienes " + pend.length + (pend.length === 1 ? " pendiente" : " pendientes") + ". " + (pend.length ? "Si quieres, te propongo una para el fin de semana." : "");
-    return t.trim();
-  }
-
-  // Explica en qué se basan las recomendaciones, con los datos que usa
-  function explicarPerfil() {
-    const vistas = vistasDe();
-    if (!vistas.length) return "Todavía no tengo nada en que basarme. Marca algunas películas como vistas y califícalas, y te explico cómo te recomiendo.";
-    const perfil = perfilGustos();
-    const top = obj => Object.entries(obj).sort((a, b) => b[1] - a[1]).slice(0, 3).map(x => x[0]);
-    const generos = top(perfil.genero), directores = top(perfil.director);
-    const calificadas = vistas.filter(p => estadoDe(p).estrellas);
-    let t = "Así te conozco, y en qué me baso.\n\n";
-    t += "• Géneros que más te llenan: " + (generos.length ? generos.join(", ") : "todavía no hay suficientes datos") + ".\n";
-    t += "• Directores que más te gustan: " + (directores.length ? directores.join(", ") : "todavía no hay suficientes datos") + ".\n";
-    if (calificadas.length) {
-      const prom = Math.round(calificadas.reduce((a, p) => a + estadoDe(p).estrellas, 0) / calificadas.length * 10) / 10;
-      t += "• Tu calificación promedio: " + prom + " estrellas, sobre " + calificadas.length + (calificadas.length === 1 ? " película" : " películas") + ".\n";
-    }
-    t += "\nCada película que viste suma a sus géneros y a su director según sus estrellas (sin calificar cuenta como 1). Un director pesa el doble que un género, y las pendientes reciben un pequeño empujón. Con eso elijo lo que te sugiero.";
-    return t;
-  }
-
   function procesarEntrada(t) {
-    const nt = normalizarChat(t);
-    if (/^(vota|votemos|dos opciones|a o b|cual prefieres|cual te late)/.test(nt)) { votacionAB(); return; }
-    if (/^(mi racha|racha|cuantas semanas)/.test(nt)) {
-      const r = rachaSemanas();
-      burbuja(r.racha ? "Llevas " + r.racha + (r.racha === 1 ? " semana" : " semanas") + " seguidas viendo al menos una película. Esta semana ya llevas " + r.vistasSemana + "." : "Todavía no empiezas la racha. Marca una película como vista esta semana y arrancamos.", "ia");
-      return;
-    }
-    if (/^(resumen|resumen de (mi|la) semana|mi semana|como va mi semana)/.test(nt)) { burbuja(resumenSemana(), "ia"); return; }
-    if (/(que sabes de mi|como me conoces|por que me recomiendas|por que me sugieres|en que te basas)/.test(nt)) { burbuja(explicarPerfil(), "ia"); return; }
-    if (/maraton/.test(nt)) {
-      const h = nt.match(/(\d+)\s*(horas?|h)\b/), mi = nt.match(/(\d+)\s*(minutos?|min)\b/);
-      let mins = 0;
-      if (h) mins += Number(h[1]) * 60;
-      if (mi) mins += Number(mi[1]);
-      if (!mins) mins = 180;
-      const tema = /terror|miedo|suspenso/.test(nt) ? "terror" : /animacion|animada/.test(nt) ? "animacion" : /comedia|reir|risas/.test(nt) ? "comedia" : "libre";
-      const plan = planearNoche(mins, tema, "");
-      if (plan.error) { burbuja(plan.error, "ia"); return; }
-      const ahora = new Date();
-      ahora.setMinutes(Math.ceil(ahora.getMinutes() / 5) * 5, 0, 0);
-      const cursor = new Date(ahora.getTime());
-      const lineas = plan.secuencia.map(x => {
-        const ini = new Date(cursor.getTime());
-        cursor.setMinutes(cursor.getMinutes() + x.m + plan.GAP);
-        return horaTexto(ini) + " · " + x.p.titulo + " (" + x.m + " min)";
-      });
-      burbuja("Te armé una noche de " + plan.secuencia.length + (plan.secuencia.length === 1 ? " película" : " películas") +
-        (tema !== "libre" ? " de " + tema : "") + ", empezando a las " + horaTexto(ahora) + ":\n\n" + lineas.join("\n") +
-        "\n\nPara verla con pantalla completa, abre Maratón y toca Empezar.", "ia");
-      return;
-    }
-    if (/registro de errores|mis errores|ver errores/.test(nt)) {
-      const reg = window.obtenerRegistro ? window.obtenerRegistro() : [];
-      burbuja(reg.length
-        ? "Estos son los últimos errores que registré:\n\n" + reg.slice(-5).map(x => "• " + x.f.slice(0, 16).replace("T", " ") + " · " + x.msg).join("\n") + "\n\nPuedes verlo completo en Datos → Registro de errores."
-        : "No hay errores registrados. Todo va bien por aquí.", "ia");
-      return;
-    }
     if (/^(mis estadisticas|mi ano|mis numeros|resumen de mi ano|estadisticas)\b/.test(normalizarChat(t))) return mostrarEstadisticas();
     let m;
     if ((m = t.match(/^recuerda que\s+(.+)$/i))) return proponerNota(m[1].trim());
@@ -9567,7 +9234,6 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
     }
     panel.classList.add("abierto");
     fondoChat.classList.add("visible");
-    pintarTablero();
     if (!notasCargadas) notasCargar();
     consultarUso();
     saludar();
@@ -9599,10 +9265,10 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
   }
   ["pointerdown", "keydown", "input", "submit"].forEach(ev => panel.addEventListener(ev, reiniciarCierreAuto));
 
-  /* ---------- Estela dentro del buscador principal ---------- */
-  // Enter busca en el catálogo; si lo escrito es una pregunta (¿…? o termina en ?), o se toca 🍿, se envía a Estela.
+  /* ---------- Rolo dentro del buscador principal ---------- */
+  // Enter busca en el catálogo; si lo escrito es una pregunta (¿…? o termina en ?), o se toca 🍿, se envía a Rolo.
   const buscarPrincipal = document.getElementById("buscar");
-  function preguntarAEstela(texto) {
+  function preguntarARolo(texto) {
     const t = String(texto || "").trim();
     if (!t) {
       if (!panel.classList.contains("abierto")) document.getElementById("chatAbrir").click();
@@ -9620,7 +9286,7 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
     const t = buscarPrincipal.value.trim();
     if (t.startsWith("¿") || t.endsWith("?")) {
       e.preventDefault();
-      preguntarAEstela(t);
+      preguntarARolo(t);
     }
   });
 
@@ -9766,7 +9432,7 @@ document.querySelectorAll("input[type=range]").forEach(r => {
 <script>
 /* El orbe se coloca justo en el centro de la barra, encima de su hueco */
 (function () {
-  const slot = document.getElementById("tabEstela");
+  const slot = document.getElementById("tabRolo");
   const orbe = document.getElementById("chatAbrir");
   if (!slot || !orbe) return;
   const colocar = () => {
@@ -9827,477 +9493,40 @@ document.addEventListener("DOMContentLoaded", () => {
     el.style.setProperty("--my", (e.clientY - r.top) + "px");
   }, { passive: true });
 
-  // Indicador deslizante de la barra inferior
+  // Indicador deslizante de la barra inferior: se estira como una gota al ir a otra pestaña y al regresar
   const barra = document.getElementById("tabbar");
   if (!barra) return;
   const ind = document.createElement("span");
   ind.className = "lg-indicador";
   barra.insertBefore(ind, barra.firstChild);
-  const colocar = () => {
+  let ultimo = null;
+  const medir = b => ({ x: b.offsetLeft, w: b.offsetWidth });
+  const colocar = (animar) => {
     const act = barra.querySelector("button.activa");
-    if (!act) { ind.style.width = "0px"; return; }
-    ind.style.width = act.offsetWidth + "px";
-    ind.style.transform = "translateX(" + act.offsetLeft + "px)";
+    if (!act || !act.offsetWidth) { ind.style.width = "0px"; ultimo = null; return; }
+    const a = medir(act);
+    ind.style.left = a.x + "px";
+    ind.style.width = a.w + "px";
+    if (animar && ultimo && (ultimo.x !== a.x || ultimo.w !== a.w) && ind.animate) {
+      const de = ultimo;
+      const izq = Math.min(de.x, a.x);
+      const ancho = Math.abs(a.x - de.x) + Math.min(de.w, a.w);
+      ind.animate([
+        { left: de.x + "px", width: de.w + "px", offset: 0 },
+        { left: izq + "px", width: ancho + "px", offset: 0.55 },
+        { left: a.x + "px", width: a.w + "px", offset: 1 }
+      ], { duration: 560, easing: "cubic-bezier(.22,.9,.3,1)" });
+    }
+    ultimo = a;
   };
-  new MutationObserver(colocar).observe(barra, { attributes: true, subtree: true, attributeFilter: ["class"] });
-  window.addEventListener("resize", colocar);
-  colocar();
+  new MutationObserver(() => colocar(true)).observe(barra, { attributes: true, subtree: true, attributeFilter: ["class"] });
+  if (window.ResizeObserver) new ResizeObserver(() => colocar(false)).observe(barra);
+  window.addEventListener("resize", () => colocar(false));
+  // Cuando la barra aparece (al entrar), se coloca sin animar
+  new MutationObserver(() => { if (document.body.classList.contains("con-sesion")) setTimeout(() => colocar(false), 60); })
+    .observe(document.body, { attributes: true, attributeFilter: ["class"] });
+  colocar(false);
 })();
 </script>
-<style id="deslizador-suave">
-/* Pastilla que se desliza suavemente hacia la opción activa, y regresa al cambiar */
-.segmentado { position:relative; }
-.segmentado .indicador,
-#tabbar .indicador {
-  position:absolute; left:0; top:0; z-index:0; pointer-events:none;
-  border-radius:999px; opacity:0;
-  transition: transform .5s cubic-bezier(.22,.9,.3,1), width .5s cubic-bezier(.22,.9,.3,1), height .5s cubic-bezier(.22,.9,.3,1), opacity .25s ease;
-}
-.segmentado .indicador { background:var(--tarjeta); box-shadow:var(--sombra); }
-#tabbar .indicador { background:var(--tema-bg); }
-.segmentado > button, .segmentado > * { position:relative; z-index:1; }
-.segmentado .activa { background:transparent !important; box-shadow:none !important; }
-#tabbar > button, #tabbar > .tab-estela { position:relative; z-index:1; }
-@media (prefers-reduced-motion: reduce) {
-  .segmentado .indicador, #tabbar .indicador { transition:none; }
-}
-</style>
-<script>
-/* Coloca la pastilla sobre la opción activa de cada selector y de la barra inferior */
-(function () {
-  function asegurar(cont) {
-    if (!cont.querySelector(":scope > .indicador")) {
-      const ind = document.createElement("span");
-      ind.className = "indicador";
-      cont.insertBefore(ind, cont.firstChild);
-    }
-    return cont.querySelector(":scope > .indicador");
-  }
-  function mover(cont) {
-    const ind = asegurar(cont);
-    const act = cont.querySelector(".activa");
-    if (!act || !act.offsetWidth) { ind.style.opacity = 0; return; }
-    ind.style.opacity = 1;
-    ind.style.width = act.offsetWidth + "px";
-    ind.style.height = act.offsetHeight + "px";
-    ind.style.transform = "translate(" + act.offsetLeft + "px," + act.offsetTop + "px)";
-  }
-  function todos() {
-    document.querySelectorAll(".segmentado, #tabbar").forEach(mover);
-  }
-  todos();
-  setInterval(todos, 300);
-  window.addEventListener("resize", todos);
-})();
-</script>
-<style id="funciones-nuevas">
-.modal-global{position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.32);display:none;align-items:center;justify-content:center;padding:16px}
-.modal-global.visible{display:flex}
-.modal-tarjeta{background:var(--tarjeta);color:var(--texto);border-radius:28px;max-width:460px;width:100%;max-height:82dvh;display:flex;flex-direction:column;box-shadow:0 24px 60px rgba(0,0,0,.25);animation:aparecerModal .28s cubic-bezier(.2,.8,.2,1) both}
-@keyframes aparecerModal{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:scale(1)}}
-.modal-cab{display:flex;justify-content:space-between;align-items:center;padding:18px 20px 8px;font-size:17px;font-weight:600}
-.modal-x{background:var(--boton-suave);border:0;border-radius:50%;width:32px;height:32px;font-size:18px;color:var(--gris);cursor:pointer}
-.modal-cuerpo{padding:8px 20px 20px;overflow:auto;font-size:14px;line-height:1.5}
-.modal-cuerpo pre{white-space:pre-wrap;word-break:break-word;font-family:inherit;margin:0}
-.modal-btn{border:0;border-radius:999px;padding:10px 16px;background:var(--azul);color:#fff;font-size:14px;cursor:pointer}
-.modal-btn.sec{background:var(--boton-suave);color:var(--texto)}
-.toast-suave{position:fixed;left:50%;bottom:120px;transform:translateX(-50%);width:min(420px, calc(100vw - 24px));background:var(--tarjeta);color:var(--texto);border-radius:22px;box-shadow:0 14px 36px rgba(0,0,0,.18);padding:12px 12px 12px 16px;display:flex;align-items:center;gap:10px;z-index:45;animation:toastEntra .4s cubic-bezier(.2,.8,.2,1) both;transition:opacity .4s ease,transform .4s ease}
-.toast-suave span{flex:1;font-size:14px;line-height:1.4}
-.toast-suave.salir{opacity:0;transform:translate(-50%,10px)}
-@keyframes toastEntra{from{opacity:0;transform:translate(-50%,16px)}to{opacity:1;transform:translate(-50%,0)}}
-.modo-cine{position:fixed;inset:0;z-index:70;background:radial-gradient(circle at 50% 30%, #1b2440 0%, #05070d 75%);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:24px;text-align:center}
-.modo-cine img{max-height:44dvh;max-width:70vw;border-radius:18px;box-shadow:0 20px 60px rgba(0,0,0,.6)}
-.modo-cine .mc-sin{width:180px;height:260px;border-radius:18px;background:rgba(255,255,255,.08);display:grid;place-items:center;font-size:46px}
-.modo-cine h2{margin:0;font-size:22px;font-weight:700}
-.modo-cine .mc-meta{font-size:14px;opacity:.7;margin:0}
-.modo-cine .mc-timer{font-size:40px;font-weight:300;font-variant-numeric:tabular-nums;margin-top:6px}
-.modo-cine .mc-barra{width:min(420px,80vw);height:6px;border-radius:999px;background:rgba(255,255,255,.15);overflow:hidden}
-.modo-cine .mc-fill{height:100%;width:0;background:linear-gradient(90deg,#0a84ff,#64d2ff);border-radius:999px;transition:width .5s linear}
-.modo-cine .mc-estado{font-size:14px;opacity:.8;min-height:20px}
-.modo-cine .mc-acc{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:6px}
-.modo-cine .mc-acc button{border:0;border-radius:999px;padding:11px 18px;font-size:15px;background:rgba(255,255,255,.14);color:#fff;cursor:pointer}
-.modo-cine .mc-acc button.mc-pri{background:#0a84ff}
-.modo-cine .mc-x{position:absolute;top:14px;right:14px;width:40px;height:40px;border-radius:50%;border:0;padding:0;font-size:22px;background:rgba(255,255,255,.14);color:#fff;cursor:pointer}
-</style>
-<script>
-(function () {
-  /* ---------- Registro de errores ---------- */
-  const CLAVE_REG = "registro_errores";
-  function leerRegistro() {
-    try { return JSON.parse(localStorage.getItem(CLAVE_REG) || "[]"); } catch (e) { return []; }
-  }
-  function anotar(tipo, msg, extra) {
-    const r = leerRegistro();
-    r.push({ f: new Date().toISOString(), tipo: tipo, msg: String(msg || "").slice(0, 300), extra: String(extra || "").slice(0, 200) });
-    try { localStorage.setItem(CLAVE_REG, JSON.stringify(r.slice(-40))); } catch (e) {}
-  }
-  window.obtenerRegistro = leerRegistro;
-  window.anotarError = anotar;
-  window.addEventListener("error", e => anotar("error", e.message, (e.filename || "") + ":" + (e.lineno || "")));
-  window.addEventListener("unhandledrejection", e => {
-    const r = e.reason;
-    anotar("promesa", (r && (r.message || r)) || "rechazo sin detalle", "");
-  });
-
-  /* ---------- Modal general ---------- */
-  function boton(txt, fn, sec) {
-    const b = document.createElement("button");
-    b.type = "button";
-    b.className = "modal-btn" + (sec ? " sec" : "");
-    b.textContent = txt;
-    b.addEventListener("click", fn);
-    return b;
-  }
-  function abrirModal(titulo, cuerpo, bloqueado) {
-    let o = document.getElementById("modalGlobal");
-    if (!o) {
-      o = document.createElement("div");
-      o.id = "modalGlobal";
-      o.className = "modal-global";
-      o.innerHTML = '<div class="modal-tarjeta"><div class="modal-cab"><span></span><button type="button" class="modal-x" aria-label="Cerrar">×</button></div><div class="modal-cuerpo"></div></div>';
-      document.body.appendChild(o);
-      o.addEventListener("click", e => {
-        if (o.dataset.bloqueado === "1") return;
-        if (e.target === o || e.target.classList.contains("modal-x")) o.classList.remove("visible");
-      });
-    }
-    o.dataset.bloqueado = bloqueado ? "1" : "";
-    o.querySelector(".modal-cab span").textContent = titulo;
-    const c = o.querySelector(".modal-cuerpo");
-    c.textContent = "";
-    c.appendChild(cuerpo);
-    o.classList.add("visible");
-  }
-  function cerrarModal() {
-    const o = document.getElementById("modalGlobal");
-    if (o) { o.dataset.bloqueado = ""; o.classList.remove("visible"); }
-  }
-
-  /* ---------- Registro en pantalla ---------- */
-  function verRegistro() {
-    const cont = document.createElement("div");
-    const pre = document.createElement("pre");
-    const reg = leerRegistro().slice().reverse();
-    pre.textContent = reg.length
-      ? reg.map(x => x.f.slice(0, 19).replace("T", " ") + " · " + x.tipo + "\n" + x.msg + (x.extra ? "\n" + x.extra : "")).join("\n\n")
-      : "Sin errores registrados.";
-    cont.appendChild(pre);
-    const fila = document.createElement("div");
-    fila.style.cssText = "display:flex;gap:8px;margin-top:14px;flex-wrap:wrap";
-    const copiar = boton("Copiar", async () => {
-      try { await navigator.clipboard.writeText(pre.textContent); copiar.textContent = "Copiado ✓"; }
-      catch (e) { copiar.textContent = "No se pudo copiar"; }
-    });
-    const borrar = boton("Borrar registro", () => {
-      try { localStorage.removeItem(CLAVE_REG); } catch (e) {}
-      pre.textContent = "Sin errores registrados.";
-    }, true);
-    fila.append(copiar, borrar);
-    cont.appendChild(fila);
-    abrirModal("Registro de errores", cont, false);
-  }
-
-  /* ---------- Aviso de privacidad ---------- */
-  const CLAVE_PRIV = "privacidad_v1";
-  const TEXTO_PRIVACIDAD = [
-    "Esto es lo que pasa con tus datos en esta app:",
-    "• Tus marcas (vista, pendiente, estrellas y notas) se guardan en tu navegador y en tu Drive, en una carpeta privada que solo usa esta app. Nadie más del grupo las puede ver.",
-    "• Con el chat con IA, tus preguntas, tus preferencias guardadas y los datos de tu catálogo (títulos, géneros, director, duración y estado de cada película) se envían a Gemini, de Google, a través del script de quien administra el catálogo.",
-    "• Según el código actual, ese script no guarda el contenido de tus preguntas. Google aplica sus propias políticas al procesarlas.",
-    "• Puedes borrar tus preferencias en «Mi memoria» y tus marcas desde Ajustes → Cuenta.",
-    "• Solo entran cuentas institucionales."
-  ];
-  function contenidoPrivacidad(primeraVez) {
-    const d = document.createElement("div");
-    const pre = document.createElement("pre");
-    pre.textContent = TEXTO_PRIVACIDAD.join("\n\n");
-    d.appendChild(pre);
-    if (primeraVez) {
-      const fila = document.createElement("div");
-      fila.style.cssText = "display:flex;gap:8px;margin-top:16px;justify-content:flex-end";
-      fila.appendChild(boton("Entiendo y acepto", () => {
-        try { localStorage.setItem(CLAVE_PRIV, new Date().toISOString()); } catch (e) {}
-        cerrarModal();
-      }));
-      d.appendChild(fila);
-    }
-    return d;
-  }
-  function privacidadAceptada() {
-    try { return !!localStorage.getItem(CLAVE_PRIV); } catch (e) { return true; }
-  }
-
-  /* ---------- Avisos suaves ---------- */
-  function toast(texto, accionTxt, accion) {
-    const t = document.createElement("div");
-    t.className = "toast-suave";
-    const s = document.createElement("span");
-    s.textContent = texto;
-    t.appendChild(s);
-    if (accionTxt) t.appendChild(boton(accionTxt, () => { if (accion) accion(); t.remove(); }));
-    t.appendChild(boton("×", () => t.remove(), true));
-    document.body.appendChild(t);
-    setTimeout(() => { t.classList.add("salir"); setTimeout(() => t.remove(), 450); }, 12000);
-  }
-  function isoHoy() {
-    const d = new Date();
-    return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
-  }
-  function avisoPendientesViejos() {
-    try { if (localStorage.getItem("aviso_pend_dia") === isoHoy()) return; } catch (e) {}
-    try { localStorage.setItem("aviso_pend_dia", isoHoy()); } catch (e) {}
-    if (typeof peliculas === "undefined" || !peliculas.length) return;
-    const limite = Date.now() - 30 * 86400000;
-    const viejos = peliculas.filter(p => {
-      const e = estadoDe(p);
-      if (!e.pendiente || e.vista) return false;
-      const h = (marcas[p.titulo] || {}).historial || [];
-      const ev = h.slice().reverse().find(x => x.a === "pendiente");
-      return !!ev && new Date(ev.f).getTime() < limite;
-    });
-    if (!viejos.length) return;
-    toast("Tienes " + viejos.length + (viejos.length === 1 ? " pendiente que lleva" : " pendientes que llevan") + " más de un mes esperando. ¿Vemos alguna esta noche?",
-      "Ver", () => { if (typeof abrirQueVerEstaNoche === "function") abrirQueVerEstaNoche(); });
-  }
-
-  /* ---------- Modo cine en casa ---------- */
-  window.abrirModoCine = function (p, cola) {
-    const lista = Array.isArray(cola) && cola.length ? cola : [p];
-    let idx = 0, iv = null, wake = null;
-    const previo = document.getElementById("modoCine");
-    if (previo) previo.remove();
-    if (typeof cerrarQueVer === "function") cerrarQueVer();
-
-    const o = document.createElement("div");
-    o.id = "modoCine";
-    o.className = "modo-cine";
-    document.body.appendChild(o);
-
-    const fmt = ms => {
-      const s = Math.floor(ms / 1000);
-      const hh = Math.floor(s / 3600), mm = Math.floor((s % 3600) / 60), ss = s % 60;
-      return (hh ? hh + ":" : "") + String(mm).padStart(2, "0") + ":" + String(ss).padStart(2, "0");
-    };
-    const cerrar = () => {
-      if (iv) clearInterval(iv);
-      if (wake) { try { wake.release(); } catch (e) {} }
-      o.remove();
-    };
-    const finMaraton = () => {
-      if (iv) clearInterval(iv);
-      o.innerHTML = "";
-      const x = document.createElement("button");
-      x.type = "button"; x.className = "mc-x"; x.setAttribute("aria-label", "Salir"); x.textContent = "×";
-      x.addEventListener("click", cerrar);
-      const h = document.createElement("h2"); h.textContent = "Maratón terminado";
-      const t = document.createElement("p"); t.className = "mc-meta";
-      t.textContent = "Viste " + lista.length + (lista.length === 1 ? " película" : " películas") + ". ¡Buena noche!";
-      const b = document.createElement("button");
-      b.type = "button"; b.className = "mc-pri"; b.textContent = "Cerrar";
-      b.addEventListener("click", cerrar);
-      o.append(x, h, t, b);
-    };
-
-    const DESCANSO_MS = 10 * 60000;
-    const pintarDescanso = () => {
-      const siguiente = lista[idx + 1];
-      if (iv) clearInterval(iv);
-      o.innerHTML = "";
-      const x = document.createElement("button");
-      x.type = "button"; x.className = "mc-x"; x.setAttribute("aria-label", "Salir"); x.textContent = "×";
-      x.addEventListener("click", cerrar);
-      const h = document.createElement("h2"); h.textContent = "Descanso";
-      const meta = document.createElement("p"); meta.className = "mc-meta";
-      meta.textContent = "Siguiente: " + siguiente.titulo;
-      const timer = document.createElement("div"); timer.className = "mc-timer";
-      const estado = document.createElement("div"); estado.className = "mc-estado";
-      estado.textContent = "Estira las piernas. Empieza sola cuando termine el descanso.";
-      const acc = document.createElement("div"); acc.className = "mc-acc";
-      const ya = document.createElement("button"); ya.type = "button"; ya.className = "mc-pri"; ya.textContent = "Empezar ya";
-      acc.append(ya);
-      o.append(x, h, meta, timer, estado, acc);
-      const fin = Date.now() + DESCANSO_MS;
-      const avanzar = () => { idx++; pintar(); };
-      const tickD = () => {
-        const falta = Math.max(0, fin - Date.now());
-        timer.textContent = fmt(falta);
-        if (falta <= 0) { clearInterval(iv); avanzar(); }
-      };
-      iv = setInterval(tickD, 500);
-      tickD();
-      ya.addEventListener("click", () => { clearInterval(iv); avanzar(); });
-    };
-
-    const pintar = () => {
-      const film = lista[idx];
-      const total = (minutos(film) || 120) * 60000;
-      let transcurrido = 0, inicio = Date.now(), pausado = false;
-      if (iv) clearInterval(iv);
-      o.innerHTML = "";
-
-      const x = document.createElement("button");
-      x.type = "button"; x.className = "mc-x"; x.setAttribute("aria-label", "Salir"); x.textContent = "×";
-      if (film.portada) {
-        const img = document.createElement("img"); img.src = film.portada; img.alt = "";
-        o.appendChild(img);
-      } else {
-        const sin = document.createElement("div"); sin.className = "mc-sin"; sin.textContent = "🎬";
-        o.appendChild(sin);
-      }
-      const h = document.createElement("h2"); h.textContent = film.titulo;
-      const meta = document.createElement("p"); meta.className = "mc-meta";
-      meta.textContent = (lista.length > 1 ? "Película " + (idx + 1) + " de " + lista.length + " · " : "") +
-        [film["año"], film.duracion, film.director].filter(Boolean).join(" · ");
-      const timer = document.createElement("div"); timer.className = "mc-timer";
-      const barra = document.createElement("div"); barra.className = "mc-barra";
-      const fill = document.createElement("div"); fill.className = "mc-fill"; barra.appendChild(fill);
-      const estado = document.createElement("div"); estado.className = "mc-estado";
-      const acc = document.createElement("div"); acc.className = "mc-acc";
-      const btnPausa = document.createElement("button"); btnPausa.type = "button"; btnPausa.textContent = "Pausar";
-      const hayMas = idx < lista.length - 1;
-      const btnFin = document.createElement("button"); btnFin.type = "button"; btnFin.className = "mc-pri";
-      btnFin.textContent = hayMas ? "Terminé: siguiente" : "Terminé: ya la vi";
-      acc.append(btnPausa, btnFin);
-      o.append(x, h, meta, timer, barra, estado, acc);
-
-      const tick = () => {
-        const ahora = pausado ? transcurrido : transcurrido + (Date.now() - inicio);
-        timer.textContent = fmt(ahora) + " / " + fmt(total);
-        fill.style.width = Math.min(100, ahora / total * 100) + "%";
-        if (ahora >= total) estado.textContent = "Ya debería haber terminado. ¿Pasamos a la siguiente?";
-      };
-      iv = setInterval(tick, 500);
-      tick();
-
-      x.addEventListener("click", cerrar);
-      btnPausa.addEventListener("click", () => {
-        if (pausado) { inicio = Date.now(); pausado = false; btnPausa.textContent = "Pausar"; }
-        else { transcurrido += Date.now() - inicio; pausado = true; btnPausa.textContent = "Reanudar"; }
-        tick();
-      });
-      btnFin.addEventListener("click", () => {
-        cambiarEstado(film.titulo, { vista: true });
-        if (typeof refrescarTodo === "function") refrescarTodo();
-        if (hayMas) pintarDescanso();
-        else finMaraton();
-      });
-    };
-
-    pintar();
-    (async () => {
-      try { if (navigator.wakeLock) wake = await navigator.wakeLock.request("screen"); } catch (e) {}
-    })();
-  };
-
-  /* ---------- Conexiones con los botones y avisos ---------- */
-  const br = document.getElementById("verRegistro");
-  if (br) br.addEventListener("click", verRegistro);
-  const bp = document.getElementById("verPrivacidad");
-  if (bp) bp.addEventListener("click", () => abrirModal("Aviso de privacidad", contenidoPrivacidad(false), false));
-
-  let avisoListo = false;
-  setInterval(() => {
-    const app = document.getElementById("app");
-    if (!app || app.style.display !== "block") return;
-    if (!privacidadAceptada()) {
-      if (!document.getElementById("modalGlobal") || !document.getElementById("modalGlobal").classList.contains("visible")) {
-        abrirModal("Antes de empezar", contenidoPrivacidad(true), true);
-      }
-      return;
-    }
-    if (!avisoListo) { avisoListo = true; setTimeout(avisoPendientesViejos, 1500); }
-  }, 1000);
-})();
-</script>
-<style id="noche-ajustes">
-#nocheFondo{position:fixed;inset:0;z-index:30;background:transparent}
-.noche-panel{bottom:calc(112px + env(safe-area-inset-bottom,0px));width:min(440px, calc(100vw - 24px));max-width:440px;box-sizing:border-box;padding:18px}
-.noche-tarjeta{gap:14px}
-.noche-tarjeta img{width:104px;height:156px}
-.noche-tarjeta .noche-sin{width:104px;height:156px}
-.noche-info{flex:1;min-width:0}
-.noche-info h3{font-size:16px;line-height:1.3}
-.noche-acciones{display:flex;flex-wrap:wrap;gap:8px;width:100%}
-.noche-acciones button{padding:8px 13px;font-size:13px;white-space:nowrap}
-.noche-cab button{width:32px;height:32px;display:grid;place-items:center;border-radius:50%;background:var(--boton-suave);font-size:18px;padding:0}
-</style>
-<style id="noche-botones">
-/* Los botones se acomodan en filas dentro de la tarjeta y nunca se salen */
-.noche-tarjeta{display:flex;gap:12px;align-items:flex-start}
-.noche-tarjeta img,.noche-tarjeta .noche-sin{width:92px;height:138px;flex:0 0 92px}
-.noche-info{flex:1 1 0;min-width:0;display:flex;flex-direction:column}
-.noche-acciones{display:flex;flex-wrap:wrap;gap:6px;width:100%;margin-top:4px}
-.noche-acciones button{flex:0 1 auto;white-space:normal;padding:7px 11px;font-size:13px;line-height:1.2;text-align:center}
-.noche-acciones button.principal{flex:1 1 100%}
-</style>
-<style id="noche-rejilla">
-/* Botones en tres columnas iguales: «Ver ficha» ocupa la fila de arriba y el texto no se corta */
-.noche-acciones{display:grid !important;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;width:100%}
-.noche-acciones button{white-space:nowrap;padding:9px 6px;font-size:13px;min-width:0;overflow:hidden;text-overflow:ellipsis}
-.noche-acciones button.principal{grid-column:1 / -1}
-</style>
-<style id="maraton-noche">
-.mara-lista{list-style:none;padding:0;margin:10px 0 0;display:flex;flex-direction:column;gap:10px}
-.mara-fila{display:flex;gap:12px;align-items:center;background:var(--boton-suave);border-radius:18px;padding:8px}
-.mara-fila img,.mara-sin{width:56px;height:84px;border-radius:10px;object-fit:cover;flex:0 0 56px}
-.mara-sin{display:grid;place-items:center;background:var(--tarjeta);font-size:22px}
-.mara-info{display:flex;flex-direction:column;gap:2px;min-width:0}
-.mara-info b{font-size:15px;line-height:1.25}
-.mara-hora{font-size:13px;font-weight:600;color:var(--azul)}
-#maraIni{flex:0 0 auto;width:auto}
-</style>
-<style id="maraton-descanso">
-.maraton-titulo{margin:18px 0 6px;font-size:15px}
-.mara-guardar{margin-top:12px}
-.mara-guardadas{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:8px}
-.mara-guardadas li{display:flex;justify-content:space-between;align-items:center;gap:8px;background:var(--boton-suave);border-radius:16px;padding:10px 12px}
-.mara-guardadas li>span:first-child{display:flex;flex-direction:column;min-width:0}
-.mara-acc{display:flex;gap:6px}
-.mara-acc button{padding:6px 10px}
-</style>
-<style id="asistente-pulido-visual">
-/* Panel del asistente con más profundidad y mensajes más legibles */
-#chatPanel{background:rgba(255,255,255,.86) !important;-webkit-backdrop-filter:saturate(180%) blur(22px);backdrop-filter:saturate(180%) blur(22px);border:1px solid rgba(255,255,255,.7) !important;box-shadow:0 30px 70px rgba(15,23,42,.22),0 2px 8px rgba(15,23,42,.08) !important}
-@media (prefers-color-scheme: dark){#chatPanel{background:rgba(28,28,30,.82) !important;border-color:rgba(255,255,255,.08) !important}}
-.chat-avatar{background:linear-gradient(135deg,#dbeaff,#f3e8ff) !important;box-shadow:inset 0 0 0 1px rgba(255,255,255,.7)}
-.chat-titulo b{letter-spacing:-.3px}
-.chat-burbuja{box-shadow:0 1px 2px rgba(15,23,42,.06);border-radius:20px}
-.chat-burbuja.ia{background:rgba(120,120,128,.12) !important;color:var(--texto)}
-.chat-burbuja.yo{background:linear-gradient(135deg,#0a84ff,#3b82f6) !important;color:#fff !important;box-shadow:0 4px 12px rgba(10,132,255,.25)}
-#chatForm button[type=submit]{background:linear-gradient(135deg,#0a84ff,#3b82f6) !important;box-shadow:0 4px 12px rgba(10,132,255,.3)}
-#chatInput{background:rgba(120,120,128,.12) !important}
-#chatSugerencias button{background:rgba(120,120,128,.12);border:1px solid rgba(255,255,255,.4)}
-/* Orbe: un poco más de brillo y profundidad, sin colores fuertes */
-#chatAbrir .orbe{box-shadow:inset 0 -6px 12px rgba(47,111,232,.25),inset 0 2px 6px rgba(255,255,255,.8)}
-#chatAbrir{box-shadow:0 10px 26px rgba(47,111,232,.32),0 2px 6px rgba(15,23,42,.12) !important}
-</style>
-<style id="asistente-mejoras">
-.chat-chips{margin-top:2px}
-.chat-chips button{background:rgba(10,132,255,.1);color:#0a84ff;font-weight:600}
-</style>
-<style id="tablero-icono">
-.chat-tablero{display:flex;flex-wrap:wrap;gap:6px;padding:0 16px 8px}
-.chat-tablero:empty{display:none}
-.tablero-pill{font-size:11px;padding:4px 9px;border-radius:999px;background:rgba(120,120,128,.14);color:var(--texto);white-space:nowrap}
-.tablero-pill.ia{background:rgba(52,199,89,.16);color:#1f8a3a;font-weight:600}
-.tablero-pill.local{background:rgba(255,159,10,.18);color:#9a5b00;font-weight:600}
-.chat-votos button{background:rgba(10,132,255,.1);color:#0a84ff;font-weight:600;white-space:normal;text-align:left}
-#chatAbrir::after{content:"";position:absolute;right:2px;top:2px;width:12px;height:12px;border-radius:50%;border:2px solid #fff;background:#8e8e93;box-sizing:border-box}
-#chatAbrir.modo-ia::after{background:#34c759}
-#chatAbrir.modo-local::after{background:#ff9f0a}
-#chatAbrir.escuchando::after{background:#ff453a}
-</style>
-<style id="panel-ajuste-inferior">
-#chatPanel{height:min(720px, calc(100dvh - 130px - env(safe-area-inset-top,0px))) !important;max-height:min(720px, calc(100dvh - 130px)) !important;bottom:calc(104px + env(safe-area-inset-bottom,0px)) !important;flex-direction:column !important;overflow:hidden !important}
-#chatPanel > *{flex-shrink:0}
-#chatPanel.abierto{display:flex !important}
-#chatPanel:not(.abierto){display:none !important}
-#chatMensajes{flex:1 1 0 !important;min-height:0 !important;overflow-y:auto}
-#chatMensajes > *{flex-shrink:0}
-#chatForm{flex:0 0 auto !important;display:flex !important;align-items:center;gap:8px;padding:10px 14px 14px !important;min-height:64px}
-#chatForm #chatInput{flex:1 1 auto;min-width:0;height:44px}
-#chatForm #chatVoz,#chatForm button[type=submit]{flex:0 0 44px;width:44px !important;height:44px !important;border-radius:50% !important}
-#chatSugerencias{flex:0 0 auto !important;min-height:48px}
-</style>
 </body>
 </html>
