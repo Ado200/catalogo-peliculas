@@ -1146,6 +1146,13 @@ h1 { letter-spacing:-.02em; }
 .acciones-ficha{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
 #tabbar button#tabExplorar{color:inherit}
 </style>
+<style id="explorar-lista-visible">
+.explorar-grupo{margin:14px 0 6px;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--gris)}
+.explorar-item{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;width:100%;padding:11px 14px;border-radius:var(--radio-chico);border:1px solid var(--borde);background:var(--boton-suave);color:var(--texto);font:inherit;cursor:pointer}
+.explorar-item b{font-size:15px}
+.explorar-item .meta{font-size:13px}
+#explorarTodo .ventana-larga{max-height:80vh}
+</style>
 </head>
 <body>
 <div id="bannerSinConexion" class="banner-offline" hidden></div>
@@ -1405,7 +1412,6 @@ h1 { letter-spacing:-.02em; }
   <span id="tabRolo" class="tab-rolo" aria-hidden="true"></span>
   <button data-tab="pendientes"><span class="ico">⏳</span>Pendientes</button>
   <button data-tab="vistas"><span class="ico">✓</span>Vistas</button>
-  <button type="button" id="tabExplorar"><span class="ico">🧭</span>Explorar</button>
 </nav>
 
 <div id="modal">
@@ -5058,7 +5064,6 @@ window.addEventListener("load", () => {
   document.querySelectorAll("#tabbar button[data-tab]").forEach(b => {
     b.addEventListener("click", () => cambiarPestana(b.dataset.tab));
   });
-  document.getElementById("tabExplorar").addEventListener("click", abrirExplorar);
   const guardada = modoGuardado("pestana_activa", "inicio");
   if (["inicio", "catalogo", "notas", "pendientes", "vistas", "descartadas"].includes(guardada)) fijarTab(guardada);
   aplicarEstadoTabs();
@@ -6894,8 +6899,9 @@ function renderAlertasEstreno() {
 
 /* ---------- Explorar: herramientas visibles desde la pantalla de inicio ---------- */
 function gruposHerramientas() {
-  return [...document.querySelectorAll("#panelMas .grupo-menu")]
-    .filter(g => !/^(Ver|Ayuda|Datos)$/.test((g.querySelector(".grupo-titulo") || {}).textContent || ""));
+  return [...document.querySelectorAll("#panelAvanzados .grupo-menu, #panelMas .grupo-menu")]
+    .filter(g => !/^(Ver|Ayuda|Datos|Cuenta)$/.test((g.querySelector(".grupo-titulo") || {}).textContent || ""))
+    .filter(g => [...g.querySelectorAll("button[id]")].some(b => DESC_HERRAMIENTAS[b.id]));
 }
 
 function abrirGrupoHerramientas(indice) {
@@ -6951,26 +6957,60 @@ function ejecutarHerramienta(id) {
   if (destino) destino.click();
 }
 
+const DESC_HERRAMIENTAS = {
+  nocheTema: "Elige una pendiente del género que toca hoy.",
+  maraton: "Arma hasta 3 pendientes que quepan en el tiempo que tienes.",
+  sorpresa: "Una película según duración, género o actor.",
+  animoBtn: "Ordena el catálogo según cómo te sientes hoy.",
+  mapaViaje: "Qué países has visitado con tus películas.",
+  parejaBtn: "Activa elegir solo entre las películas para ver con alguien.",
+  votarPareja: "Cada quien vota sí o no, y ves en qué coinciden.",
+  capsula: "Tu resumen del año: vistas, favoritas y géneros.",
+  clasificar: "Clasifica rápido las películas que aún no tienes marcadas.",
+  estadisticas: "Gráficas de tus calificaciones y tus hábitos.",
+  diario: "Tus películas vistas con fecha y notas.",
+  buzon: "Escribe cartas a tu yo futuro sobre una película.",
+  prepararViaje: "Guarda tus pendientes para verlas sin internet.",
+  verViaje: "Abre la lista guardada para llevarla.",
+  guardarPaletas: "Calcula y guarda los colores de los pósters.",
+  deshacer: "Regresa el último cambio en tus marcas.",
+  atajos: "Muestra los atajos de teclado."
+};
+
 function abrirExplorar() {
-  const lista = todasHerramientas();
-  abrirVentanaSimple("explorarTodo", "Explorar",
-    '<input id="explorarBusca" class="campo-busca" type="search" placeholder="Busca una herramienta…" autocomplete="off">' +
+  const grupos = gruposHerramientas().map(g => ({
+    titulo: g.querySelector(".grupo-titulo").textContent,
+    items: [...g.querySelectorAll("button[id]")].map(b => ({
+      id: b.id, html: b.innerHTML, texto: b.textContent.trim(), desc: DESC_HERRAMIENTAS[b.id] || ""
+    }))
+  }));
+  const filtrar = q => {
+    const t = q.trim().toLowerCase();
+    return grupos.map(g => ({
+      titulo: g.titulo,
+      items: g.items.filter(x => !t || (x.texto + " " + x.desc + " " + g.titulo).toLowerCase().includes(t))
+    })).filter(g => g.items.length);
+  };
+  const pintar = q => {
+    const gs = filtrar(q);
+    const plano = gs.flatMap(g => g.items);
+    caja.innerHTML = gs.map(g =>
+      '<h4 class="explorar-grupo">' + esc(g.titulo) + '</h4>' +
+      g.items.map(x => '<button type="button" class="explorar-item" data-id="' + x.id + '">' +
+        '<b>' + x.html + '</b><span class="meta">' + esc(x.desc) + '</span></button>').join("")
+    ).join("") || '<p class="meta">Ninguna herramienta coincide. Prueba con otra palabra.</p>';
+    return plano;
+  };
+  abrirVentanaSimple("explorarTodo", "Herramientas",
+    '<input id="explorarBusca" class="campo-busca" type="search" placeholder="Busca por nombre o para qué sirve…" autocomplete="off">' +
     '<div id="explorarResultados" class="explorar-lista"></div>');
   const caja = document.getElementById("explorarResultados");
-  const dibujar = q => {
-    const t = q.trim().toLowerCase();
-    const f = lista.filter(x => (x.texto + " " + x.grupo).toLowerCase().includes(t));
-    caja.innerHTML = f.map(x => '<button type="button" class="explorar-item" data-id="' + x.id + '">' + x.html +
-      ' <span class="meta">· ' + esc(x.grupo) + '</span></button>').join("") ||
-      '<p class="meta">Ninguna herramienta coincide. Prueba con otra palabra.</p>';
-    return f;
-  };
-  dibujar("");
   const busca = document.getElementById("explorarBusca");
-  busca.addEventListener("input", () => dibujar(busca.value));
+  pintar("");
+  busca.addEventListener("input", () => pintar(busca.value));
   busca.addEventListener("keydown", e => {
     if (e.key !== "Enter") return;
-    const primera = dibujar(busca.value)[0];
+    const primera = pintar(busca.value)[0];
     if (primera) { document.querySelector("#explorarTodo [data-cerrar]").click(); ejecutarHerramienta(primera.id); }
   });
   caja.addEventListener("click", e => {
