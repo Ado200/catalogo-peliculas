@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Casa Cano · Colección</title>
+<title>Mi catálogo de películas</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0071e3">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1041,6 +1041,22 @@ body[data-pestana="pendientes"] .aviso-opciones::-webkit-scrollbar-thumb { backg
 /* La altura se calcula para que el panel quepa completo: encabezado arriba y campo de texto sobre la barra */
 #chatPanel{height:min(720px, calc(100dvh - 150px - env(safe-area-inset-top,0px))) !important;max-height:min(720px, calc(100dvh - 150px)) !important;min-height:0 !important;overflow:hidden}
 #chatMensajes{min-height:120px !important;flex:1 1 0 !important}
+
+  /* Indicador deslizante del segmentado (restaurado de la versión anterior) */
+.segmentado { position:relative; }
+.segmentado .indicador,
+.segmentado .indicador { background:var(--tarjeta); box-shadow:var(--sombra); }
+.segmentado > button, .segmentado > * { position:relative; z-index:1; }
+.segmentado .activa { background:transparent !important; box-shadow:none !important; }
+  .segmentado .indicador, #tabbar .indicador { transition:none; }
+
+  .firma-agc { color:var(--texto); opacity:.72; pointer-events:none; user-select:none; }
+  .firma-agc .firma-svg { display:block; width:46px; height:auto; margin:0 auto; }
+  .firma-login { margin:2px 0 12px; }
+  .firma-login .firma-svg { width:22px; opacity:.6; }
+  .firma-inicio { display:none; margin:2px 0 10px; }
+  body[data-pestana="inicio"] .firma-inicio { display:block; }
+  body[data-pestana="inicio"] .firma-inicio .firma-svg { width:20px; margin:0 0 0 2px; }
 </style>
 <style id="ayuda-atajos">
 .ayuda-atajos{position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;z-index:2000;padding:16px}
@@ -1449,22 +1465,9 @@ body.con-reproductor #chatAbrir, body.con-reproductor #chatPanel { display:none 
 #lista .tarjeta.amplia .acciones-rapidas { margin:8px 4px 2px; }
 #lista .tarjeta.amplia .acciones-rapidas .pildora { font-size:12px; padding:6px 10px; }
 /* Selector de filtro de la pantalla de películas: segmento más moderno */
-#app > header .segmentado { border-radius:999px !important; }
 /* Encabezado de Películas: barra limpia, pestañas tipo chip y filtros con píldoras */
 #app > header { padding:16px 16px 14px !important; border-radius:28px !important; }
-#app > header .fila-titulo { gap:10px !important; align-items:center !important; }
 #app > header h1 { font-size:28px !important; font-weight:800 !important; letter-spacing:-.03em !important; margin:0 6px 0 2px !important; white-space:nowrap; }
-#app > header .buscar { height:44px !important; border-radius:999px !important; background:rgba(118,118,128,.12) !important; border:1px solid transparent !important; box-shadow:inset 0 1px 2px rgba(0,0,0,.04) !important; }
-#app > header .buscar:focus-within { border-color:color-mix(in srgb, var(--azul) 45%, transparent) !important; box-shadow:0 0 0 4px color-mix(in srgb, var(--azul) 14%, transparent) !important; }
-#app > header .botones-barra { gap:8px !important; }
-#app > header .boton-circular { width:42px !important; height:42px !important; border-radius:50% !important; background:var(--tarjeta) !important; box-shadow:0 1px 3px rgba(0,0,0,.1), inset 0 0 0 1px var(--borde) !important; font-size:18px !important; }
-#app > header .segmentado { display:flex !important; overflow-x:auto !important; scrollbar-width:none; gap:8px !important; padding:0 !important; margin:14px 0 0 !important; background:none !important; border-radius:0 !important; justify-content:flex-start !important; }
-#app > header .segmentado::-webkit-scrollbar { display:none; }
-#app > header .segmentado button { flex:0 0 auto !important; border:1px solid var(--borde) !important; background:var(--tarjeta) !important; color:var(--gris) !important; border-radius:999px !important; padding:8px 16px !important; font-size:14px !important; font-weight:600 !important; box-shadow:none !important; transition:background .35s var(--lg-fluido), color .35s var(--lg-fluido), transform .2s var(--ease) !important; }
-#app > header .segmentado button:active { transform:scale(.95) !important; }
-#app > header .segmentado button::after, #app > header .segmentado::before, #app > header .segmentado::after { content:none !important; display:none !important; }
-#app > header .segmentado { background:transparent !important; box-shadow:none !important; }
-#app > header .segmentado button.activa { background:linear-gradient(135deg, var(--azul), #64d2ff) !important; color:#fff !important; border-color:transparent !important; box-shadow:0 6px 16px color-mix(in srgb, var(--azul) 35%, transparent) !important; }
 /* Modo Premiere: sala oscura con acentos dorados, tipografía con serif y brillo de estreno */
 .marca-sub { font-weight:400; color:var(--gris); font-size:.6em; letter-spacing:.02em; }
 body.premiere {
@@ -1516,9 +1519,29 @@ body.premiere #app > header .segmentado button { background:#141210 !important; 
 
 <div id="login">
   <div class="login-tarjeta">
-    <div class="login-icono" aria-hidden="true"><svg viewBox="0 0 256 256" width="72" height="72" aria-hidden="true" style="border-radius:20px;display:block;margin:0 auto">  <defs>    <linearGradient id="fondo" x1="0" y1="0" x2="1" y2="1">      <stop offset="0" stop-color="#1c1915"/>      <stop offset="1" stop-color="#0a0908"/>    </linearGradient>    <linearGradient id="oro" x1="0" y1="0" x2="1" y2="1">      <stop offset="0" stop-color="#f4dc9b"/>      <stop offset="1" stop-color="#b8923e"/>    </linearGradient>  </defs>  <rect x="8" y="8" width="240" height="240" rx="56" fill="url(#fondo)"/>  <rect x="14" y="14" width="228" height="228" rx="50" fill="none" stroke="url(#oro)" stroke-width="2" opacity=".7"/>  <text x="128" y="150" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="104" font-weight="400" fill="url(#oro)" letter-spacing="-4">CC</text>  <g fill="url(#oro)" opacity=".85">    <rect x="44" y="184" width="10" height="8" rx="2"/><rect x="62" y="184" width="10" height="8" rx="2"/><rect x="80" y="184" width="10" height="8" rx="2"/>    <rect x="98" y="184" width="10" height="8" rx="2"/><rect x="116" y="184" width="10" height="8" rx="2"/><rect x="134" y="184" width="10" height="8" rx="2"/>    <rect x="152" y="184" width="10" height="8" rx="2"/><rect x="170" y="184" width="10" height="8" rx="2"/><rect x="188" y="184" width="10" height="8" rx="2"/>  </g></svg></div>
+    <div class="login-icono" aria-hidden="true"><svg viewBox="0 0 256 256" width="72" height="72" aria-hidden="true" style="display:block;margin:0 auto">  <defs>
+    <radialGradient id="fondo" cx="50%" cy="50%" r="72%">
+      <stop offset="0" stop-color="#101a2e"/>
+      <stop offset="1" stop-color="#05070d"/>
+    </radialGradient>
+    <linearGradient id="anillo" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#7ef3ff"/>
+      <stop offset="0.5" stop-color="#3b82f6"/>
+      <stop offset="1" stop-color="#a78bfa"/>
+    </linearGradient>
+    <filter id="halo" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="9"/>
+    </filter>
+  </defs>
+  <rect width="256" height="256" rx="56" fill="url(#fondo)"/>
+  <circle cx="128" cy="128" r="72" fill="none" stroke="url(#anillo)" stroke-width="22" opacity="0.55" filter="url(#halo)"/>
+  <circle cx="128" cy="128" r="72" fill="none" stroke="url(#anillo)" stroke-width="10"/>
+  <circle cx="128" cy="128" r="50" fill="none" stroke="#ffffff" stroke-opacity="0.07" stroke-width="2"/>
+  <circle cx="128" cy="128" r="6" fill="#dff8ff"/>
+</svg></div>
     <span class="login-etiqueta">🔒 Acceso con cuenta institucional</span>
-    <h1>Casa Cano <span class="marca-sub">· Colección</span></h1>
+    <h1>Mi catálogo de películas</h1>
+    <div class="firma-agc firma-login" aria-hidden="true"><svg class="firma-svg" viewBox="-6 -6 167.9 112.0" aria-label="AG" role="img" xmlns="http://www.w3.org/2000/svg"><path fill="currentColor" d="M80.29020556227329 66.38452237001209C66.62636033857316 68.07738814993954 64.93349455864572 66.74727932285369 64.93349455864572 60.94316807738815C64.93349455864572 57.557436517533255 70.73760580411125 10.640870616686819 72.4304715840387 1.2091898428053156L70.85852478839179 0.0C69.16565900846433 1.6928657799274447 67.47279322853689 3.748488512696497 64.81257557436518 3.748488512696497C62.152357920193474 3.748488512696497 49.93954050785973 2.055622732769038 47.27932285368803 2.055622732769038C40.02418379685611 2.055622732769038 36.03385731559855 4.836759371221277 29.987908101571946 10.399032648125754C24.78839177750907 15.235792019347038 20.918984280532044 20.67714631197098 20.918984280532044 26.844014510278114C20.918984280532044 30.471584038694076 21.523579201934705 33.85731559854897 22.49093107617896 37.001209189842804L31.318016928657798 31.801692865779927C30.22974607013301 28.536880290205566 28.778718258766627 23.700120918984283 28.778718258766627 19.951632406287786C28.778718258766627 13.905683192261186 34.3409915356711 9.310761789600967 41.958887545344616 9.310761789600967C44.619105199516326 9.310761789600967 57.67835550181378 10.882708585247883 59.854897218863364 10.882708585247883L25.876662636033856 54.89721886336155C21.523579201934705 60.33857315598549 16.68681983071342 63.11970979443773 9.915356711003628 63.11970979443773C8.94800483675937 63.11970979443773 5.441354292623942 62.75695284159613 4.474002418379686 62.6360338573156L0.0 70.97944377267231C2.418379685610641 71.58403869407498 4.594921402660217 71.82587666263603 6.529625151148731 71.82587666263603C13.05925030229746 71.82587666263603 17.533252720677147 68.6819830713422 22.97460701330109 63.603385731559854C24.667472793228537 62.031438935912945 32.769044740024185 52.84159613059251 35.79201934703749 49.09310761789601C40.507859733978236 49.09310761789601 53.08343409915357 49.214026602176546 56.9528415961306 49.697702539298675C55.8645707376058 57.19467956469166 54.89721886336155 63.966142684401454 54.29262394195889 70.49576783555018C54.17170495767836 71.94679564691657 55.62273276904474 72.91414752116083 57.19467956469166 72.91414752116083C59.250302297460706 72.91414752116083 73.03506650544136 69.52841596130592 78.35550181378477 69.0447400241838ZM57.67835550181378 44.74002418379686H38.93591293833132L62.27327690447401 13.422007255139057ZM153.32527206771465 39.05683192261185C148.48851269649336 38.694074969770256 137.3639661426844 38.45223700120919 126.11850060459494 38.45223700120919L118.74244256348248 42.20072551390568V43.16807738814994L136.39661426844015 42.44256348246675L132.043530834341 59.854897218863364C126.96493349455866 64.69165659008465 119.70979443772674 67.95646916565902 114.14752116082227 67.95646916565902C105.19951632406288 67.95646916565902 99.63724304715842 60.94316807738815 99.63724304715842 49.93954050785973C99.63724304715842 26.360338573155985 115.59854897218864 4.3530834340991476 132.52720677146314 4.3530834340991476C137.48488512696494 4.3530834340991476 141.71704957678355 6.4087061668682 144.01451027811368 10.03627569528416C145.58645707376058 12.454655380894799 146.19105199516326 14.510278113663844 146.91656590084645 19.588875453446192L155.86457073760582 9.552599758162032C153.56711003627572 2.660217654171703 149.093107617896 0.0 139.90326481257557 0.0C126.72309552599759 0.0 114.75211608222492 5.4413542926239415 105.07859733978236 15.840386940749696C95.28415961305926 26.360338573155985 89.11729141475213 41.23337363966143 89.11729141475213 53.92986698911729C89.11729141475213 65.6590084643289 95.52599758162032 72.91414752116083 105.92503022974608 72.91414752116083C113.42200725513908 72.91414752116083 119.83071342200726 70.97944377267231 130.59250302297463 65.53808948004837C128.77871825876665 72.79322853688029 126.60217654171706 80.65296251511488 125.51390568319226 83.31318016928658C123.09552599758163 89.8428053204353 119.5888754534462 92.50302297460702 113.180169286578 92.50302297460702C109.67351874244258 92.50302297460702 103.7484885126965 92.01934703748489 100.12091898428054 91.41475211608223L95.0423216444982 99.39540507859735C99.39540507859735 99.87908101571946 101.33010882708587 100.0 103.7484885126965 100.0C113.42200725513908 100.0 121.64449818621524 95.64691656590085 129.62515114873037 86.33615477629988C134.82466747279324 80.41112454655381 137.00120918984283 75.33252720677146 140.50785973397825 61.305925030229744L145.22370012091898 42.44256348246675H147.76299879081017Z"/></svg></div>
     <p class="login-texto">Tu catálogo personal: lo que viste, lo que quieres ver y lo que te gustó, con sugerencias hechas a tu medida.</p>
     <ul class="login-cualidades">
       <li><span aria-hidden="true">✓</span>Vistas, pendientes y descartadas en un solo lugar</li>
@@ -1681,6 +1704,7 @@ body.premiere #app > header .segmentado button { background:#141210 !important; 
   </div>
 
 
+<div class="firma-agc firma-inicio" aria-hidden="true"><svg class="firma-svg" viewBox="-6 -6 167.9 112.0" aria-label="AG" role="img" xmlns="http://www.w3.org/2000/svg"><path fill="currentColor" d="M80.29020556227329 66.38452237001209C66.62636033857316 68.07738814993954 64.93349455864572 66.74727932285369 64.93349455864572 60.94316807738815C64.93349455864572 57.557436517533255 70.73760580411125 10.640870616686819 72.4304715840387 1.2091898428053156L70.85852478839179 0.0C69.16565900846433 1.6928657799274447 67.47279322853689 3.748488512696497 64.81257557436518 3.748488512696497C62.152357920193474 3.748488512696497 49.93954050785973 2.055622732769038 47.27932285368803 2.055622732769038C40.02418379685611 2.055622732769038 36.03385731559855 4.836759371221277 29.987908101571946 10.399032648125754C24.78839177750907 15.235792019347038 20.918984280532044 20.67714631197098 20.918984280532044 26.844014510278114C20.918984280532044 30.471584038694076 21.523579201934705 33.85731559854897 22.49093107617896 37.001209189842804L31.318016928657798 31.801692865779927C30.22974607013301 28.536880290205566 28.778718258766627 23.700120918984283 28.778718258766627 19.951632406287786C28.778718258766627 13.905683192261186 34.3409915356711 9.310761789600967 41.958887545344616 9.310761789600967C44.619105199516326 9.310761789600967 57.67835550181378 10.882708585247883 59.854897218863364 10.882708585247883L25.876662636033856 54.89721886336155C21.523579201934705 60.33857315598549 16.68681983071342 63.11970979443773 9.915356711003628 63.11970979443773C8.94800483675937 63.11970979443773 5.441354292623942 62.75695284159613 4.474002418379686 62.6360338573156L0.0 70.97944377267231C2.418379685610641 71.58403869407498 4.594921402660217 71.82587666263603 6.529625151148731 71.82587666263603C13.05925030229746 71.82587666263603 17.533252720677147 68.6819830713422 22.97460701330109 63.603385731559854C24.667472793228537 62.031438935912945 32.769044740024185 52.84159613059251 35.79201934703749 49.09310761789601C40.507859733978236 49.09310761789601 53.08343409915357 49.214026602176546 56.9528415961306 49.697702539298675C55.8645707376058 57.19467956469166 54.89721886336155 63.966142684401454 54.29262394195889 70.49576783555018C54.17170495767836 71.94679564691657 55.62273276904474 72.91414752116083 57.19467956469166 72.91414752116083C59.250302297460706 72.91414752116083 73.03506650544136 69.52841596130592 78.35550181378477 69.0447400241838ZM57.67835550181378 44.74002418379686H38.93591293833132L62.27327690447401 13.422007255139057ZM153.32527206771465 39.05683192261185C148.48851269649336 38.694074969770256 137.3639661426844 38.45223700120919 126.11850060459494 38.45223700120919L118.74244256348248 42.20072551390568V43.16807738814994L136.39661426844015 42.44256348246675L132.043530834341 59.854897218863364C126.96493349455866 64.69165659008465 119.70979443772674 67.95646916565902 114.14752116082227 67.95646916565902C105.19951632406288 67.95646916565902 99.63724304715842 60.94316807738815 99.63724304715842 49.93954050785973C99.63724304715842 26.360338573155985 115.59854897218864 4.3530834340991476 132.52720677146314 4.3530834340991476C137.48488512696494 4.3530834340991476 141.71704957678355 6.4087061668682 144.01451027811368 10.03627569528416C145.58645707376058 12.454655380894799 146.19105199516326 14.510278113663844 146.91656590084645 19.588875453446192L155.86457073760582 9.552599758162032C153.56711003627572 2.660217654171703 149.093107617896 0.0 139.90326481257557 0.0C126.72309552599759 0.0 114.75211608222492 5.4413542926239415 105.07859733978236 15.840386940749696C95.28415961305926 26.360338573155985 89.11729141475213 41.23337363966143 89.11729141475213 53.92986698911729C89.11729141475213 65.6590084643289 95.52599758162032 72.91414752116083 105.92503022974608 72.91414752116083C113.42200725513908 72.91414752116083 119.83071342200726 70.97944377267231 130.59250302297463 65.53808948004837C128.77871825876665 72.79322853688029 126.60217654171706 80.65296251511488 125.51390568319226 83.31318016928658C123.09552599758163 89.8428053204353 119.5888754534462 92.50302297460702 113.180169286578 92.50302297460702C109.67351874244258 92.50302297460702 103.7484885126965 92.01934703748489 100.12091898428054 91.41475211608223L95.0423216444982 99.39540507859735C99.39540507859735 99.87908101571946 101.33010882708587 100.0 103.7484885126965 100.0C113.42200725513908 100.0 121.64449818621524 95.64691656590085 129.62515114873037 86.33615477629988C134.82466747279324 80.41112454655381 137.00120918984283 75.33252720677146 140.50785973397825 61.305925030229744L145.22370012091898 42.44256348246675H147.76299879081017Z"/></svg></div>
 <section id="hoy" class="hoy solo-catalogo" data-zona="inicio" style="display:none"></section>
 <div id="avisoFecha" class="aviso-estancados solo-catalogo" data-zona="inicio" style="display:none">
   <div class="aviso-cabecera">
@@ -9526,6 +9550,34 @@ document.addEventListener("DOMContentLoaded", () => {
   new MutationObserver(() => { if (document.body.classList.contains("con-sesion")) setTimeout(() => colocar(false), 60); })
     .observe(document.body, { attributes: true, attributeFilter: ["class"] });
   colocar(false);
+})();
+</script>
+<script id="indicador-segmentado">
+(function () {
+  function asegurar(cont) {
+    if (!cont.querySelector(":scope > .indicador")) {
+      const ind = document.createElement("span");
+      ind.className = "indicador";
+      cont.insertBefore(ind, cont.firstChild);
+    }
+    return cont.querySelector(":scope > .indicador");
+  }
+  function mover(cont) {
+    const ind = asegurar(cont);
+    const act = cont.querySelector(".activa");
+    if (!act || !act.offsetWidth) { ind.style.opacity = 0; return; }
+    ind.style.opacity = 1;
+    ind.style.width = act.offsetWidth + "px";
+    ind.style.height = act.offsetHeight + "px";
+    ind.style.transform = "translate(" + act.offsetLeft + "px," + act.offsetTop + "px)";
+  }
+  function todos() { document.querySelectorAll(".segmentado, #tabbar").forEach(mover); }
+  document.addEventListener("click", e => {
+    const cont = e.target.closest && e.target.closest(".segmentado, #tabbar");
+    if (cont) setTimeout(() => mover(cont), 0);
+  });
+  window.addEventListener("resize", todos);
+  todos();
 })();
 </script>
 </body>
