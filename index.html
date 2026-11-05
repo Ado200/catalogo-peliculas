@@ -1366,6 +1366,53 @@ body.con-reproductor #chatAbrir, body.con-reproductor #chatPanel { display:none 
 #miniReproductor .mr-recorte { position:absolute; inset:0; overflow:hidden; }
 #miniReproductor .mr-recorte iframe { left:calc(var(--recorte, 0px) * -1); width:calc(100% + var(--recorte, 0px)); }
 #miniReproductor .mr-botones button[hidden] { display:none; }
+/* Estrenos: tarjetas tipo póster con fecha real, etiqueta y estado */
+.dest-sub { margin:-6px 0 12px; font-size:13px; color:var(--gris); }
+.carrusel-estrenos { gap:14px; padding:4px 2px 16px; scrollbar-width:none; }
+.carrusel-estrenos::-webkit-scrollbar { display:none; }
+.carrusel-estrenos .dest2 { flex:0 0 170px; position:relative; border-radius:20px; overflow:hidden; cursor:pointer; background:var(--tarjeta); box-shadow:var(--sombra); scroll-snap-align:start; transition:transform .3s var(--ease), box-shadow .3s var(--ease); }
+.carrusel-estrenos .dest2:hover { transform:translateY(-4px); }
+.carrusel-estrenos .dest2:active { transform:scale(.97); }
+.carrusel-estrenos .dest2-poster { position:relative; aspect-ratio:2/3; }
+.carrusel-estrenos .dest2-poster img, .carrusel-estrenos .dest2-sinportada { width:100%; height:100%; object-fit:cover; display:block; }
+.carrusel-estrenos .dest2-sinportada { display:flex; align-items:center; justify-content:center; font-size:48px; background:linear-gradient(135deg,#2c2c2e,#0a84ff66); }
+.carrusel-estrenos .dest2-poster::after { content:""; position:absolute; left:0; right:0; bottom:0; height:55%; background:linear-gradient(transparent, rgba(0,0,0,.88)); pointer-events:none; }
+.carrusel-estrenos .dest2-info { position:absolute; left:0; right:0; bottom:0; padding:10px 12px; color:#fff; z-index:1; }
+.carrusel-estrenos .dest2-titulo { font-size:15px; font-weight:700; line-height:1.2; text-shadow:0 1px 6px rgba(0,0,0,.4); }
+.carrusel-estrenos .dest2-fecha { font-size:12px; opacity:.9; margin-top:3px; }
+.carrusel-estrenos .dest2-tag { position:absolute; top:10px; left:10px; z-index:2; font-size:11px; font-weight:700; padding:4px 9px; border-radius:999px; color:#fff; background:rgba(0,0,0,.55); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); }
+.carrusel-estrenos .dest2-tag.nuevo { background:#ff3b30; }
+.carrusel-estrenos .dest2-tag.prox { background:#0a84ff; }
+.carrusel-estrenos .dest2-estado { position:absolute; top:10px; right:10px; z-index:2; width:26px; height:26px; border-radius:50%; display:grid; place-items:center; font-size:13px; color:#fff; background:rgba(0,0,0,.55); }
+/* Sagas: tira de pósters en orden, progreso y siguiente película */
+.sagas-wrap h3 { margin-bottom:6px; }
+.sg-bloque { padding:16px 0 12px; border-top:1px solid var(--borde); }
+.sg-bloque:first-of-type { border-top:none; }
+.sg-cabecera { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; }
+.sg-nombre { font-size:17px; font-weight:700; letter-spacing:-.2px; }
+.sg-sub { font-size:13px; color:var(--gris); margin-top:2px; }
+.sg-pct { font-size:22px; font-weight:800; color:var(--azul); font-variant-numeric:tabular-nums; }
+.sg-barra { height:6px; margin:10px 0 14px; background:var(--boton-suave); }
+.sg-barra > div { background:linear-gradient(90deg, #0a84ff, #64d2ff); }
+.sg-tira { display:flex; gap:12px; overflow-x:auto; padding:6px 2px 14px; scroll-snap-type:x proximity; scrollbar-width:none; }
+.sg-tira::-webkit-scrollbar { display:none; }
+.sg-card { flex:0 0 112px; cursor:pointer; scroll-snap-align:start; transition:transform .25s var(--ease); }
+.sg-card:hover { transform:translateY(-3px); }
+.sg-card:active { transform:scale(.97); }
+.sg-poster { position:relative; width:112px; height:168px; border-radius:14px; overflow:hidden; box-shadow:var(--sombra); background:var(--tarjeta); }
+.sg-poster img, .sg-sinportada { width:100%; height:100%; object-fit:cover; display:block; }
+.sg-sinportada { display:flex; align-items:center; justify-content:center; font-size:34px; background:linear-gradient(135deg,#2c2c2e,#0a84ff55); }
+.sg-card:not(.visto) .sg-poster { filter:saturate(.25) brightness(.8); }
+.sg-card.visto .sg-poster { box-shadow:0 0 0 2px #30d158, var(--sombra); }
+.sg-card.siguiente .sg-poster { box-shadow:0 0 0 2px var(--azul), 0 10px 26px rgba(10,132,255,.35); }
+.sg-num { position:absolute; left:6px; top:6px; min-width:24px; height:24px; padding:0 6px; border-radius:999px; background:rgba(0,0,0,.6); color:#fff; font-size:12px; font-weight:700; display:grid; place-items:center; }
+.sg-ins { position:absolute; right:6px; top:6px; width:24px; height:24px; border-radius:50%; display:grid; place-items:center; font-size:12px; color:#fff; }
+.sg-ins.ok { background:#30d158; }
+.sg-ins.pend { background:rgba(0,0,0,.6); }
+.sg-tag { position:absolute; left:0; right:0; bottom:0; padding:6px 0; text-align:center; font-size:11px; font-weight:700; color:#fff; background:linear-gradient(transparent, rgba(10,132,255,.95)); }
+.sg-titulo { font-size:13px; font-weight:600; margin-top:8px; line-height:1.25; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.sg-anio { font-size:12px; color:var(--gris); }
+.sg-pie { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; }
 </style>
 </head>
 <body>
@@ -1580,8 +1627,9 @@ body.con-reproductor #chatAbrir, body.con-reproductor #chatPanel { display:none 
   <div id="recomCarrusel" class="carrusel"></div>
 </section>
 <section id="destacados" class="destacados solo-catalogo" data-zona="estrenos">
-  <h3>Estrenos recientes</h3>
-  <div id="carrusel" class="carrusel"></div>
+  <h3>Estrenos</h3>
+  <p id="destSub" class="dest-sub"></p>
+  <div id="carrusel" class="carrusel carrusel-estrenos"></div>
 </section>
 <section id="sagas" class="destacados solo-catalogo" data-zona="sagas" style="display:none"></section>
 <section id="actores" class="destacados solo-catalogo" data-zona="actores" style="display:none"></section>
@@ -2487,24 +2535,38 @@ function renderSagas() {
     sec.style.display = "none";
     return;
   }
-  sec.innerHTML = '<div class="actividad-card"><h3>Sagas</h3>' +
+  sec.innerHTML = '<div class="actividad-card sagas-wrap"><h3>Sagas</h3>' +
     grupos.map(g => {
       const pct = Math.round(g.vistas / g.total * 100);
       const peliculasEnOrden = [...g.lista].sort(ordenEnSaga);
-      const items = peliculasEnOrden.map((p, i) => {
+      const siguiente = peliculasEnOrden.find(p => { const e = estadoDe(p); return !e.vista && !(marcas[p.titulo] || {}).descartada; });
+      const tarjetas = peliculasEnOrden.map((p, i) => {
         const n = numeroOrdenSaga(p);
-        return '<li data-idx="' + peliculas.indexOf(p) + '">' +
-          '<span class="saga-num">' + esc(n !== null ? n : i + 1) + '</span>' +
-          '<span class="saga-titulo">' + esc(p.titulo) + ' <small>' + esc(p["año"] || "") + '</small></span>' +
-          '<span class="saga-estado">' + esc(etiquetaEstadoSaga(p)) + '</span>' +
-        '</li>';
+        const e = estadoDe(p);
+        const visto = !!e.vista;
+        const esSiguiente = siguiente === p;
+        const portada = (p.portada && !datosLimitados())
+          ? '<img src="' + esc(p.portada) + '" alt="" loading="lazy">'
+          : '<div class="sg-sinportada">🎬</div>';
+        const insignia = visto ? '<span class="sg-ins ok">✓</span>' : (e.pendiente ? '<span class="sg-ins pend">⏳</span>' : '');
+        return '<div class="sg-card' + (visto ? ' visto' : '') + (esSiguiente ? ' siguiente' : '') + '" data-idx="' + peliculas.indexOf(p) + '">' +
+          '<div class="sg-poster">' + portada +
+            '<span class="sg-num">' + esc(n !== null ? n : i + 1) + '</span>' + insignia +
+            (esSiguiente ? '<span class="sg-tag">Sigue aquí</span>' : '') +
+          '</div>' +
+          '<div class="sg-titulo">' + esc(p.titulo) + '</div>' +
+          '<div class="sg-anio">' + esc(p["año"] || "") + '</div>' +
+        '</div>';
       }).join("");
-      return '<div class="saga-fila">' +
-        '<div class="resumen-top"><b>' + esc(g.nombre) + '</b><span class="meta">' + g.vistas + ' de ' + g.total + ' vistas</span></div>' +
-        '<div class="saga-barra"><div style="width:' + pct + '%"></div></div>' +
-        '<ol class="saga-lista">' + items + '</ol>' +
+      return '<div class="saga-fila sg-bloque">' +
+        '<div class="sg-cabecera"><div><b class="sg-nombre">' + esc(g.nombre) + '</b>' +
+          '<div class="sg-sub">' + (siguiente ? 'Siguiente: ' + esc(siguiente.titulo) : '¡Saga completa!') + '</div></div>' +
+          '<div class="sg-pct">' + pct + '%</div></div>' +
+        '<div class="saga-barra sg-barra"><div style="width:' + pct + '%"></div></div>' +
+        '<div class="sg-tira">' + tarjetas + '</div>' +
+        '<div class="sg-pie"><span class="meta">' + g.vistas + ' de ' + g.total + ' vistas</span>' +
         (g.pendientesPosibles ? '<button class="pildora" data-saga-pend="' + esc(g.nombre) + '">Marcar las que faltan como pendientes</button>' : '') +
-      '</div>';
+        '</div></div>';
     }).join("") +
     '</div>';
   sec.style.display = "block";
@@ -4065,19 +4127,46 @@ function filaPestana(p, i, extra) {
 }
 
 function renderDestacados() {
-  const recientes = [...peliculas]
-    .filter(p => Number(p["año"]))
-    .sort((a, b) => Number(b["año"]) - Number(a["año"]))
-    .slice(0, 6);
-
-  $("carrusel").innerHTML = recientes.map(p => {
+  const fechaValida = f => /^\d{4}-\d{2}-\d{2}$/.test(String(f || ""));
+  const hoy = hoyLocalISO();
+  const dias = f => Math.round((new Date(f + "T00:00") - new Date(hoy + "T00:00")) / 86400000);
+  const MESES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
+  const etiquetaFecha = f => { const [a, m, d] = f.split("-"); return Number(d) + " " + MESES[Number(m) - 1] + " " + a; };
+  const conFecha = peliculas.filter(p => fechaValida(p.estreno));
+  let lista, sub;
+  if (conFecha.length) {
+    const ya = conFecha.filter(p => p.estreno <= hoy && dias(p.estreno) >= -120).sort((a, b) => b.estreno.localeCompare(a.estreno)).slice(0, 8);
+    const pronto = conFecha.filter(p => p.estreno > hoy).sort((a, b) => a.estreno.localeCompare(b.estreno)).slice(0, 4);
+    lista = ya.map(p => ({ p, tipo: "ya" })).concat(pronto.map(p => ({ p, tipo: "pronto" })));
+    sub = "Según su fecha de estreno real";
+  } else {
+    lista = [...peliculas].filter(p => Number(p["año"]))
+      .sort((a, b) => Number(b["año"]) - Number(a["año"])).slice(0, 8).map(p => ({ p, tipo: "" }));
+    sub = "Agrega la fecha de estreno en la hoja para ordenarlos por estreno real";
+  }
+  $("destSub").textContent = sub;
+  $("carrusel").innerHTML = lista.map(({ p, tipo }) => {
     const idx = peliculas.indexOf(p);
+    const s = estadoDe(p);
     const img = (p.portada && !datosLimitados())
-      ? '<img src="' + esc(p.portada) + '" alt="">'
-      : '<div class="sinportada-mini">🎬</div>';
-    return '<div class="dest" data-idx="' + idx + '">' + img +
-      '<div class="dest-titulo">' + esc(p.titulo) + '</div>' +
-      '<div class="dest-anio">' + esc(p["año"]) + '</div></div>';
+      ? '<img src="' + esc(p.portada) + '" alt="" loading="lazy">'
+      : '<div class="dest2-sinportada">🎬</div>';
+    let etiqueta = "";
+    let fecha = p["año"] ? String(p["año"]) : "";
+    if (tipo === "ya") {
+      const d = dias(p.estreno);
+      if (d >= -30) etiqueta = '<span class="dest2-tag nuevo">Nuevo</span>';
+      fecha = "Estrenó " + etiquetaFecha(p.estreno);
+    } else if (tipo === "pronto") {
+      const d = dias(p.estreno);
+      etiqueta = '<span class="dest2-tag prox">' + (d === 1 ? "Mañana" : "En " + d + " días") + '</span>';
+      fecha = "Se estrena el " + etiquetaFecha(p.estreno);
+    }
+    const estado = s.vista ? '<span class="dest2-estado">✓</span>' : (s.pendiente ? '<span class="dest2-estado">⏳</span>' : "");
+    return '<div class="dest2" data-idx="' + idx + '">' +
+      '<div class="dest2-poster">' + img + etiqueta + estado + '</div>' +
+      '<div class="dest2-info"><div class="dest2-titulo">' + esc(p.titulo) + '</div>' +
+      '<div class="dest2-fecha">' + esc(fecha) + '</div></div></div>';
   }).join("");
 }
 
