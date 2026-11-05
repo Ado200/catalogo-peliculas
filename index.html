@@ -1531,6 +1531,20 @@ body.premiere #app > header .segmentado button.activa { background:#2a2620 !impo
 #chatAbrir .rolo-ia-badge { display:none !important; }
 #chatAbrir.escuchando { background:linear-gradient(135deg,#ff453a 0%,#ff7a59 100%) !important; box-shadow:0 0 0 6px rgba(255,69,58,.18),0 8px 22px rgba(255,69,58,.35) !important; }
 </style>
+<style id="fix-asistente-barra">
+/* 1) Sin el orbe del asistente en la pantalla de entrada (antes de iniciar sesión) */
+body:not(.con-sesion) #chatAbrir { display:none !important; }
+
+/* 2) Barra inferior: 5 columnas iguales; la del centro es el hueco del asistente, sin espacios sobrantes */
+#tabbar { display:grid !important; grid-template-columns:repeat(5, minmax(0,1fr)) !important; justify-content:stretch !important; align-items:center !important; gap:0 !important; }
+#tabbar > button, #tabbar > .tab-rolo { flex:initial !important; width:auto !important; max-width:none !important; min-width:0 !important; }
+#tabbar .tab-rolo { width:58px !important; height:58px !important; justify-self:center !important; }
+
+/* 3) Asistente centrado sobre la barra, con icono blanco y color de acento sólido */
+#chatAbrir { background:#0a84ff !important; border:0 !important; box-shadow:0 6px 18px rgba(10,132,255,.35) !important; }
+#chatAbrir .rolo-ia svg path { fill:#ffffff !important; }
+#chatAbrir.escuchando { background:#ff453a !important; }
+</style>
 </head>
 <body>
 <div id="bannerSinConexion" class="banner-offline" hidden></div>
