@@ -1603,6 +1603,18 @@ body:not(.con-sesion) #chatAbrir { display:none !important; }
 @keyframes saludoRespira { 0%, 100% { opacity:1; } 50% { opacity:.72; } }
 @media (prefers-reduced-motion: reduce) { .saludo-personal, .nombre-caja, .saludo-personal.hablando .saludo-titulo { animation:none; } }
 </style>
+<style id="deslizar-segmentados">
+#app > header .segmentado .indicador { display:block !important; background:var(--tarjeta) !important; box-shadow:0 1px 4px rgba(0,0,0,.14) !important; }
+#app > header .segmentado button.activa, #app > header .segmentado button.activa:hover { background:transparent !important; box-shadow:none !important; }
+body.premiere #app > header .segmentado .indicador { background:#2a2620 !important; }
+body.premiere #app > header .segmentado button.activa { background:transparent !important; }
+.segmentado .indicador, #tabbar .indicador {
+  transition: transform .42s cubic-bezier(.32,.72,0,1), width .42s cubic-bezier(.32,.72,0,1), height .42s cubic-bezier(.32,.72,0,1), opacity .2s ease !important;
+}
+.segmentado button { position:relative; z-index:1; }
+.segmentado button:active { transform:scale(.96); }
+@media (prefers-reduced-motion: reduce) { .segmentado .indicador, #tabbar .indicador { transition:none !important; } }
+</style>
 </head>
 <body>
 <div id="bannerSinConexion" class="banner-offline" hidden></div>
@@ -1794,6 +1806,7 @@ body:not(.con-sesion) #chatAbrir { display:none !important; }
         <option value="si">Sí, al entrar</option>
         <option value="no">Solo texto</option>
       </select></div>
+    <div class="campo"><button type="button" id="cambiarNombreBtn" class="pildora">✎ Cambiar mi nombre</button></div>
       <div class="ajuste-vidrio" id="ajusteVidrio"><label for="vidrioAlfa">Transparencia del vidrio <span id="vidrioAlfaValor">72</span>%</label><input type="range" id="vidrioAlfa" min="40" max="95" step="1" value="72" aria-label="Transparencia del vidrio"></div>
     </div>
     <div class="grupo-menu grupo-peligro">
@@ -10078,7 +10091,7 @@ function textoSaludo(d) {
   }
   const extras = [];
   if (d.planes) extras.push("📅 Tienes " + plural(d.planes, "plan", "planes") + " con alguien en los próximos días.");
-  extras.push("🏆 " + esc(d.reto.texto) + " · " + d.reto.hecho + "/" + d.reto.meta);
+  extras.push("🏆 " + esc(d.reto.texto));
   return { titulo: titulo, linea: linea, extras: extras, tieneNombre: !!n };
 }
 
@@ -10098,8 +10111,7 @@ function renderSaludoPersonal() {
     '<h2 class="saludo-titulo">' + t.titulo + '</h2>' +
     '<p class="saludo-linea">' + t.linea + '</p>' +
     t.extras.map(x => '<p class="saludo-meta">' + x + '</p>').join("") +
-    '<div class="saludo-acciones"><button type="button" class="pildora" data-accion="escuchar">🔊 Escuchar</button><button type="button" class="pildora" data-accion="nombre">✎ ' +
-    (t.tieneNombre ? "Cambiar mi nombre" : "Ponerme un nombre") + '</button></div>';
+    '<div class="saludo-acciones"><button type="button" class="pildora" data-accion="escuchar">🔊 Escuchar</button></div>';
   sec.style.display = "block";
   if (speechSynthesis && speechSynthesis.speaking) marcarHablando(true);
   if (!saludoHablo) { saludoHablo = true; setTimeout(hablarSaludo, 500); }
@@ -10153,7 +10165,6 @@ $("saludoPersonal").addEventListener("click", e => {
   const b = e.target.closest("[data-accion]");
   if (!b) return;
   if (b.dataset.accion === "cerrar") { saludoCerrado = true; renderSaludoPersonal(); }
-  if (b.dataset.accion === "nombre") abrirNombre(true);
   if (b.dataset.accion === "escuchar") {
     if ($("saludoPersonal").classList.contains("hablando")) detenerSaludo(); else hablarSaludo();
   }
@@ -10233,6 +10244,8 @@ function hablarSaludo() {
     }
   }, 1200);
 }
+
+$("cambiarNombreBtn").addEventListener("click", () => abrirNombre(true));
 
 const selVoz = $("saludo-voz");
 selVoz.value = leerLS("saludo_voz") || "si";
