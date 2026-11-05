@@ -1153,6 +1153,12 @@ h1 { letter-spacing:-.02em; }
 .explorar-item .meta{font-size:13px}
 #explorarTodo .ventana-larga{max-height:80vh}
 </style>
+<style id="rolo-icono-ia">
+#chatAbrir { border-radius:18px !important; background:linear-gradient(135deg,#0a84ff 0%,#7d5cff 100%) !important; color:#fff !important; border:0 !important; box-shadow:0 8px 22px rgba(90,80,255,.38) !important; }
+#chatAbrir .orbe { display:none !important; }
+#chatAbrir .rolo-ia { display:flex; align-items:center; justify-content:center; pointer-events:none; }
+#chatAbrir .rolo-ia-badge { position:absolute; top:-6px; right:-6px; background:#fff; color:#6a4cff; font:700 10px/1 system-ui,-apple-system,sans-serif; letter-spacing:.02em; padding:3px 5px; border-radius:999px; box-shadow:0 2px 6px rgba(0,0,0,.2); pointer-events:none; }
+</style>
 </head>
 <body>
 <div id="bannerSinConexion" class="banner-offline" hidden></div>
@@ -6900,7 +6906,7 @@ function renderAlertasEstreno() {
 /* ---------- Explorar: herramientas visibles desde la pantalla de inicio ---------- */
 function gruposHerramientas() {
   return [...document.querySelectorAll("#panelAvanzados .grupo-menu, #panelMas .grupo-menu")]
-    .filter(g => !/^(Ver|Ayuda|Datos|Cuenta)$/.test((g.querySelector(".grupo-titulo") || {}).textContent || ""))
+    .filter(g => !/^(Ver|Ayuda|Datos|Cuenta|Ajustes)$/.test((g.querySelector(".grupo-titulo") || {}).textContent || ""))
     .filter(g => [...g.querySelectorAll("button[id]")].some(b => DESC_HERRAMIENTAS[b.id]));
 }
 
@@ -7291,7 +7297,7 @@ document.getElementById("salirDispositivo").addEventListener("click", salirDeEst
 })();
 </script>
 
-<button id="chatAbrir" style="display:none" aria-label="Abrir el compañero peliculero" title="Hablar con Rolo"><span class="orbe" aria-hidden="true"></span></button>
+<button id="chatAbrir" style="display:none" aria-label="Abrir Rolo, el asistente de IA" title="Rolo · asistente de IA"><span class="rolo-ia" aria-hidden="true"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v3"/><circle cx="12" cy="2.5" r="1.2" fill="#fff" stroke="none"/><rect x="4.5" y="6" width="15" height="12" rx="4"/><circle cx="9.3" cy="11.6" r="1.4" fill="#fff" stroke="none"/><circle cx="14.7" cy="11.6" r="1.4" fill="#fff" stroke="none"/><path d="M9.5 15.4c.8.6 4.2.6 5 0"/><path d="M1.5 11v3M22.5 11v3"/></svg></span><span class="rolo-ia-badge" aria-hidden="true">IA</span></button>
 <div id="chatPanel" role="dialog" aria-label="Compañero peliculero">
   <div id="chatCab">
     <div class="chat-titulo"><span class="chat-avatar">🍿</span><b>Rolo</b></div>
