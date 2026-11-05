@@ -1362,6 +1362,10 @@ body.con-reproductor #chatAbrir, body.con-reproductor #chatPanel { display:none 
 /* Centrado vertical y horizontal; si la altura no cabe, el video se ajusta */
 #miniReproductor.mr-min { top:auto; bottom:calc(96px + env(safe-area-inset-bottom, 0px)); transform:translateX(-50%); }
 #miniReproductor .mr-caja { max-height:calc(100vh - 110px); }
+/* Recorte de la barra lateral de la página de la película (ciclo: 0 / 150 / 260 px) */
+#miniReproductor .mr-recorte { position:absolute; inset:0; overflow:hidden; }
+#miniReproductor .mr-recorte iframe { left:calc(var(--recorte, 0px) * -1); width:calc(100% + var(--recorte, 0px)); }
+#miniReproductor .mr-botones button[hidden] { display:none; }
 </style>
 </head>
 <body>
@@ -4674,6 +4678,7 @@ function abrirVerPelicula(titulo, es, en, link) {
         (codigo ? '<button type="button" class="mr-chip' + (peli ? '' : ' activo') + '" data-mr="trailer">Tráiler</button>' : '') +
       '</span>' +
       '<span class="mr-botones"><button type="button" data-mr="tamano" aria-label="Cambiar tamaño">⤢</button>' +
+      (peli && !/youtube\.com\/embed/.test(peli) ? '<button type="button" data-mr="recorte" aria-label="Recortar barra lateral" title="Recortar barra lateral">✂</button>' : '') +
       '<button type="button" data-mr="min" aria-label="Minimizar">▁</button>' +
       '<button type="button" data-mr="cerrar" aria-label="Cerrar">✕</button></span></div>' +
     '<div class="mr-caja" id="mrCaja"></div>' +
@@ -4683,10 +4688,14 @@ function abrirVerPelicula(titulo, es, en, link) {
   const mostrar = (modo) => {
     div.querySelectorAll("[data-mr=peli],[data-mr=trailer]").forEach(b => b.classList.toggle("activo", b.dataset.mr === modo));
     if (modo === "peli" && peli) {
-      caja.innerHTML = '<iframe src="' + esc(peli) + '" allow="autoplay; encrypted-media; fullscreen; picture-in-picture" allowfullscreen referrerpolicy="strict-origin-when-cross-origin" title="' + esc(titulo) + '"></iframe>';
+      caja.innerHTML = '<div class="mr-recorte" data-ancho="0"><iframe src="' + esc(peli) + '" allow="autoplay; encrypted-media; fullscreen; picture-in-picture" allowfullscreen referrerpolicy="strict-origin-when-cross-origin" title="' + esc(titulo) + '"></iframe></div>';
+      const bRec = div.querySelector("[data-mr=recorte]");
+      if (bRec) bRec.hidden = false;
       nota.innerHTML = 'Si la pantalla sale en blanco, esa página no permite verla dentro de la app. <a href="' + esc(link) + '" target="_blank" rel="noopener">Abrir en otra pestaña</a>';
     } else {
       caja.innerHTML = codigo ? iframeTrailer(codigo, titulo) : '<div class="mr-vacio">Esta película no tiene tráiler disponible.</div>';
+      const bRec2 = div.querySelector("[data-mr=recorte]");
+      if (bRec2) bRec2.hidden = true;
       nota.textContent = "Tráiler en la app.";
     }
   };
@@ -4695,6 +4704,15 @@ function abrirVerPelicula(titulo, es, en, link) {
     if (!b) return;
     if (b.dataset.mr === "cerrar") { div.remove(); document.body.classList.remove("con-reproductor"); }
     else if (b.dataset.mr === "min") div.classList.toggle("mr-min");
+    else if (b.dataset.mr === "recorte") {
+      const rec = div.querySelector(".mr-recorte");
+      if (rec) {
+        const pasos = [0, 150, 260];
+        const i = (pasos.indexOf(Number(rec.dataset.ancho)) + 1) % pasos.length;
+        rec.dataset.ancho = String(pasos[i]);
+        rec.style.setProperty("--recorte", pasos[i] + "px");
+      }
+    }
     else if (b.dataset.mr === "tamano") {
       const pantallaCompleta = div.classList.contains("mr-completa");
       div.classList.toggle("mr-completa", !pantallaCompleta);
