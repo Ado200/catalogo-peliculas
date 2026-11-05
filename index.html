@@ -7086,50 +7086,161 @@ function nocheTematica() {
   abrirDetalle(elegirAlAzar(del_tema));
 }
 
-/* 3) Maratón: arma hasta 3 películas que quepan en el tiempo indicado */
-function abrirMaraton() {
-  abrirVentanaSimple("maraton", "Maratón",
-    '<p class="meta">¿Cuántos minutos tienes para ver películas?</p>' +
-    '<div class="fila-form"><input id="maraMin" type="number" min="30" step="15" value="300" inputmode="numeric">' +
-    '<button type="button" class="pildora destacado" id="maraGo">Armar</button></div>' +
-    '<div id="maraRes"></div>');
-  document.getElementById("maraGo").addEventListener("click", () => armarMaraton(Number(document.getElementById("maraMin").value)));
-  armarMaraton(300);
+/* 3) Maratón: noche con horario, orden, pósters, temas y noches guardadas */
+const GUARDADOS_KEY = "maratones_guardados";
+function leerNochesGuardadas() {
+  try { return JSON.parse(localStorage.getItem(GUARDADOS_KEY) || "[]"); } catch (e) { return []; }
+}
+function escribirNochesGuardadas(v) {
+  try { localStorage.setItem(GUARDADOS_KEY, JSON.stringify(v.slice(-20))); } catch (e) {}
 }
 
-function armarMaraton(minutosPedidos) {
-  const res = document.getElementById("maraRes");
-  if (!minutosPedidos || minutosPedidos <= 0) { res.innerHTML = '<p class="meta">Escribe un número de minutos.</p>'; return; }
-  // Primero usa tus pendientes; si no tienes ninguna, usa las películas que no has visto
+function abrirMaraton() {
+  abrirVentanaSimple("maraton", "Maratón",
+    '<p class="meta">¿Cuándo empiezas, cuánto tiempo tienes y qué quieres ver?</p>' +
+    '<div class="fila-form"><input id="maraIni" type="time" value="20:00" aria-label="Hora de inicio">' +
+    '<input id="maraMin" type="number" min="30" step="15" value="240" inputmode="numeric" aria-label="Minutos disponibles">' +
+    '<button type="button" class="pildora destacado" id="maraGo">Armar</button></div>' +
+    '<div class="fila-form"><select id="maraTema" aria-label="Tema">' +
+    '<option value="libre">Cualquier tema</option><option value="terror">Terror y suspenso</option>' +
+    '<option value="animacion">Animación</option><option value="comedia">Comedia</option>' +
+    '<option value="director">De un director</option></select>' +
+    '<input id="maraDir" type="text" placeholder="Nombre del director" aria-label="Director"></div>' +
+    '<div id="maraRes"></div>' +
+    '<h4 class="maraton-titulo">Noches guardadas</h4><div id="maraGuardadas"></div>');
+  const armar = () => armarMaraton(
+    Number(document.getElementById("maraMin").value),
+    document.getElementById("maraIni").value,
+    document.getElementById("maraTema").value,
+    document.getElementById("maraDir").value.trim());
+  document.getElementById("maraGo").addEventListener("click", armar);
+  armar();
+  pintarNochesGuardadas();
+}
+
+// Ligeras primero, después las intensas y al final las tranquilas
+function intensidadMaraton(p) {
+  const g = String(p.genero || "").toLowerCase();
+  if (/animaci|familia|comedia|aventura/.test(g)) return 1;
+  if (/terror|suspenso|crimen|accion|acción|thriller/.test(g)) return 3;
+  return 2;
+}
+
+function horaTexto(d) {
+  return String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
+}
+
+// Arma la noche (sin pintar nada): la usan la ventana del maratón y el chat
+function planearNoche(minutosPedidos, tema, dir) {
   let base = pendientesNoVistas();
   let aviso = "";
   if (!base.length) {
     base = peliculas.filter(p => !estadoDe(p).vista && !(marcas[p.titulo] || {}).descartada);
-    aviso = '<p class="meta">No tienes pendientes, así que armo con películas que no has visto.</p>';
+    aviso = "No tienes pendientes, así que armo con películas que no has visto.";
   }
+  base = base.filter(p => {
+    const g = String(p.genero || "");
+    if (tema === "terror") return /terror|suspenso/i.test(g);
+    if (tema === "animacion") return /animaci/i.test(g);
+    if (tema === "comedia") return /comedia/i.test(g);
+    if (tema === "director") return !!dir && String(p.director || "").toLowerCase().includes(dir.toLowerCase());
+    return true;
+  });
+  if (!base.length) return { error: tema === "libre" ? "No tienes películas sin ver en tu catálogo. Agrega algunas o marca pendientes." : "No tienes películas sin ver de ese tema. Prueba con otro." };
   const pool = base.map(p => ({ p, m: minutos(p) })).filter(x => x.m > 0);
-  if (!base.length) {
-    res.innerHTML = '<p class="meta">No tienes películas sin ver en tu catálogo. Agrega algunas o marca pendientes.</p>';
-    return;
-  }
-  if (!pool.length) {
-    res.innerHTML = '<p class="meta">Ninguna de estas películas tiene duración escrita. Revisa la columna «duracion» de la hoja, por ejemplo «1 h 45 min».</p>';
-    return;
-  }
+  if (!pool.length) return { error: "Ninguna de estas películas tiene duración escrita. Revisa la columna «duracion» de la hoja, por ejemplo «1 h 45 min»." };
+
+  const GAP = 10, MAX = 5;
   const orden = pool.slice().sort(() => Math.random() - 0.5);
   const elegidas = [];
-  let total = 0;
+  let usados = 0;
   for (const x of orden) {
-    if (elegidas.length >= 3) break;
-    if (total + x.m <= minutosPedidos) { elegidas.push(x); total += x.m; }
+    if (elegidas.length >= MAX) break;
+    const extra = elegidas.length ? GAP : 0;
+    if (usados + extra + x.m <= minutosPedidos) { elegidas.push(x); usados += extra + x.m; }
   }
-  if (!elegidas.length) {
-    res.innerHTML = '<p class="meta">Ninguna pendiente cabe en ' + minutosPedidos + ' minutos. Prueba con más tiempo.</p>';
-    return;
-  }
-  const h = Math.floor(total / 60), mm = total % 60;
-  res.innerHTML = aviso + '<p class="meta">Total: ' + h + ' h ' + mm + ' min · ' + elegidas.length + ' películas</p><ol>' +
-    elegidas.map(x => '<li><b>' + esc(x.p.titulo) + '</b> · ' + x.m + ' min</li>').join("") + '</ol>';
+  if (!elegidas.length) return { error: "Ninguna película cabe en " + minutosPedidos + " minutos. Prueba con más tiempo." };
+  const grupo = n => elegidas.filter(x => intensidadMaraton(x.p) === n);
+  const secuencia = [...grupo(1), ...grupo(3), ...grupo(2)];
+  return { aviso, elegidas, secuencia, usados, sobra: minutosPedidos - usados, GAP };
+}
+
+function armarMaraton(minutosPedidos, inicio, tema, dir) {
+  const res = document.getElementById("maraRes");
+  if (!minutosPedidos || minutosPedidos <= 0) { res.innerHTML = '<p class="meta">Escribe cuántos minutos tienes.</p>'; return; }
+  const plan = planearNoche(minutosPedidos, tema || "libre", dir || "");
+  if (plan.error) { res.innerHTML = '<p class="meta">' + esc(plan.error) + '</p>'; return; }
+  const { secuencia, usados, sobra, GAP } = plan;
+
+  const [hh, mm2] = String(inicio || "20:00").split(":").map(Number);
+  const cursor = new Date();
+  cursor.setHours(isNaN(hh) ? 20 : hh, isNaN(mm2) ? 0 : mm2, 0, 0);
+  const fin = new Date(cursor.getTime());
+  const filas = secuencia.map(x => {
+    const ini = new Date(cursor.getTime());
+    cursor.setMinutes(cursor.getMinutes() + x.m + GAP);
+    const termina = new Date(cursor.getTime() - GAP * 60000);
+    const portada = x.p.portada ? '<img src="' + esc(x.p.portada) + '" alt="" loading="lazy">' : '<div class="mara-sin">🎬</div>';
+    return '<li class="mara-fila">' + portada +
+      '<div class="mara-info"><span class="mara-hora">' + horaTexto(ini) + ' – ' + horaTexto(termina) + '</span>' +
+      '<b>' + esc(x.p.titulo) + '</b>' +
+      '<span class="meta">' + esc([x.p["año"], x.m + " min", x.p.director].filter(Boolean).join(" · ")) + '</span></div></li>';
+  });
+  const terminaNoche = new Date(cursor.getTime() - GAP * 60000);
+  res.innerHTML = (plan.aviso ? '<p class="meta">' + esc(plan.aviso) + '</p>' : '') +
+    '<p class="meta">Noche de ' + secuencia.length + (secuencia.length === 1 ? " película" : " películas") +
+    ' · de ' + horaTexto(fin) + ' a ' + horaTexto(terminaNoche) + (sobra >= 10 ? ' · te sobran ' + sobra + ' min' : '') + '</p>' +
+    '<ol class="mara-lista">' + filas.join("") + '</ol>' +
+    '<div class="fila-form mara-guardar"><input id="maraNombre" type="text" placeholder="Nombre de la noche" aria-label="Nombre de la noche">' +
+    '<button type="button" class="pildora" id="maraGuardar">💾 Guardar</button></div>';
+
+  const btnEmp = document.createElement("button");
+  btnEmp.type = "button";
+  btnEmp.className = "pildora destacado mara-empezar";
+  btnEmp.textContent = "▶ Empezar maratón";
+  btnEmp.addEventListener("click", () => {
+    const ventana = document.querySelector("#maraton [data-cerrar]");
+    if (ventana) ventana.click();
+    if (typeof window.abrirModoCine === "function") window.abrirModoCine(secuencia[0].p, secuencia.map(x => x.p));
+  });
+  res.appendChild(btnEmp);
+
+  document.getElementById("maraGuardar").addEventListener("click", () => {
+    const nombre = document.getElementById("maraNombre").value.trim() ||
+      ("Noche del " + new Date().toLocaleDateString("es-MX", { day: "numeric", month: "short" }));
+    const lista = leerNochesGuardadas();
+    lista.push({ nombre, fecha: new Date().toISOString(), inicio: inicio || "20:00", titulos: secuencia.map(x => x.p.titulo) });
+    escribirNochesGuardadas(lista);
+    pintarNochesGuardadas();
+    document.getElementById("maraNombre").value = "";
+    document.getElementById("maraGuardar").textContent = "Guardada ✓";
+  });
+}
+
+function pintarNochesGuardadas() {
+  const cont = document.getElementById("maraGuardadas");
+  if (!cont) return;
+  const lista = leerNochesGuardadas();
+  if (!lista.length) { cont.innerHTML = '<p class="meta">Todavía no guardas noches.</p>'; return; }
+  cont.innerHTML = '<ul class="mara-guardadas">' + lista.map((n, i) =>
+    '<li><span><b>' + esc(n.nombre) + '</b><span class="meta">' + n.titulos.length + ' películas · ' + esc(n.inicio) + '</span></span>' +
+    '<span class="mara-acc"><button type="button" class="pildora" data-ver="' + i + '">▶</button>' +
+    '<button type="button" class="pildora" data-borrar="' + i + '">🗑</button></span></li>').join("") + '</ul>';
+  cont.querySelectorAll("[data-ver]").forEach(b => b.addEventListener("click", () => {
+    const n = leerNochesGuardadas()[Number(b.dataset.ver)];
+    if (!n) return;
+    const films = n.titulos.map(t => peliculas.find(p => p.titulo === t)).filter(Boolean);
+    if (!films.length) return;
+    const ventana = document.querySelector("#maraton [data-cerrar]");
+    if (ventana) ventana.click();
+    if (typeof window.abrirModoCine === "function") window.abrirModoCine(films[0], films);
+  }));
+  cont.querySelectorAll("[data-borrar]").forEach(b => b.addEventListener("click", () => {
+    const l = leerNochesGuardadas();
+    l.splice(Number(b.dataset.borrar), 1);
+    escribirNochesGuardadas(l);
+    pintarNochesGuardadas();
+  }));
 }
 
 /* 8) Modo sorpresa con reglas */
@@ -9178,6 +9289,28 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
     const nt = normalizarChat(t);
     if (/^(resumen|resumen de (mi|la) semana|mi semana|como va mi semana)/.test(nt)) { burbuja(resumenSemana(), "ia"); return; }
     if (/(que sabes de mi|como me conoces|por que me recomiendas|por que me sugieres|en que te basas)/.test(nt)) { burbuja(explicarPerfil(), "ia"); return; }
+    if (/maraton/.test(nt)) {
+      const h = nt.match(/(\d+)\s*(horas?|h)\b/), mi = nt.match(/(\d+)\s*(minutos?|min)\b/);
+      let mins = 0;
+      if (h) mins += Number(h[1]) * 60;
+      if (mi) mins += Number(mi[1]);
+      if (!mins) mins = 180;
+      const tema = /terror|miedo|suspenso/.test(nt) ? "terror" : /animacion|animada/.test(nt) ? "animacion" : /comedia|reir|risas/.test(nt) ? "comedia" : "libre";
+      const plan = planearNoche(mins, tema, "");
+      if (plan.error) { burbuja(plan.error, "ia"); return; }
+      const ahora = new Date();
+      ahora.setMinutes(Math.ceil(ahora.getMinutes() / 5) * 5, 0, 0);
+      const cursor = new Date(ahora.getTime());
+      const lineas = plan.secuencia.map(x => {
+        const ini = new Date(cursor.getTime());
+        cursor.setMinutes(cursor.getMinutes() + x.m + plan.GAP);
+        return horaTexto(ini) + " · " + x.p.titulo + " (" + x.m + " min)";
+      });
+      burbuja("Te armé una noche de " + plan.secuencia.length + (plan.secuencia.length === 1 ? " película" : " películas") +
+        (tema !== "libre" ? " de " + tema : "") + ", empezando a las " + horaTexto(ahora) + ":\n\n" + lineas.join("\n") +
+        "\n\nPara verla con pantalla completa, abre Maratón y toca Empezar.", "ia");
+      return;
+    }
     if (/registro de errores|mis errores|ver errores/.test(nt)) {
       const reg = window.obtenerRegistro ? window.obtenerRegistro() : [];
       burbuja(reg.length
@@ -9704,38 +9837,16 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   /* ---------- Modo cine en casa ---------- */
-  window.abrirModoCine = function (p) {
+  window.abrirModoCine = function (p, cola) {
+    const lista = Array.isArray(cola) && cola.length ? cola : [p];
+    let idx = 0, iv = null, wake = null;
     const previo = document.getElementById("modoCine");
     if (previo) previo.remove();
     if (typeof cerrarQueVer === "function") cerrarQueVer();
 
-    const total = (minutos(p) || 120) * 60000;
-    let transcurrido = 0, inicio = Date.now(), pausado = false, wake = null;
-
     const o = document.createElement("div");
     o.id = "modoCine";
     o.className = "modo-cine";
-    const x = document.createElement("button");
-    x.type = "button"; x.className = "mc-x"; x.setAttribute("aria-label", "Salir"); x.textContent = "×";
-    if (p.portada) {
-      const img = document.createElement("img"); img.src = p.portada; img.alt = "";
-      o.appendChild(img);
-    } else {
-      const sin = document.createElement("div"); sin.className = "mc-sin"; sin.textContent = "🎬";
-      o.appendChild(sin);
-    }
-    const h = document.createElement("h2"); h.textContent = p.titulo;
-    const meta = document.createElement("p"); meta.className = "mc-meta";
-    meta.textContent = [p["año"], p.duracion, p.director].filter(Boolean).join(" · ");
-    const timer = document.createElement("div"); timer.className = "mc-timer";
-    const barra = document.createElement("div"); barra.className = "mc-barra";
-    const fill = document.createElement("div"); fill.className = "mc-fill"; barra.appendChild(fill);
-    const estado = document.createElement("div"); estado.className = "mc-estado";
-    const acc = document.createElement("div"); acc.className = "mc-acc";
-    const btnPausa = document.createElement("button"); btnPausa.type = "button"; btnPausa.textContent = "Pausar";
-    const btnFin = document.createElement("button"); btnFin.type = "button"; btnFin.className = "mc-pri"; btnFin.textContent = "Terminé: ya la vi";
-    acc.append(btnPausa, btnFin);
-    o.append(x, h, meta, timer, barra, estado, acc);
     document.body.appendChild(o);
 
     const fmt = ms => {
@@ -9743,31 +9854,112 @@ document.addEventListener("DOMContentLoaded", () => {
       const hh = Math.floor(s / 3600), mm = Math.floor((s % 3600) / 60), ss = s % 60;
       return (hh ? hh + ":" : "") + String(mm).padStart(2, "0") + ":" + String(ss).padStart(2, "0");
     };
-    const tick = () => {
-      const ahora = pausado ? transcurrido : transcurrido + (Date.now() - inicio);
-      timer.textContent = fmt(ahora) + " / " + fmt(total);
-      fill.style.width = Math.min(100, ahora / total * 100) + "%";
-      if (ahora >= total) estado.textContent = "Ya debería haber terminado. ¿La marcamos como vista?";
-    };
-    const iv = setInterval(tick, 500);
-    tick();
-
     const cerrar = () => {
-      clearInterval(iv);
+      if (iv) clearInterval(iv);
       if (wake) { try { wake.release(); } catch (e) {} }
       o.remove();
     };
-    x.addEventListener("click", cerrar);
-    btnPausa.addEventListener("click", () => {
-      if (pausado) { inicio = Date.now(); pausado = false; btnPausa.textContent = "Pausar"; }
-      else { transcurrido += Date.now() - inicio; pausado = true; btnPausa.textContent = "Reanudar"; }
+    const finMaraton = () => {
+      if (iv) clearInterval(iv);
+      o.innerHTML = "";
+      const x = document.createElement("button");
+      x.type = "button"; x.className = "mc-x"; x.setAttribute("aria-label", "Salir"); x.textContent = "×";
+      x.addEventListener("click", cerrar);
+      const h = document.createElement("h2"); h.textContent = "Maratón terminado";
+      const t = document.createElement("p"); t.className = "mc-meta";
+      t.textContent = "Viste " + lista.length + (lista.length === 1 ? " película" : " películas") + ". ¡Buena noche!";
+      const b = document.createElement("button");
+      b.type = "button"; b.className = "mc-pri"; b.textContent = "Cerrar";
+      b.addEventListener("click", cerrar);
+      o.append(x, h, t, b);
+    };
+
+    const DESCANSO_MS = 10 * 60000;
+    const pintarDescanso = () => {
+      const siguiente = lista[idx + 1];
+      if (iv) clearInterval(iv);
+      o.innerHTML = "";
+      const x = document.createElement("button");
+      x.type = "button"; x.className = "mc-x"; x.setAttribute("aria-label", "Salir"); x.textContent = "×";
+      x.addEventListener("click", cerrar);
+      const h = document.createElement("h2"); h.textContent = "Descanso";
+      const meta = document.createElement("p"); meta.className = "mc-meta";
+      meta.textContent = "Siguiente: " + siguiente.titulo;
+      const timer = document.createElement("div"); timer.className = "mc-timer";
+      const estado = document.createElement("div"); estado.className = "mc-estado";
+      estado.textContent = "Estira las piernas. Empieza sola cuando termine el descanso.";
+      const acc = document.createElement("div"); acc.className = "mc-acc";
+      const ya = document.createElement("button"); ya.type = "button"; ya.className = "mc-pri"; ya.textContent = "Empezar ya";
+      acc.append(ya);
+      o.append(x, h, meta, timer, estado, acc);
+      const fin = Date.now() + DESCANSO_MS;
+      const avanzar = () => { idx++; pintar(); };
+      const tickD = () => {
+        const falta = Math.max(0, fin - Date.now());
+        timer.textContent = fmt(falta);
+        if (falta <= 0) { clearInterval(iv); avanzar(); }
+      };
+      iv = setInterval(tickD, 500);
+      tickD();
+      ya.addEventListener("click", () => { clearInterval(iv); avanzar(); });
+    };
+
+    const pintar = () => {
+      const film = lista[idx];
+      const total = (minutos(film) || 120) * 60000;
+      let transcurrido = 0, inicio = Date.now(), pausado = false;
+      if (iv) clearInterval(iv);
+      o.innerHTML = "";
+
+      const x = document.createElement("button");
+      x.type = "button"; x.className = "mc-x"; x.setAttribute("aria-label", "Salir"); x.textContent = "×";
+      if (film.portada) {
+        const img = document.createElement("img"); img.src = film.portada; img.alt = "";
+        o.appendChild(img);
+      } else {
+        const sin = document.createElement("div"); sin.className = "mc-sin"; sin.textContent = "🎬";
+        o.appendChild(sin);
+      }
+      const h = document.createElement("h2"); h.textContent = film.titulo;
+      const meta = document.createElement("p"); meta.className = "mc-meta";
+      meta.textContent = (lista.length > 1 ? "Película " + (idx + 1) + " de " + lista.length + " · " : "") +
+        [film["año"], film.duracion, film.director].filter(Boolean).join(" · ");
+      const timer = document.createElement("div"); timer.className = "mc-timer";
+      const barra = document.createElement("div"); barra.className = "mc-barra";
+      const fill = document.createElement("div"); fill.className = "mc-fill"; barra.appendChild(fill);
+      const estado = document.createElement("div"); estado.className = "mc-estado";
+      const acc = document.createElement("div"); acc.className = "mc-acc";
+      const btnPausa = document.createElement("button"); btnPausa.type = "button"; btnPausa.textContent = "Pausar";
+      const hayMas = idx < lista.length - 1;
+      const btnFin = document.createElement("button"); btnFin.type = "button"; btnFin.className = "mc-pri";
+      btnFin.textContent = hayMas ? "Terminé: siguiente" : "Terminé: ya la vi";
+      acc.append(btnPausa, btnFin);
+      o.append(x, h, meta, timer, barra, estado, acc);
+
+      const tick = () => {
+        const ahora = pausado ? transcurrido : transcurrido + (Date.now() - inicio);
+        timer.textContent = fmt(ahora) + " / " + fmt(total);
+        fill.style.width = Math.min(100, ahora / total * 100) + "%";
+        if (ahora >= total) estado.textContent = "Ya debería haber terminado. ¿Pasamos a la siguiente?";
+      };
+      iv = setInterval(tick, 500);
       tick();
-    });
-    btnFin.addEventListener("click", () => {
-      cambiarEstado(p.titulo, { vista: true });
-      if (typeof refrescarTodo === "function") refrescarTodo();
-      cerrar();
-    });
+
+      x.addEventListener("click", cerrar);
+      btnPausa.addEventListener("click", () => {
+        if (pausado) { inicio = Date.now(); pausado = false; btnPausa.textContent = "Pausar"; }
+        else { transcurrido += Date.now() - inicio; pausado = true; btnPausa.textContent = "Reanudar"; }
+        tick();
+      });
+      btnFin.addEventListener("click", () => {
+        cambiarEstado(film.titulo, { vista: true });
+        if (typeof refrescarTodo === "function") refrescarTodo();
+        if (hayMas) pintarDescanso();
+        else finMaraton();
+      });
+    };
+
+    pintar();
     (async () => {
       try { if (navigator.wakeLock) wake = await navigator.wakeLock.request("screen"); } catch (e) {}
     })();
@@ -9819,6 +10011,25 @@ document.addEventListener("DOMContentLoaded", () => {
 .noche-acciones{display:grid !important;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;width:100%}
 .noche-acciones button{white-space:nowrap;padding:9px 6px;font-size:13px;min-width:0;overflow:hidden;text-overflow:ellipsis}
 .noche-acciones button.principal{grid-column:1 / -1}
+</style>
+<style id="maraton-noche">
+.mara-lista{list-style:none;padding:0;margin:10px 0 0;display:flex;flex-direction:column;gap:10px}
+.mara-fila{display:flex;gap:12px;align-items:center;background:var(--boton-suave);border-radius:18px;padding:8px}
+.mara-fila img,.mara-sin{width:56px;height:84px;border-radius:10px;object-fit:cover;flex:0 0 56px}
+.mara-sin{display:grid;place-items:center;background:var(--tarjeta);font-size:22px}
+.mara-info{display:flex;flex-direction:column;gap:2px;min-width:0}
+.mara-info b{font-size:15px;line-height:1.25}
+.mara-hora{font-size:13px;font-weight:600;color:var(--azul)}
+#maraIni{flex:0 0 auto;width:auto}
+</style>
+<style id="maraton-descanso">
+.maraton-titulo{margin:18px 0 6px;font-size:15px}
+.mara-guardar{margin-top:12px}
+.mara-guardadas{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:8px}
+.mara-guardadas li{display:flex;justify-content:space-between;align-items:center;gap:8px;background:var(--boton-suave);border-radius:16px;padding:10px 12px}
+.mara-guardadas li>span:first-child{display:flex;flex-direction:column;min-width:0}
+.mara-acc{display:flex;gap:6px}
+.mara-acc button{padding:6px 10px}
 </style>
 </body>
 </html>
