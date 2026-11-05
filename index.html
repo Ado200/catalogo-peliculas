@@ -1328,7 +1328,7 @@ body.oscuro .toast-app { background:rgba(245,245,247,.94) !important; color:#1c1
 body.oscuro #tabbar, body.oscuro #app > header { color:#f5f5f7; }
 body.oscuro #tabbar button:not(.activa) { color:#c7c7cc; }
 /* Mini reproductor flotante: se ve sobre la página sin cubrirla */
-#miniReproductor { position:fixed; right:8px; bottom:calc(96px + env(safe-area-inset-bottom, 0px)); width:min(560px, calc(100vw - 16px)); z-index:40; border-radius:18px; overflow:hidden; background:#000; box-shadow:0 14px 40px rgba(0,0,0,.4); }
+#miniReproductor { position:fixed; left:50%; transform:translateX(-50%); bottom:calc(96px + env(safe-area-inset-bottom, 0px)); width:min(960px, calc(100vw - 16px)); z-index:40; border-radius:18px; overflow:hidden; background:#000; box-shadow:0 14px 40px rgba(0,0,0,.4); }
 #miniReproductor .mr-barra { display:flex; justify-content:space-between; align-items:center; gap:8px; padding:8px 10px; background:rgba(28,28,30,.92); color:#fff; font-size:13px; }
 #miniReproductor .mr-titulo { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:600; }
 #miniReproductor .mr-barra button { background:none; border:0; color:#fff; font-size:16px; padding:2px 8px; cursor:pointer; }
@@ -1346,7 +1346,7 @@ body.oscuro #tabbar button:not(.activa) { color:#c7c7cc; }
 #miniReproductor.mr-completa .mr-barra button { font-size:20px; }
 #miniReproductor.mr-grande .mr-barra button, #miniReproductor.mr-completa .mr-barra button { font-size:20px; }
 /* Reproductor a pantalla completa: deja libre la parte baja para que sus controles no queden tapados */
-#miniReproductor.mr-completa { inset:0 0 calc(92px + env(safe-area-inset-bottom, 0px)) 0; height:auto; }
+#miniReproductor.mr-completa { inset:0 0 calc(92px + env(safe-area-inset-bottom, 0px)) 0; left:0; right:0; width:auto; height:auto; transform:none; }
 #miniReproductor.mr-completa .mr-nota { display:none; }
 body.con-reproductor #chatAbrir, body.con-reproductor #chatPanel { display:none !important; }
 </style>
