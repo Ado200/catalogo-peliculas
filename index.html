@@ -9803,5 +9803,11 @@ document.addEventListener("DOMContentLoaded", () => {
 .noche-acciones button{flex:0 1 auto;white-space:normal;padding:7px 11px;font-size:13px;line-height:1.2;text-align:center}
 .noche-acciones button.principal{flex:1 1 100%}
 </style>
+<style id="noche-rejilla">
+/* Botones en tres columnas iguales: «Ver ficha» ocupa la fila de arriba y el texto no se corta */
+.noche-acciones{display:grid !important;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;width:100%}
+.noche-acciones button{white-space:nowrap;padding:9px 6px;font-size:13px;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.noche-acciones button.principal{grid-column:1 / -1}
+</style>
 </body>
 </html>
