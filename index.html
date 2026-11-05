@@ -66,7 +66,7 @@
   .boton-voz[hidden] { display:none; }
   @keyframes pulsoVoz { 0%, 100% { transform:scale(1); } 50% { transform:scale(1.08); } }
 
-  #calido { position:fixed; inset:0; pointer-events:none; z-index:9; background:#ff9a3c; mix-blend-mode:multiply; opacity:0; transition:opacity 60s linear; }
+  #calido { position:fixed; inset:0; pointer-events:none; z-index:9; background:#ff9a3c; opacity:0; transition:opacity 60s linear; }
 
   #chips { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-top:12px; min-height:4px; }
   .chip { background:var(--azul); color:#fff; font-size:13px; padding:6px 10px 6px 14px; border-radius:999px; cursor:pointer; animation:entrarChip .3s var(--ease) both; }
@@ -1322,6 +1322,11 @@ body.oscuro .ayuda-caja, body.oscuro .panel-avanzados, body.oscuro #panelMas, bo
 body.oscuro #modal .ventana, body.oscuro #actorModal .ventana, body.oscuro #statsModal .ventana, body.oscuro .hoy {
   background:linear-gradient(180deg, rgba(40,40,46,max(.92, var(--vidrio-a,.72))), rgba(24,24,28,max(.88, var(--vidrio-a,.72)))) !important;
 }
+/* Textos legibles en ambos temas: avisos con fondo sólido y barra/encabezado con color propio en oscuro */
+.toast-app { background:rgba(28,28,30,.92) !important; color:#fff !important; border:0 !important; }
+body.oscuro .toast-app { background:rgba(245,245,247,.94) !important; color:#1c1c1e !important; }
+body.oscuro #tabbar, body.oscuro #app > header { color:#f5f5f7; }
+body.oscuro #tabbar button:not(.activa) { color:#c7c7cc; }
 </style>
 </head>
 <body>
