@@ -4142,7 +4142,7 @@ function renderDestacados() {
   } else {
     lista = [...peliculas].filter(p => Number(p["año"]))
       .sort((a, b) => Number(b["año"]) - Number(a["año"])).slice(0, 8).map(p => ({ p, tipo: "" }));
-    sub = "Agrega la fecha de estreno en la hoja para ordenarlos por estreno real";
+    sub = "";
   }
   $("destSub").textContent = sub;
   $("carrusel").innerHTML = lista.map(({ p, tipo }) => {
