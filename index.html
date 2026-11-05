@@ -1132,6 +1132,20 @@ h1 { letter-spacing:-.02em; }
 /* 7. Iconos alineados en el menú */
 .ico { display:inline-block; width:1.4em; text-align:center; margin-right:.3em; }
 </style>
+<style id="explorar">
+.explorar-titulo{margin:18px 0 8px;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--gris)}
+.explorar-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.explorar-tile{text-align:left;padding:14px 14px 12px;border-radius:var(--radio-chico);border:1px solid var(--borde);background:var(--boton-suave);color:var(--texto);font:inherit;cursor:pointer;display:flex;flex-direction:column;gap:4px}
+.explorar-tile b{font-size:15px}
+.explorar-lista{display:flex;flex-direction:column;gap:8px;margin-top:6px}
+.explorar-item{text-align:left;width:100%}
+</style>
+<style id="explorar-todo">
+.campo-busca{display:block;width:100%;box-sizing:border-box;padding:10px 12px;border-radius:var(--radio-chico);border:1px solid var(--borde);background:var(--boton-suave);color:var(--texto);font:inherit;margin-bottom:6px}
+.hoy-dia{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:14px;padding:10px 12px;border-radius:var(--radio-chico);background:var(--boton-suave);font-size:14px}
+.acciones-ficha{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+#tabbar button#tabExplorar{color:inherit}
+</style>
 </head>
 <body>
 <div id="bannerSinConexion" class="banner-offline" hidden></div>
@@ -1391,6 +1405,7 @@ h1 { letter-spacing:-.02em; }
   <span id="tabRolo" class="tab-rolo" aria-hidden="true"></span>
   <button data-tab="pendientes"><span class="ico">⏳</span>Pendientes</button>
   <button data-tab="vistas"><span class="ico">✓</span>Vistas</button>
+  <button type="button" id="tabExplorar"><span class="ico">🧭</span>Explorar</button>
 </nav>
 
 <div id="modal">
@@ -4406,6 +4421,11 @@ function abrirDetalle(p) {
       '<button class="pildora" id="btnEnlace">🔗 Copiar enlace</button>' +
     '</div>';
 
+  $("detalle").insertAdjacentHTML("beforeend",
+    '<div class="acciones-ficha"><button type="button" class="pildora" id="fichaCarta">📬 Escribir carta</button>' +
+    '<button type="button" class="pildora" id="fichaVotar">🗳 Votar en pareja</button></div>');
+  document.getElementById("fichaCarta").addEventListener("click", () => { cerrarDetalle(); abrirBuzon(); });
+  document.getElementById("fichaVotar").addEventListener("click", () => { cerrarDetalle(); abrirVotacionPareja(); });
   $("otra").innerHTML = desdeAleatorio
     ? '<button class="pildora destacado" id="otraSugerencia">🎲 Otra sugerencia</button>'
     : '';
@@ -5038,6 +5058,7 @@ window.addEventListener("load", () => {
   document.querySelectorAll("#tabbar button[data-tab]").forEach(b => {
     b.addEventListener("click", () => cambiarPestana(b.dataset.tab));
   });
+  document.getElementById("tabExplorar").addEventListener("click", abrirExplorar);
   const guardada = modoGuardado("pestana_activa", "inicio");
   if (["inicio", "catalogo", "notas", "pendientes", "vistas", "descartadas"].includes(guardada)) fijarTab(guardada);
   aplicarEstadoTabs();
@@ -6871,6 +6892,96 @@ function renderAlertasEstreno() {
     '</div>';
 }
 
+/* ---------- Explorar: herramientas visibles desde la pantalla de inicio ---------- */
+function gruposHerramientas() {
+  return [...document.querySelectorAll("#panelMas .grupo-menu")]
+    .filter(g => !/^(Ver|Ayuda|Datos)$/.test((g.querySelector(".grupo-titulo") || {}).textContent || ""));
+}
+
+function abrirGrupoHerramientas(indice) {
+  const g = gruposHerramientas()[indice];
+  if (!g) return;
+  const titulo = g.querySelector(".grupo-titulo").textContent;
+  const botones = [...g.querySelectorAll("button[id]")];
+  abrirVentanaSimple("explorarGrupo", titulo,
+    '<div class="explorar-lista">' + botones.map(b =>
+      '<button type="button" class="explorar-item" data-id="' + b.id + '">' + b.innerHTML + '</button>').join("") +
+    '</div>');
+  document.querySelectorAll("#explorarGrupo .explorar-item").forEach(b => b.addEventListener("click", () => {
+    document.querySelector("#explorarGrupo [data-cerrar]").click();
+    const destino = document.getElementById(b.dataset.id);
+    if (destino) destino.click();
+  }));
+}
+
+function herramientaDelDia() {
+  const lista = todasHerramientas();
+  if (!lista.length) return "";
+  const hoy = new Date();
+  const diaDelAno = Math.floor((hoy - new Date(hoy.getFullYear(), 0, 0)) / 86400000);
+  const x = lista[diaDelAno % lista.length];
+  return '<div class="hoy-dia"><span>✨ Prueba hoy: <b>' + esc(x.texto) + '</b></span>' +
+    '<button type="button" class="pildora" data-run="' + x.id + '">Probar</button></div>';
+}
+
+function bloqueExplorar() {
+  const grupos = gruposHerramientas();
+  if (!grupos.length) return "";
+  return '<div class="explorar-titulo">Explorar</div><div class="explorar-grid">' +
+    grupos.map((g, i) => {
+      const n = g.querySelectorAll("button[id]").length;
+      return '<button type="button" class="explorar-tile" data-grupo="' + i + '">' +
+        '<b>' + esc(g.querySelector(".grupo-titulo").textContent) + '</b>' +
+        '<span class="meta">' + n + ' herramientas</span></button>';
+    }).join("") + '</div>';
+}
+
+/* ---------- Explorar: buscador de herramientas (pestaña, Ctrl+K) ---------- */
+function todasHerramientas() {
+  const out = [];
+  gruposHerramientas().forEach(g => {
+    const grupo = g.querySelector(".grupo-titulo").textContent;
+    g.querySelectorAll("button[id]").forEach(b => out.push({ id: b.id, html: b.innerHTML, texto: b.textContent.trim(), grupo: grupo }));
+  });
+  return out;
+}
+
+function ejecutarHerramienta(id) {
+  const destino = document.getElementById(id);
+  if (destino) destino.click();
+}
+
+function abrirExplorar() {
+  const lista = todasHerramientas();
+  abrirVentanaSimple("explorarTodo", "Explorar",
+    '<input id="explorarBusca" class="campo-busca" type="search" placeholder="Busca una herramienta…" autocomplete="off">' +
+    '<div id="explorarResultados" class="explorar-lista"></div>');
+  const caja = document.getElementById("explorarResultados");
+  const dibujar = q => {
+    const t = q.trim().toLowerCase();
+    const f = lista.filter(x => (x.texto + " " + x.grupo).toLowerCase().includes(t));
+    caja.innerHTML = f.map(x => '<button type="button" class="explorar-item" data-id="' + x.id + '">' + x.html +
+      ' <span class="meta">· ' + esc(x.grupo) + '</span></button>').join("") ||
+      '<p class="meta">Ninguna herramienta coincide. Prueba con otra palabra.</p>';
+    return f;
+  };
+  dibujar("");
+  const busca = document.getElementById("explorarBusca");
+  busca.addEventListener("input", () => dibujar(busca.value));
+  busca.addEventListener("keydown", e => {
+    if (e.key !== "Enter") return;
+    const primera = dibujar(busca.value)[0];
+    if (primera) { document.querySelector("#explorarTodo [data-cerrar]").click(); ejecutarHerramienta(primera.id); }
+  });
+  caja.addEventListener("click", e => {
+    const b = e.target.closest(".explorar-item");
+    if (!b) return;
+    document.querySelector("#explorarTodo [data-cerrar]").click();
+    ejecutarHerramienta(b.dataset.id);
+  });
+  busca.focus();
+}
+
 /* ---------- Pantalla de inicio: «Hoy» ---------- */
 function saludoHoy() {
   const h = new Date().getHours();
@@ -6910,10 +7021,12 @@ function renderHoy() {
     '</div>' +
     '<div class="hoy-reto"><span>🏆 ' + esc(r.texto) + '</span>' +
       '<div class="reto-barra"><span style="width:' + Math.round(r.hecho / r.meta * 100) + '%"></span></div></div>' +
-    renderAlertasEstreno();
+    herramientaDelDia() + bloqueExplorar() + renderAlertasEstreno();
   $("hoyNoche").addEventListener("click", nocheTematica);
   $("hoyAzar").addEventListener("click", sugerirAleatoria);
   $("hoyAnimo").addEventListener("click", abrirAnimo);
+  sec.querySelectorAll("[data-run]").forEach(b => b.addEventListener("click", () => ejecutarHerramienta(b.dataset.run)));
+  sec.querySelectorAll("[data-grupo]").forEach(b => b.addEventListener("click", () => abrirGrupoHerramientas(Number(b.dataset.grupo))));
 }
 
 /* ---------- Deshacer general (Ctrl/Cmd+Z o botón) ---------- */
@@ -6983,6 +7096,11 @@ function toggleAyudaAtajos() {
 
 document.addEventListener("keydown", e => {
   const ctrl = e.ctrlKey || e.metaKey;
+  if (ctrl && !e.shiftKey && !e.altKey && e.key.toLowerCase() === "k") {
+    e.preventDefault();
+    abrirExplorar();
+    return;
+  }
   if (ctrl && !e.shiftKey && !e.altKey && e.key.toLowerCase() === "z" && !enCampoDeTexto(e.target)) {
     e.preventDefault();
     deshacerUltimo();
