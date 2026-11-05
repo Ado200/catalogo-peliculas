@@ -7100,9 +7100,20 @@ function abrirMaraton() {
 function armarMaraton(minutosPedidos) {
   const res = document.getElementById("maraRes");
   if (!minutosPedidos || minutosPedidos <= 0) { res.innerHTML = '<p class="meta">Escribe un número de minutos.</p>'; return; }
-  const pool = pendientesNoVistas().map(p => ({ p, m: minutos(p) })).filter(x => x.m > 0);
+  // Primero usa tus pendientes; si no tienes ninguna, usa las películas que no has visto
+  let base = pendientesNoVistas();
+  let aviso = "";
+  if (!base.length) {
+    base = peliculas.filter(p => !estadoDe(p).vista && !(marcas[p.titulo] || {}).descartada);
+    aviso = '<p class="meta">No tienes pendientes, así que armo con películas que no has visto.</p>';
+  }
+  const pool = base.map(p => ({ p, m: minutos(p) })).filter(x => x.m > 0);
+  if (!base.length) {
+    res.innerHTML = '<p class="meta">No tienes películas sin ver en tu catálogo. Agrega algunas o marca pendientes.</p>';
+    return;
+  }
   if (!pool.length) {
-    res.innerHTML = '<p class="meta">Ninguna pendiente tiene duración escrita. Revisa la columna «duracion» de la hoja, por ejemplo «1 h 45 min».</p>';
+    res.innerHTML = '<p class="meta">Ninguna de estas películas tiene duración escrita. Revisa la columna «duracion» de la hoja, por ejemplo «1 h 45 min».</p>';
     return;
   }
   const orden = pool.slice().sort(() => Math.random() - 0.5);
@@ -7117,7 +7128,7 @@ function armarMaraton(minutosPedidos) {
     return;
   }
   const h = Math.floor(total / 60), mm = total % 60;
-  res.innerHTML = '<p class="meta">Total: ' + h + ' h ' + mm + ' min · ' + elegidas.length + ' películas</p><ol>' +
+  res.innerHTML = aviso + '<p class="meta">Total: ' + h + ' h ' + mm + ' min · ' + elegidas.length + ' películas</p><ol>' +
     elegidas.map(x => '<li><b>' + esc(x.p.titulo) + '</b> · ' + x.m + ' min</li>').join("") + '</ol>';
 }
 
