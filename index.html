@@ -1314,6 +1314,14 @@ body.oscuro #tabbar .lg-indicador { background:linear-gradient(180deg, rgba(255,
 /* Limpieza de la lista: filtro de vistas y contador/estado viven ahora en Configuración */
 #toolbarVistas{display:none !important}
 .estado-datos{margin-top:6px}
+/* Legibilidad: los paneles con texto (ventanas, menú, chat, modales) quedan más opacos; el fondo se ve solo como tinte */
+.ayuda-caja, .panel-avanzados, #panelMas, #chatPanel, #modal .ventana, #actorModal .ventana, #statsModal .ventana, .hoy {
+  background:linear-gradient(180deg, rgba(255,255,255,max(.9, var(--vidrio-a,.72))), rgba(255,255,255,max(.86, var(--vidrio-a,.72)))) !important;
+}
+body.oscuro .ayuda-caja, body.oscuro .panel-avanzados, body.oscuro #panelMas, body.oscuro #chatPanel,
+body.oscuro #modal .ventana, body.oscuro #actorModal .ventana, body.oscuro #statsModal .ventana, body.oscuro .hoy {
+  background:linear-gradient(180deg, rgba(40,40,46,max(.92, var(--vidrio-a,.72))), rgba(24,24,28,max(.88, var(--vidrio-a,.72)))) !important;
+}
 </style>
 </head>
 <body>
