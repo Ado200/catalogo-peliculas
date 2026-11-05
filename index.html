@@ -1815,7 +1815,8 @@ body.premiere #app > header .segmentado button.activa { background:transparent !
         <option value="si">Sí, al entrar</option>
         <option value="no">Solo texto</option>
       </select></div>
-    <div class="campo"><button type="button" id="cambiarNombreBtn" class="pildora">✎ Cambiar mi nombre</button></div>
+    <div class="campo"><button type="button" id="cambiarNombreBtn" class="pildora">✎ Cambiar mi nombre</button>
+      <p id="copiaEstado" style="margin:8px 0 0;font-size:13px;color:var(--gris)">Última copia: revisando…</p></div>
       <div class="ajuste-vidrio" id="ajusteVidrio"><label for="vidrioAlfa">Transparencia del vidrio <span id="vidrioAlfaValor">72</span>%</label><input type="range" id="vidrioAlfa" min="40" max="95" step="1" value="72" aria-label="Transparencia del vidrio"></div>
     </div>
     <div class="grupo-menu grupo-peligro">
@@ -7928,6 +7929,7 @@ function renderHoy() {
   const pend = pendientesNoVistas().length;
   const conAlguien = peliculas.filter(p => (marcas[p.titulo] || {}).conAlguien && !(marcas[p.titulo] || {}).vista).length;
   const r = retoActual();
+  const sAhora = (typeof elegirParaAhora === "function") ? elegirParaAhora(null) : null;
   const resumenPend = pend ? pend + " pendiente" + (pend === 1 ? "" : "s") : "Aún no tienes pendientes";
   const extra = conAlguien ? " · " + conAlguien + " para ver con alguien" : "";
   sec.style.display = "block";
@@ -7935,6 +7937,7 @@ function renderHoy() {
     '<p class="hoy-saludo">' + saludoHoy() + '</p>' +
     '<h2 class="hoy-titulo">¿Qué vemos hoy?</h2>' +
     '<p class="hoy-sub">' + esc(resumenPend + extra) + '</p>' +
+    (sAhora && sAhora.texto ? '<p class="hoy-ahora">Para esta hora: ' + esc(sAhora.texto) + '</p>' : '') +
     '<div class="hoy-acciones">' +
       '<button type="button" class="pildora destacado" id="hoyNoche">🎡 Noche temática</button>' +
       '<button type="button" class="pildora" id="hoyAzar">🎲 Al azar</button>' +
@@ -8429,14 +8432,46 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
     actualizarIconoVoz();
   });
 
-  function saludar() {
-    if (saludado) return;
-    saludado = true;
-    const nombre = nombreUsuario();
-    burbuja("Hola" + (nombre ? ", " + nombre : "") + ". Soy " + NOMBRE_COMPA + ", y me encanta platicar de cine contigo. Puedo ayudarte a elegir qué ver, recordar qué tienes pendiente o contarte cómo va tu semana. Pregúntame lo que quieras.", "ia");
+  // Presentación completa: solo la primera vez que se usa el asistente en este navegador
+  function presentacionCompleta() {
+    burbuja("Hola" + (nombreUsuario() ? ", " + nombreUsuario() : "") + ". Soy " + NOMBRE_COMPA + ", y me encanta platicar de cine contigo. Puedo ayudarte a elegir qué ver, recordar qué tienes pendiente o contarte cómo va tu semana. Pregúntame lo que quieras.", "ia");
     burbuja("Tus marcas, notas y preferencias son solo tuyas. Las preguntas, tus preferencias y los datos de tu lista se envían a Gemini a través del script del administrador. Si aparece «código 429», se agotó la cuota diaria compartida; vuelve mañana.", "ia");
   }
 
+  // Preguntas por momento del día; no repite la última
+  const PREGUNTAS_SALUDO = {
+    manana: ["¿Qué te apetece ver hoy?", "¿Quieres algo corto para empezar el día?", "¿Revisamos tus pendientes para hoy?"],
+    tarde: ["¿Te antoja algo para la tarde?", "¿Vemos algo nuevo o retomamos un pendiente?", "¿Te recomiendo algo según tu ánimo?"],
+    noche: ["¿Qué vemos esta noche?", "¿Te armo una maratón según el tiempo que tengas?", "¿Empezamos algo de tu lista hoy?"],
+    general: ["¿Qué tal si elegimos algo de tus pendientes?", "¿Te cuento qué tienes por ver esta semana?"]
+  };
+
+  function saludoBreve() {
+    const h = new Date().getHours();
+    const franja = h < 12 ? "manana" : h < 19 ? "tarde" : "noche";
+    const saludo = h < 12 ? "Buenos días" : h < 19 ? "Buenas tardes" : "Buenas noches";
+    const pool = PREGUNTAS_SALUDO[franja].concat(PREGUNTAS_SALUDO.general);
+    let ultima = null;
+    try { ultima = localStorage.getItem("chat_pregunta_ultima"); } catch (e) {}
+    const candidatas = pool.filter(q => q !== ultima);
+    const pregunta = candidatas[Math.floor(Math.random() * candidatas.length)];
+    try { localStorage.setItem("chat_pregunta_ultima", pregunta); } catch (e) {}
+    const nombre = nombreUsuario();
+    return saludo + (nombre ? ", " + nombre : "") + ". " + pregunta;
+  }
+
+  function saludar() {
+    if (saludado) return;
+    saludado = true;
+    let primera = false;
+    try { primera = localStorage.getItem("chat_presentado") !== "1"; } catch (e) {}
+    if (primera) {
+      presentacionCompleta();
+      try { localStorage.setItem("chat_presentado", "1"); } catch (e) {}
+      return;
+    }
+    burbuja(saludoBreve(), "ia");
+  }
   function catalogoParaIA() {
     const base = peliculas.map(p => {
       const e = estadoDe(p);
@@ -10075,7 +10110,7 @@ function calcularSaludo() {
   const dias = ultima ? Math.floor((Date.now() - ultima) / 86400000) : null;
   const pend = pendientesNoVistas().length;
   const planes = recordatoriosActivos().length;
-  return { dias: dias, pend: pend, planes: planes, reto: retoActual() };
+  return { dias: dias, pend: pend, planes: planes, viejos: pendientesViejos(), reto: retoActual() };
 }
 
 function textoSaludo(d) {
@@ -10100,6 +10135,7 @@ function textoSaludo(d) {
   }
   const extras = [];
   if (d.planes) extras.push("📅 Tienes " + plural(d.planes, "plan", "planes") + " con alguien en los próximos días.");
+  if (d.viejos && d.viejos.length) extras.push("📌 " + plural(d.viejos.length, "pendiente lleva", "pendientes llevan") + " más de 2 meses esperando, como «" + esc(d.viejos[0]) + "».");
   extras.push("🏆 " + esc(d.reto.texto));
   return { titulo: titulo, linea: linea, extras: extras, tieneNombre: !!n };
 }
@@ -10262,6 +10298,109 @@ selVoz.addEventListener("change", () => {
   escribirLS("saludo_voz", selVoz.value);
   if (selVoz.value === "no") detenerSaludo();
 });
+</script>
+<script id="automatico-autonomo">
+/* ---------- Automático y autónomo ---------- */
+
+/* 1) Filtros: se guardan al cambiarlos y se restauran al entrar (sin botón) */
+const FILTROS_AUTO = "filtros_ultimos";
+function guardarFiltrosAuto() {
+  try {
+    const v = { orden: $("orden").value };
+    Object.entries(sel).forEach(([k, el]) => { v[k] = el.value; });
+    localStorage.setItem(FILTROS_AUTO, JSON.stringify(v));
+  } catch (e) {}
+}
+function restaurarFiltrosAuto() {
+  let v = null;
+  try { v = JSON.parse(localStorage.getItem(FILTROS_AUTO) || "null"); } catch (e) {}
+  if (!v) return;
+  const aplicar = (el, valor) => {
+    if (el && valor !== undefined && el.value !== valor && [...el.options].some(o => o.value === valor)) {
+      el.value = valor;
+      el.dispatchEvent(new Event("change"));
+    }
+  };
+  Object.entries(sel).forEach(([k, el]) => aplicar(el, v[k]));
+  aplicar($("orden"), v.orden);
+}
+document.addEventListener("change", e => {
+  if (e.target === $("orden") || Object.values(sel).includes(e.target)) guardarFiltrosAuto();
+});
+
+/* 2) Estado de la copia: visible en Ajustes, sin buscarlo */
+function tiempoHace(ms) {
+  const m = Math.round(ms / 60000);
+  if (m < 1) return "hace un momento";
+  if (m < 60) return "hace " + m + " min";
+  const h = Math.round(m / 60);
+  if (h < 24) return "hace " + h + " h";
+  const d = Math.round(h / 24);
+  return "hace " + d + " día" + (d === 1 ? "" : "s");
+}
+function actualizarCopiaEstado() {
+  const el = $("copiaEstado");
+  if (!el) return;
+  let t = Number(leerLS("copia_marcas_fecha") || 0);
+  try {
+    const c = JSON.parse(localStorage.getItem("catalogo_hoja_cache") || "null");
+    if (c && c.fecha) t = Math.max(t, Date.parse(c.fecha) || 0);
+  } catch (e) {}
+  el.textContent = t ? "Última copia: " + tiempoHace(Date.now() - t) : "Aún no hay copias en este navegador.";
+}
+if (typeof syncTodo === "function") {
+  const syncOriginal = syncTodo;
+  syncTodo = async function () {
+    const r = await syncOriginal.apply(this, arguments);
+    try {
+      if (accessToken && syncContarPendientes() === 0) escribirLS("copia_marcas_fecha", String(Date.now()));
+    } catch (e) {}
+    actualizarCopiaEstado();
+    return r;
+  };
+}
+actualizarCopiaEstado();
+setInterval(actualizarCopiaEstado, 60000);
+
+/* 3) Pendientes viejos: más de 60 días en la lista */
+function pendientesViejos() {
+  const limite = Date.now() - 60 * 86400000;
+  return peliculas.filter(p => {
+    const m = marcas[p.titulo] || {};
+    if (!m.pendiente || m.vista || !m.pendienteDesde) return false;
+    return Date.parse(m.pendienteDesde) < limite;
+  }).map(p => p.titulo);
+}
+
+/* 4) Hoy se actualiza solo cuando cambia la hora */
+setInterval(() => { if (typeof renderHoy === "function") renderHoy(); }, 600000);
+
+/* 5) Paletas: se guardan solas después de que la cuenta dueña lo confirme con el botón */
+let ultimoEstadoTexto = "";
+if (typeof setEstado === "function") {
+  const setEstadoOriginal = setEstado;
+  setEstado = function (m) { ultimoEstadoTexto = String(m || ""); return setEstadoOriginal.apply(this, arguments); };
+}
+$("guardarPaletas").addEventListener("click", () => {
+  const inicio = Date.now();
+  const t = setInterval(() => {
+    if (Date.now() - inicio > 90000) { clearInterval(t); return; }
+    if (/Calculando/i.test(ultimoEstadoTexto)) return;
+    clearInterval(t);
+    if (ultimoEstadoTexto && !/dueña|No pude/i.test(ultimoEstadoTexto)) escribirLS("paletas_duena", "1");
+  }, 700);
+});
+function paletasAutomaticas() {
+  if (leerLS("paletas_duena") !== "1" || typeof guardarPaletasEnHoja !== "function") return;
+  if (peliculas.some(p => p.portada && !paletaDeTexto(p[NOMBRE_PALETA]).length)) guardarPaletasEnHoja();
+}
+
+/* Arranque: cuando el catálogo ya cargó */
+const esperaAuto = setInterval(() => {
+  if (typeof peliculas === "undefined" || !peliculas.length) return;
+  clearInterval(esperaAuto);
+  setTimeout(() => { restaurarFiltrosAuto(); paletasAutomaticas(); }, 800);
+}, 500);
 </script>
 </body>
 </html>
