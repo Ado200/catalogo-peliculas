@@ -1,6 +1,6 @@
 // Service worker: deja abrir el catálogo sin conexión con la última versión que se cargó.
 // Solo guarda archivos de este mismo sitio (página, manifest, íconos). Nunca guarda datos de Google ni del chat.
-const VERSION = "catalogo-v1";
+const VERSION = "catalogo-20261105231544";
 const BASE = ["./", "./index.html", "./manifest.json", "./icon.svg"];
 
 self.addEventListener("install", event => {
