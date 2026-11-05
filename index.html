@@ -1630,6 +1630,9 @@ body.con-reproductor #chatAbrir, body.con-reproductor #chatPanel { display:none 
   <h3>Estrenos</h3>
   <p id="destSub" class="dest-sub"></p>
   <div id="carrusel" class="carrusel carrusel-estrenos"></div>
+  <h3 class="sub-h">Próximos en cines</h3>
+  <p id="proxSub" class="dest-sub"></p>
+  <div id="proximosCines" class="carrusel carrusel-estrenos"></div>
 </section>
 <section id="sagas" class="destacados solo-catalogo" data-zona="sagas" style="display:none"></section>
 <section id="actores" class="destacados solo-catalogo" data-zona="actores" style="display:none"></section>
@@ -4131,7 +4134,9 @@ function renderDestacados() {
   const hoy = hoyLocalISO();
   const dias = f => Math.round((new Date(f + "T00:00") - new Date(hoy + "T00:00")) / 86400000);
   const MESES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
+  const DIAS = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
   const etiquetaFecha = f => { const [a, m, d] = f.split("-"); return Number(d) + " " + MESES[Number(m) - 1] + " " + a; };
+  const etiquetaDia = f => DIAS[new Date(f + "T00:00").getDay()] + " " + etiquetaFecha(f);
   const conFecha = peliculas.filter(p => fechaValida(p.estreno));
   let lista, sub;
   if (conFecha.length) {
@@ -4145,6 +4150,7 @@ function renderDestacados() {
     sub = "";
   }
   $("destSub").textContent = sub;
+  renderProximosCines();
   $("carrusel").innerHTML = lista.map(({ p, tipo }) => {
     const idx = peliculas.indexOf(p);
     const s = estadoDe(p);
@@ -4156,11 +4162,11 @@ function renderDestacados() {
     if (tipo === "ya") {
       const d = dias(p.estreno);
       if (d >= -30) etiqueta = '<span class="dest2-tag nuevo">Nuevo</span>';
-      fecha = "Estrenó " + etiquetaFecha(p.estreno);
+      fecha = "Estrenó el " + etiquetaDia(p.estreno);
     } else if (tipo === "pronto") {
       const d = dias(p.estreno);
       etiqueta = '<span class="dest2-tag prox">' + (d === 1 ? "Mañana" : "En " + d + " días") + '</span>';
-      fecha = "Se estrena el " + etiquetaFecha(p.estreno);
+      fecha = "Se estrena el " + etiquetaDia(p.estreno);
     }
     const estado = s.vista ? '<span class="dest2-estado">✓</span>' : (s.pendiente ? '<span class="dest2-estado">⏳</span>' : "");
     return '<div class="dest2" data-idx="' + idx + '">' +
@@ -4169,6 +4175,67 @@ function renderDestacados() {
       '<div class="dest2-fecha">' + esc(fecha) + '</div></div></div>';
   }).join("");
 }
+
+let proximosCines = [];
+const normTxt = t => String(t || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").trim();
+
+async function cargarProximosCines() {
+  if (!accessToken || !HOJA_ID) return;
+  try {
+    const r = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${HOJA_ID}/values/proximos!A:E`, {
+      headers: { Authorization: "Bearer " + accessToken }
+    });
+    if (!r.ok) return;
+    const j = await r.json();
+    proximosCines = (j.values || []).slice(1)
+      .filter(f => f[0] && /^\d{4}-\d{2}-\d{2}$/.test(f[1] || ""))
+      .map(f => ({ titulo: f[0], fecha: f[1], portada: f[2] || "", tmdb: f[3] || "", sinopsis: f[4] || "" }))
+      .sort((a, b) => a.fecha.localeCompare(b.fecha));
+    renderProximosCines();
+  } catch (e) {}
+}
+
+function renderProximosCines() {
+  const cont = document.getElementById("proximosCines");
+  if (!cont) return;
+  const DIAS_C = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
+  const MESES_C = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
+  const hoy = hoyLocalISO();
+  const lista = proximosCines.filter(x => x.fecha >= hoy).slice(0, 12);
+  document.getElementById("proxSub").textContent = lista.length ? "Cartelera de cines en México. Toca una para ver de qué trata." : "";
+  cont.innerHTML = lista.map((x, i) => {
+    const idx = peliculas.findIndex(p => normTxt(p.titulo) === normTxt(x.titulo));
+    const [a, m, d] = x.fecha.split("-");
+    const dif = Math.round((new Date(x.fecha + "T00:00") - new Date(hoy + "T00:00")) / 86400000);
+    const etiqueta = dif === 0 ? "Hoy" : (dif === 1 ? "Mañana" : "En " + dif + " días");
+    const img = (x.portada && !datosLimitados())
+      ? '<img src="' + esc(x.portada) + '" alt="" loading="lazy">'
+      : '<div class="dest2-sinportada">🎬</div>';
+    return '<div class="dest2" data-prox="' + i + '"' + (idx !== -1 ? ' data-idx="' + idx + '"' : '') + '>' +
+      '<div class="dest2-poster">' + img +
+      '<span class="dest2-tag prox">' + etiqueta + '</span>' +
+      (idx !== -1 ? '<span class="dest2-estado" title="Ya está en tu catálogo">★</span>' : '') + '</div>' +
+      '<div class="dest2-info"><div class="dest2-titulo">' + esc(x.titulo) + '</div>' +
+      '<div class="dest2-fecha">' + esc(DIAS_C[new Date(x.fecha + "T00:00").getDay()] + " " + Number(d) + " " + MESES_C[Number(m) - 1]) + '</div></div></div>';
+  }).join("") || '';
+  if (!cont.dataset.listo) {
+    cont.dataset.listo = "1";
+    cont.addEventListener("click", e => {
+      const t = e.target.closest("[data-prox]");
+      if (!t) return;
+      if (t.dataset.idx !== undefined) { desdeAleatorio = false; abrirDetalle(peliculas[Number(t.dataset.idx)]); return; }
+      const x = proximosCines[Number(t.dataset.prox)];
+      const hoyTxt = hoyLocalISO();
+      if (x) abrirVentanaSimple("ventanaProximo", x.titulo,
+        '<p class="meta">Se estrena el ' + esc(x.fecha) + '</p>' +
+        '<p>' + esc(x.sinopsis || "Sin sinopsis por ahora.") + '</p>' +
+        '<p class="meta">No está en tu catálogo todavía.</p>');
+    });
+  }
+}
+
+// Estrenos se reacomoda solo: se vuelve a pintar cada hora (cambia de «próximo» a «estrenó» al pasar la fecha)
+setInterval(() => { if (peliculas.length) renderDestacados(); }, 60 * 60 * 1000);
 
 function hayFiltros() {
   return buscar.value.trim() !== "" || Object.values(sel).some(s => s.value !== "");
@@ -5408,6 +5475,7 @@ async function cargarHoja() {
 async function iniciarApp() {
   await cargarMarcas();
   await cargarHoja();
+  cargarProximosCines();
 }
 
 window.addEventListener("load", () => {
@@ -7494,7 +7562,21 @@ const DESC_HERRAMIENTAS = {
   verViaje: "Abre la lista guardada para llevarla.",
   guardarPaletas: "Calcula y guarda los colores de los pósters.",
   deshacer: "Regresa el último cambio en tus marcas.",
-  atajos: "Muestra los atajos de teclado."
+  atajos: "Muestra los atajos de teclado.",
+  vista: "Cambia entre vista normal y compacta de la lista.",
+  agrupar: "Agrupa las películas por tema.",
+  limpiar: "Quita todos los filtros.",
+  presetGuardar: "Guarda los filtros actuales para reusarlos.",
+  presetBorrar: "Borra el filtro guardado seleccionado.",
+  exportar: "Descarga tu catálogo en un archivo CSV.",
+  respaldarMarcas: "Descarga una copia de tus marcas.",
+  restaurarMarcas: "Carga una copia de tus marcas.",
+  borrarMarcas: "Borra todas tus marcas (no se puede deshacer).",
+  salirDispositivo: "Cierra tu sesión en este dispositivo.",
+  toggleSalud: "Muestra el estado de los datos de la hoja.",
+  aleatorio: "Sugiere una película al azar.",
+  queVerNoche: "Te dice qué ver esta noche según el tiempo que tengas.",
+  verGuia: "Abre esta guía."
 };
 
 function abrirExplorar() {
@@ -7777,9 +7859,21 @@ document.getElementById("salirDispositivo").addEventListener("click", salirDeEst
       </div>
 
       <div class="seccion">
-<h3>⚙ Filtros, ajustes y datos</h3>
-        <p>Ahí están exportar, respaldar, restaurar y borrar. Tus cambios se guardan en tu Drive, aun sin señal.</p>
+        <h3>🗣 Rolo y el micrófono</h3>
+        <p>Rolo es tu compañero peliculero: pregúntale qué ver o qué te puede gustar. El 🎤 de la barra de búsqueda y el de Rolo te dejan dictar en vez de escribir.</p>
       </div>
+
+      <div class="seccion">
+        <h3>▶ Ver una película</h3>
+        <p>«Ver película» abre un reproductor flotante. Con ⤢ lo ves a pantalla completa, con ▁ lo minimizas y con ✂ recortas la barra lateral de la página (cuando aplica).</p>
+      </div>
+
+      <div class="seccion">
+        <h3>⚙ Configuración</h3>
+        <p>El ⚙ de arriba abre los filtros y todas las herramientas. Ahí están los datos (exportar, respaldar, restaurar) y el estado del guardado automático.</p>
+      </div>
+
+      <div id="guiaAuto"></div>
     </div>
     <div class="pie">
       <button id="guiaEntendido" class="pildora">Entendido</button>
@@ -7790,7 +7884,41 @@ document.getElementById("salirDispositivo").addEventListener("click", salirDeEst
 (function () {
   const guia = document.getElementById("guia");
 
-  function abrirGuia() { guia.classList.add("abierta"); }
+  const DESC_ZONAS = {
+    lista: "Todas las películas, con búsqueda y filtros.",
+    estrenos: "Recién estrenadas y próximas, según su fecha real.",
+    sagas: "Colecciones en orden, con tu progreso.",
+    actores: "Actores con foto y biografía.",
+    duelo: "Enfrenta dos películas y elige cuál ver.",
+    resumen: "Tu resumen de la semana.",
+    actividad: "Tu actividad y tus retos del mes.",
+    mapa: "Tu mapa de gustos y de países.",
+    descartadas: "Las películas que descartaste."
+  };
+  // Se arma leyendo el menú y las pestañas en el momento: lo que agregues aparece solo.
+  function llenarGuiaAuto() {
+    const cont = document.getElementById("guiaAuto");
+    if (!cont) return;
+    const esc2 = t => String(t).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+    const zonas = (lista, titulo) => '<div class="seccion"><h3>' + titulo + '</h3><ul>' +
+      lista.map(([k, n]) => '<li><b>' + esc2(n) + '</b>' + (DESC_ZONAS[k] ? ' — ' + esc2(DESC_ZONAS[k]) : '') + '</li>').join("") +
+      '</ul></div>';
+    let html = zonas(ZONAS_PELICULAS, "🎬 Pestañas de Películas") + zonas(ZONAS_VISTAS, "✓ Pestañas de Vistas");
+    document.querySelectorAll("#panelAvanzados .grupo-menu, #panelMas .grupo-menu").forEach(g => {
+      const titulo = (g.querySelector(".grupo-titulo") || {}).textContent || "";
+      if (!titulo || /^Ayuda$/.test(titulo)) return;
+      const botones = [...g.querySelectorAll("button[id]")];
+      if (!botones.length) return;
+      html += '<div class="seccion"><h3>' + esc2(titulo) + '</h3><ul>' + botones.map(b => {
+        const texto = b.textContent.replace(/\s+/g, " ").trim();
+        const desc = (typeof DESC_HERRAMIENTAS !== "undefined" && DESC_HERRAMIENTAS[b.id]) || "";
+        return '<li><b>' + esc2(texto) + '</b>' + (desc ? ' — ' + esc2(desc) : '') + '</li>';
+      }).join("") + '</ul></div>';
+    });
+    cont.innerHTML = html;
+  }
+
+  function abrirGuia() { llenarGuiaAuto(); guia.classList.add("abierta"); }
   function cerrarGuia() {
     guia.classList.remove("abierta");
     if (marcas.__guia !== 1) {
