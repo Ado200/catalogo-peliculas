@@ -5004,6 +5004,11 @@ estiloNoche.textContent = `
 .noche-vacio{font-size:14px;color:var(--gris);margin:12px 0 0}`;
 document.head.appendChild(estiloNoche);
 
+function cerrarQueVer() {
+  document.getElementById("nochePanel")?.remove();
+  document.getElementById("nocheFondo")?.remove();
+}
+
 function abrirQueVerEstaNoche() {
   let panel = document.getElementById("nochePanel");
   if (panel) panel.remove();
@@ -5019,7 +5024,7 @@ function abrirQueVerEstaNoche() {
   cerrar.type = "button";
   cerrar.setAttribute("aria-label", "Cerrar");
   cerrar.textContent = "×";
-  cerrar.addEventListener("click", () => panel.remove());
+  cerrar.addEventListener("click", cerrarQueVer);
   cab.append(titulo, cerrar);
 
   const sel = document.createElement("select");
@@ -5042,6 +5047,11 @@ function abrirQueVerEstaNoche() {
   const resultado = document.createElement("div");
   resultado.id = "nocheResultado";
   panel.append(cab, sel, elegir, resultado);
+  document.getElementById("nocheFondo")?.remove();
+  const fondo = document.createElement("div");
+  fondo.id = "nocheFondo";
+  fondo.addEventListener("click", cerrarQueVer);
+  document.body.appendChild(fondo);
   document.body.appendChild(panel);
   ultimaNoche = null;
   elegirNoche(false);
@@ -5106,7 +5116,7 @@ function elegirNoche(otra) {
   verFicha.type = "button";
   verFicha.className = "principal";
   verFicha.textContent = "Ver ficha";
-  verFicha.addEventListener("click", () => { document.getElementById("nochePanel")?.remove(); abrirDetalle(p); });
+  verFicha.addEventListener("click", () => { cerrarQueVer(); abrirDetalle(p); });
 
   const otraBtn = document.createElement("button");
   otraBtn.type = "button";
@@ -9686,8 +9696,7 @@ document.addEventListener("DOMContentLoaded", () => {
   window.abrirModoCine = function (p) {
     const previo = document.getElementById("modoCine");
     if (previo) previo.remove();
-    const noche = document.getElementById("nochePanel");
-    if (noche) noche.remove();
+    if (typeof cerrarQueVer === "function") cerrarQueVer();
 
     const total = (minutos(p) || 120) * 60000;
     let transcurrido = 0, inicio = Date.now(), pausado = false, wake = null;
@@ -9773,5 +9782,17 @@ document.addEventListener("DOMContentLoaded", () => {
   }, 1000);
 })();
 </script>
+<style id="noche-ajustes">
+#nocheFondo{position:fixed;inset:0;z-index:30;background:transparent}
+.noche-panel{bottom:calc(112px + env(safe-area-inset-bottom,0px));width:min(440px, calc(100vw - 24px));max-width:440px;box-sizing:border-box;padding:18px}
+.noche-tarjeta{gap:14px}
+.noche-tarjeta img{width:104px;height:156px}
+.noche-tarjeta .noche-sin{width:104px;height:156px}
+.noche-info{flex:1;min-width:0}
+.noche-info h3{font-size:16px;line-height:1.3}
+.noche-acciones{display:flex;flex-wrap:wrap;gap:8px;width:100%}
+.noche-acciones button{padding:8px 13px;font-size:13px;white-space:nowrap}
+.noche-cab button{width:32px;height:32px;display:grid;place-items:center;border-radius:50%;background:var(--boton-suave);font-size:18px;padding:0}
+</style>
 </body>
 </html>
