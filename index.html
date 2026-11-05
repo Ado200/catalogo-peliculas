@@ -1334,9 +1334,12 @@ body.oscuro #tabbar button:not(.activa) { color:#c7c7cc; }
 #miniReproductor .mr-barra button { background:none; border:0; color:#fff; font-size:16px; padding:2px 8px; cursor:pointer; }
 #miniReproductor .mr-caja { position:relative; width:100%; aspect-ratio:16/9; }
 #miniReproductor .mr-caja iframe { position:absolute; inset:0; width:100%; height:100%; border:0; }
+#miniReproductor .mr-pestanas { display:flex; gap:6px; padding:6px 8px; background:rgba(28,28,30,.92); }
+#miniReproductor .mr-nota { margin:0; padding:6px 10px; background:rgba(28,28,30,.92); color:#c7c7cc; font-size:12px; }
+#miniReproductor .mr-nota a { color:#64b5ff; }
 #miniReproductor .mr-vacio { padding:24px 14px; color:#fff; font-size:13px; text-align:center; }
 #miniReproductor .mr-enlace { display:block; padding:8px 12px; background:rgba(28,28,30,.92); color:#64b5ff; font-size:13px; text-decoration:none; }
-#miniReproductor.mr-min .mr-caja, #miniReproductor.mr-min .mr-vacio, #miniReproductor.mr-min .mr-enlace { display:none; }
+#miniReproductor.mr-min .mr-caja, #miniReproductor.mr-min .mr-vacio, #miniReproductor.mr-min .mr-nota, #miniReproductor.mr-min .mr-pestanas { display:none; }
 </style>
 </head>
 <body>
@@ -4623,29 +4626,56 @@ function bloqueTrailer(p) {
     '<div class="trailer-nota">Activa los subtítulos en el reproductor (CC) para verlos en español.</div></div>';
 }
 
+function urlReproducible(link) {
+  const t = String(link || "").trim();
+  if (!t) return "";
+  const yt = t.match(/(?:youtube\.com\/watch\?(?:.*&)?v=|youtu\.be\/)([\w-]{6,})/);
+  if (yt) return "https://www.youtube.com/embed/" + yt[1] + "?rel=0&hl=es";
+  return /^https:\/\//.test(t) ? t : "";
+}
 function abrirVerPelicula(titulo, es, en, link) {
   const codigo = (es && es !== "sin tráiler") ? es : ((en && en !== "sin tráiler") ? en : "");
+  const peli = urlReproducible(link);
   const previo = document.getElementById("miniReproductor");
   if (previo) previo.remove();
   const div = document.createElement("div");
   div.id = "miniReproductor";
   div.setAttribute("role", "region");
   div.setAttribute("aria-label", "Reproductor de " + titulo);
+  div.dataset.titulo = titulo;
+  div.dataset.codigo = codigo;
+  div.dataset.peli = peli;
   div.innerHTML =
     '<div class="mr-barra"><span class="mr-titulo">▶ ' + esc(titulo) + '</span>' +
       '<span><button type="button" data-mr="min" aria-label="Minimizar">▁</button>' +
       '<button type="button" data-mr="cerrar" aria-label="Cerrar">✕</button></span></div>' +
-    (codigo
-      ? '<div class="mr-caja">' + iframeTrailer(codigo, titulo) + '</div>'
-      : '<div class="mr-vacio">Esta película no tiene tráiler disponible.</div>') +
-    (link ? '<a class="mr-enlace" href="' + esc(link) + '" target="_blank" rel="noopener">Abrir donde se ve</a>' : '');
+    '<div class="mr-pestanas">' +
+      (peli ? '<button type="button" class="chipc activo" data-mr="peli">Película</button>' : '') +
+      (codigo ? '<button type="button" class="chipc' + (peli ? '' : ' activo') + '" data-mr="trailer">Tráiler</button>' : '') +
+    '</div>' +
+    '<div class="mr-caja" id="mrCaja"></div>' +
+    '<p class="mr-nota" id="mrNota"></p>';
+  const caja = div.querySelector("#mrCaja");
+  const nota = div.querySelector("#mrNota");
+  const mostrar = (modo) => {
+    div.querySelectorAll("[data-mr=peli],[data-mr=trailer]").forEach(b => b.classList.toggle("activo", b.dataset.mr === modo));
+    if (modo === "peli" && peli) {
+      caja.innerHTML = '<iframe src="' + esc(peli) + '" allow="autoplay; encrypted-media; fullscreen; picture-in-picture" allowfullscreen referrerpolicy="strict-origin-when-cross-origin" title="' + esc(titulo) + '"></iframe>';
+      nota.innerHTML = 'Si la pantalla sale en blanco, esa página no permite verla dentro de la app. <a href="' + esc(link) + '" target="_blank" rel="noopener">Abrir en otra pestaña</a>';
+    } else {
+      caja.innerHTML = codigo ? iframeTrailer(codigo, titulo) : '<div class="mr-vacio">Esta película no tiene tráiler disponible.</div>';
+      nota.textContent = "Tráiler en la app.";
+    }
+  };
   div.addEventListener("click", e => {
     const b = e.target.closest && e.target.closest("[data-mr]");
     if (!b) return;
     if (b.dataset.mr === "cerrar") div.remove();
-    if (b.dataset.mr === "min") div.classList.toggle("mr-min");
+    else if (b.dataset.mr === "min") div.classList.toggle("mr-min");
+    else mostrar(b.dataset.mr);
   });
   document.body.appendChild(div);
+  mostrar(peli ? "peli" : "trailer");
 }
 document.addEventListener("click", e => {
   const b = e.target.closest && e.target.closest("#btnVerPelicula");
