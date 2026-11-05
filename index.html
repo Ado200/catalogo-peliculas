@@ -1049,7 +1049,7 @@ body[data-pestana="pendientes"] .aviso-opciones::-webkit-scrollbar-thumb { backg
 .ayuda-caja dl{display:grid;grid-template-columns:auto 1fr;gap:8px 14px;margin:0 0 16px;font-size:14px}
 .ayuda-caja dt{font-weight:700;font-family:ui-monospace,monospace;font-size:13px;white-space:nowrap}
 .ayuda-caja dd{margin:0;color:var(--gris)}
-@media (hover:none) and (pointer:coarse){ .ayuda-atajos{display:none} }
+@media (hover:none) and (pointer:coarse){ #ayudaAtajos{display:none} }
 </style>
 <style id="pareja-reto-capsula">
 .capsula-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center;margin-bottom:12px}
@@ -1158,6 +1158,26 @@ h1 { letter-spacing:-.02em; }
 #chatAbrir .orbe { display:none !important; }
 #chatAbrir .rolo-ia { display:flex; align-items:center; justify-content:center; pointer-events:none; }
 #chatAbrir .rolo-ia-badge { position:absolute; top:-6px; right:-6px; background:#fff; color:#6a4cff; font:700 10px/1 system-ui,-apple-system,sans-serif; letter-spacing:.02em; padding:3px 5px; border-radius:999px; box-shadow:0 2px 6px rgba(0,0,0,.2); pointer-events:none; }
+</style>
+<style id="pulido-ronda">
+/* Rolo: orbe degradado con destello */
+#chatAbrir { border-radius:50% !important; background:radial-gradient(circle at 30% 25%, #b6e3ff 0%, #3b82f6 38%, #8b5cf6 68%, #ec4899 100%) !important; box-shadow:0 8px 22px rgba(139,92,246,.42) !important; }
+#chatAbrir .rolo-ia-badge { display:none !important; }
+/* Barra del asistente: tres elementos del mismo alto */
+#chatForm { align-items:center !important; }
+#chatForm #chatInput { height:40px !important; box-sizing:border-box !important; padding:0 16px !important; }
+#chatForm #chatVoz { width:40px !important; height:40px !important; min-width:40px !important; padding:0 !important; border-radius:50% !important; display:grid !important; place-items:center !important; background:var(--boton-suave) !important; color:var(--texto) !important; font-size:0 !important; }
+#chatForm button[type=submit] { width:40px !important; height:40px !important; min-width:40px !important; padding:0 !important; }
+/* Avisos */
+.toast-app { position:fixed; left:50%; bottom:calc(104px + env(safe-area-inset-bottom,0px)); transform:translate(-50%,12px); opacity:0; transition:opacity .25s var(--ease), transform .25s var(--ease); background:var(--texto); color:var(--fondo); padding:10px 16px; border-radius:999px; font-size:14px; z-index:60; max-width:88vw; text-align:center; pointer-events:none; box-shadow:0 8px 24px rgba(0,0,0,.2); }
+.toast-app.visible { opacity:1; transform:translate(-50%,0); }
+/* Herramientas: fila «Prueba hoy» y lista del Explorar */
+.hoy-dia { align-items:center; }
+.hoy-dia button { flex:0 0 auto; border-radius:999px; }
+.explorar-item .ico { width:1.5em; font-size:17px; }
+.explorar-item b { display:flex; align-items:center; gap:4px; }
+.fila-form { display:flex; gap:8px; align-items:center; margin:8px 0 12px; }
+.fila-form input { flex:1; min-width:0; padding:10px 12px; border-radius:var(--radio-chico); border:1px solid var(--borde); background:var(--boton-suave); color:var(--texto); font:inherit; }
 </style>
 </head>
 <body>
@@ -6457,10 +6477,11 @@ function abrirDiario() {
   const entradas = [];
   peliculas.forEach(p => {
     const o = marcas[p.titulo] || {};
+    if (!o.vista) return;
     const v = (o.historial || []).filter(h => h.a === "vista").slice(-1)[0];
-    if (v) entradas.push({ p, o, f: String(v.f) });
+    entradas.push({ p, o, f: v ? String(v.f) : "" });
   });
-  entradas.sort((a, b) => b.f.localeCompare(a.f));
+  entradas.sort((a, b) => (b.f || "0").localeCompare(a.f || "0"));
   if (!entradas.length) {
     abrirVentanaSimple("diarioCine", "Diario de cine",
       '<p class="meta">Tu diario se llena solo cuando marcas películas como vistas. Escribe una nota en cada una y aparecerá aquí.</p>');
@@ -6468,11 +6489,11 @@ function abrirDiario() {
   }
   let html = "", mesActual = "";
   entradas.slice(0, 200).forEach(e => {
-    const mes = e.f.slice(0, 7);
+    const mes = e.f ? e.f.slice(0, 7) : "Sin fecha";
     if (mes !== mesActual) { mesActual = mes; html += '<h4>' + esc(mes) + '</h4>'; }
     html += '<div class="diario-entrada"><b>' + esc(e.p.titulo) + '</b>' +
       (e.o.estrellas ? ' <span class="meta">' + e.o.estrellas + '★</span>' : '') +
-      ' <span class="meta">· ' + esc(e.f) + '</span>' +
+      (e.f ? ' <span class="meta">· ' + esc(e.f) + '</span>' : '') +
       (e.o.nota ? '<p>' + esc(e.o.nota) + '</p>' : '') + '</div>';
   });
   abrirVentanaSimple("diarioCine", "Diario de cine", html);
@@ -6495,6 +6516,24 @@ function perfilGustos() {
   const top = obj => Object.entries(obj).sort((a, b) => b[1] - a[1]).slice(0, 3).map(x => x[0]).join(", ") || "sin datos";
   return "le gustan los géneros " + top(gen) + "; directores " + top(dir) +
     "; descarta " + top(neg) + "; tiene " + pend + " pendientes";
+}
+
+/* ---------- Avisos visibles (aparecen sobre la barra inferior) ---------- */
+let toastTimer = null;
+function avisar(msg) {
+  setEstado(msg);
+  let t = document.getElementById("toastApp");
+  if (!t) {
+    t = document.createElement("div");
+    t.id = "toastApp";
+    t.className = "toast-app";
+    t.setAttribute("role", "status");
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.classList.add("visible");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove("visible"), 4200);
 }
 
 /* ---------- Etapa 1: selección inteligente ---------- */
@@ -6525,26 +6564,36 @@ function nocheTematica() {
   const hoy = TEMAS_NOCHE[new Date().getDay()];
   const pool = pendientesNoVistas();
   if (!pool.length) {
-    setEstado("No tienes pendientes sin ver. Agrega algunas para elegir.");
+    avisar("No tienes pendientes sin ver. Agrega algunas para elegir.");
     return;
   }
   const del_tema = pool.filter(p => generoCoincide(p, hoy.genero));
   if (!del_tema.length) {
-    setEstado("Hoy es noche de " + hoy.tema + ", pero no tienes pendientes de ese género. Te muestro otra.");
+    avisar("Hoy es noche de " + hoy.tema + ", pero no tienes pendientes de ese género. Te muestro otra.");
     abrirDetalle(elegirAlAzar(pool));
     return;
   }
-  setEstado("Noche de " + hoy.tema + " (" + hoy.dia + ").");
+  avisar("Noche de " + hoy.tema + " (" + hoy.dia + ").");
   abrirDetalle(elegirAlAzar(del_tema));
 }
 
 /* 3) Maratón: arma hasta 3 películas que quepan en el tiempo indicado */
 function abrirMaraton() {
-  const minutosPedidos = Number(prompt("¿Cuántos minutos tienes para ver películas?", "300"));
-  if (!minutosPedidos || minutosPedidos <= 0) return;
+  abrirVentanaSimple("maraton", "Maratón",
+    '<p class="meta">¿Cuántos minutos tienes para ver películas?</p>' +
+    '<div class="fila-form"><input id="maraMin" type="number" min="30" step="15" value="300" inputmode="numeric">' +
+    '<button type="button" class="pildora destacado" id="maraGo">Armar</button></div>' +
+    '<div id="maraRes"></div>');
+  document.getElementById("maraGo").addEventListener("click", () => armarMaraton(Number(document.getElementById("maraMin").value)));
+  armarMaraton(300);
+}
+
+function armarMaraton(minutosPedidos) {
+  const res = document.getElementById("maraRes");
+  if (!minutosPedidos || minutosPedidos <= 0) { res.innerHTML = '<p class="meta">Escribe un número de minutos.</p>'; return; }
   const pool = pendientesNoVistas().map(p => ({ p, m: minutos(p) })).filter(x => x.m > 0);
   if (!pool.length) {
-    setEstado("Tus pendientes no tienen duración escrita, así que no puedo armar el maratón.");
+    res.innerHTML = '<p class="meta">Ninguna pendiente tiene duración escrita. Revisa la columna «duracion» de la hoja, por ejemplo «1 h 45 min».</p>';
     return;
   }
   const orden = pool.slice().sort(() => Math.random() - 0.5);
@@ -6555,13 +6604,12 @@ function abrirMaraton() {
     if (total + x.m <= minutosPedidos) { elegidas.push(x); total += x.m; }
   }
   if (!elegidas.length) {
-    setEstado("Ninguna pendiente cabe en " + minutosPedidos + " minutos. Prueba con más tiempo.");
+    res.innerHTML = '<p class="meta">Ninguna pendiente cabe en ' + minutosPedidos + ' minutos. Prueba con más tiempo.</p>';
     return;
   }
   const h = Math.floor(total / 60), mm = total % 60;
-  abrirVentanaSimple("maraton", "Tu maratón",
-    '<p class="meta">Total: ' + h + " h " + mm + ' min · ' + elegidas.length + ' películas</p><ol>' +
-    elegidas.map(x => '<li><b>' + esc(x.p.titulo) + '</b> · ' + x.m + ' min</li>').join("") + '</ol>');
+  res.innerHTML = '<p class="meta">Total: ' + h + ' h ' + mm + ' min · ' + elegidas.length + ' películas</p><ol>' +
+    elegidas.map(x => '<li><b>' + esc(x.p.titulo) + '</b> · ' + x.m + ' min</li>').join("") + '</ol>';
 }
 
 /* 8) Modo sorpresa con reglas */
@@ -6672,7 +6720,7 @@ function abrirAnimo() {
     document.querySelector("#animoVentana [data-cerrar]").click();
     pintar();
     const a = ANIMOS.find(x => x.id === b.dataset.animo);
-    setEstado(a ? "Catálogo en modo " + a.texto + "." : "Ánimo quitado.");
+    avisar(a ? "Catálogo en modo " + a.texto + "." : "Ánimo quitado.");
   }));
 }
 
@@ -6802,20 +6850,20 @@ function abrirBuzon() {
     programarGuardado();
     document.querySelector("#buzon [data-cerrar]").click();
     pintar();
-    setEstado("Cartas marcadas como leídas.");
+    avisar("Cartas marcadas como leídas.");
   });
 
   const guardar = document.getElementById("guardarCarta");
   if (guardar) guardar.addEventListener("click", () => {
     const titulo = document.getElementById("cartaPeli").value;
     const texto = document.getElementById("cartaTexto").value.trim();
-    if (!texto) { setEstado("Escribe algo en la carta antes de guardarla."); return; }
+    if (!texto) { avisar("Escribe algo en la carta antes de guardarla."); return; }
     marcas[titulo] = Object.assign({}, marcas[titulo], {
       carta: { texto, fecha: hoyLocalISO(), meses: Number(document.getElementById("cartaMeses").value), leida: false }
     });
     programarGuardado();
     document.querySelector("#buzon [data-cerrar]").click();
-    setEstado("Carta guardada. Se abrirá dentro de " + document.getElementById("cartaMeses").selectedOptions[0].text + ".");
+    avisar("Carta guardada. Se abrirá dentro de " + document.getElementById("cartaMeses").selectedOptions[0].text + ".");
   });
 }
 
@@ -6839,16 +6887,16 @@ function prepararViaje() {
     año: p["año"] || "", sinopsis: String(p.sinopsis || "").slice(0, 300)
   }));
   if (!lista.length) {
-    setEstado("No tienes pendientes para llevar. Marca algunas como «Pendiente» primero.");
+    avisar("No tienes pendientes para llevar. Marca algunas como «Pendiente» primero.");
     return;
   }
   try {
     localStorage.setItem("paquete_viaje", JSON.stringify({ fecha: hoyLocalISO(), lista: lista }));
   } catch (e) {
-    setEstado("No pude guardar la lista de viaje en este navegador.");
+    avisar("No pude guardar la lista de viaje en este navegador.");
     return;
   }
-  setEstado("Lista de viaje guardada: " + lista.length + " películas. Funciona sin internet.");
+  avisar("Lista de viaje guardada: " + lista.length + " películas. Funciona sin internet.");
   abrirModoViaje();
 }
 
@@ -6870,7 +6918,7 @@ function abrirModoViaje() {
   abrirVentanaSimple("modoViaje", "Modo viaje", cuerpo);
   document.querySelectorAll("#modoViaje [data-vista]").forEach(b => b.addEventListener("click", () => {
     cambiarEstado(b.dataset.vista, { vista: true });
-    setEstado("Marcada como vista. Se sincronizará cuando vuelva la conexión.");
+    avisar("Marcada como vista. Se sincronizará cuando vuelva la conexión.");
     document.querySelector("#modoViaje [data-cerrar]").click();
     abrirModoViaje();
   }));
@@ -7092,7 +7140,7 @@ function registrarDeshacer() {
 
 function deshacerUltimo() {
   if (!pilaDeshacer.length) {
-    setEstado("No hay cambios recientes que deshacer.");
+    avisar("No hay cambios recientes que deshacer.");
     return;
   }
   const previa = pilaDeshacer.pop();
@@ -7105,7 +7153,7 @@ function deshacerUltimo() {
   }
   ultimaCopiaMarcas = previa;
   pintar();
-  setEstado("Cambio deshecho. Puedes deshacer " + pilaDeshacer.length + " más.");
+  avisar("Cambio deshecho. Puedes deshacer " + pilaDeshacer.length + " más.");
 }
 
 /* ---------- Atajos de teclado (computadora) ---------- */
@@ -7297,7 +7345,7 @@ document.getElementById("salirDispositivo").addEventListener("click", salirDeEst
 })();
 </script>
 
-<button id="chatAbrir" style="display:none" aria-label="Abrir Rolo, el asistente de IA" title="Rolo · asistente de IA"><span class="rolo-ia" aria-hidden="true"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v3"/><circle cx="12" cy="2.5" r="1.2" fill="#fff" stroke="none"/><rect x="4.5" y="6" width="15" height="12" rx="4"/><circle cx="9.3" cy="11.6" r="1.4" fill="#fff" stroke="none"/><circle cx="14.7" cy="11.6" r="1.4" fill="#fff" stroke="none"/><path d="M9.5 15.4c.8.6 4.2.6 5 0"/><path d="M1.5 11v3M22.5 11v3"/></svg></span><span class="rolo-ia-badge" aria-hidden="true">IA</span></button>
+<button id="chatAbrir" style="display:none" aria-label="Abrir Rolo, el asistente de IA" title="Rolo · asistente de IA"><span class="rolo-ia" aria-hidden="true"><svg viewBox="0 0 24 24" width="26" height="26"><path d="M12 2.5l1.9 5.6 5.6 1.9-5.6 1.9L12 17.5l-1.9-5.6-5.6-1.9 5.6-1.9z" fill="#fff"/><path d="M18.5 15.5l.9 2.4 2.4.9-2.4.9-.9 2.4-.9-2.4-2.4-.9 2.4-.9z" fill="#fff" opacity=".9"/></svg></span></button>
 <div id="chatPanel" role="dialog" aria-label="Compañero peliculero">
   <div id="chatCab">
     <div class="chat-titulo"><span class="chat-avatar">🍿</span><b>Rolo</b></div>
@@ -7328,7 +7376,7 @@ document.getElementById("salirDispositivo").addEventListener("click", salirDeEst
     <button type="button" id="chatNumeros">Mis números</button>
   </div>
   <form id="chatForm">
-    <button type="button" id="chatVoz" aria-label="Dictar" hidden>🎤</button>
+    <button type="button" id="chatVoz" aria-label="Dictar" hidden><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button>
     <input id="chatInput" type="text" maxlength="600" placeholder="Pregúntame sobre tu catálogo…" autocomplete="off">
     <button type="submit" id="chatEnviar">Enviar</button>
   </form>
