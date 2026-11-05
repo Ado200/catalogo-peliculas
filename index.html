@@ -1345,6 +1345,10 @@ body.oscuro #tabbar button:not(.activa) { color:#c7c7cc; }
 #miniReproductor.mr-completa .mr-caja { flex:1; min-height:0; aspect-ratio:auto; }
 #miniReproductor.mr-completa .mr-barra button { font-size:20px; }
 #miniReproductor.mr-grande .mr-barra button, #miniReproductor.mr-completa .mr-barra button { font-size:20px; }
+/* Reproductor a pantalla completa: deja libre la parte baja para que sus controles no queden tapados */
+#miniReproductor.mr-completa { inset:0 0 calc(92px + env(safe-area-inset-bottom, 0px)) 0; height:auto; }
+#miniReproductor.mr-completa .mr-nota { display:none; }
+body.con-reproductor #chatAbrir, body.con-reproductor #chatPanel { display:none !important; }
 </style>
 </head>
 <body>
@@ -4676,7 +4680,7 @@ function abrirVerPelicula(titulo, es, en, link) {
   div.addEventListener("click", e => {
     const b = e.target.closest && e.target.closest("[data-mr]");
     if (!b) return;
-    if (b.dataset.mr === "cerrar") div.remove();
+    if (b.dataset.mr === "cerrar") { div.remove(); document.body.classList.remove("con-reproductor"); }
     else if (b.dataset.mr === "min") div.classList.toggle("mr-min");
     else if (b.dataset.mr === "tamano") {
       const pantallaCompleta = div.classList.contains("mr-completa");
@@ -4686,6 +4690,7 @@ function abrirVerPelicula(titulo, es, en, link) {
     else mostrar(b.dataset.mr);
   });
   document.body.appendChild(div);
+  document.body.classList.add("con-reproductor");
   mostrar(peli ? "peli" : "trailer");
 }
 document.addEventListener("click", e => {
