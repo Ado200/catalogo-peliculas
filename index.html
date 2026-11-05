@@ -8155,12 +8155,30 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
   let historial = [];
   let saludado = false;
 
+  // Escribe el texto poco a poco, como si lo estuviera diciendo
+  function escribirPoco(el, texto) {
+    el.textContent = "";
+    let i = 0;
+    const paso = () => {
+      i += 2;
+      el.textContent = texto.slice(0, i);
+      lista.scrollTop = lista.scrollHeight;
+      if (i < texto.length) setTimeout(paso, 24);
+      else el.textContent = texto;
+    };
+    paso();
+  }
+
   function burbuja(texto, tipo) {
     const d = document.createElement("div");
     d.className = "chat-burbuja " + tipo;
     const visible = tipo === "ia" ? limpiarMarkdown(texto) : texto;
-    d.textContent = visible;
     lista.appendChild(d);
+    if (tipo === "ia" && visible.length <= 600) {
+      escribirPoco(d, visible);
+    } else {
+      d.textContent = visible;
+    }
     lista.scrollTop = lista.scrollHeight;
     if (tipo === "ia") hablar(visible);
     return d;
@@ -8306,7 +8324,7 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
     if (saludado) return;
     saludado = true;
     const nombre = nombreUsuario();
-    burbuja("¡Hola" + (nombre ? ", " + nombre : "") + "! Soy " + NOMBRE_COMPA + ", tu compa peliculero. Te ayudo a elegir qué ver, a recordar qué tienes pendiente y a platicar de películas con base en tu catálogo.\n\nSi algo no está en tu lista, te lo diré. Pregúntame lo que quieras.", "ia");
+    burbuja("Hola" + (nombre ? ", " + nombre : "") + ". Soy " + NOMBRE_COMPA + ", y me encanta platicar de cine contigo. Puedo ayudarte a elegir qué ver, recordar qué tienes pendiente o contarte cómo va tu semana. Pregúntame lo que quieras.", "ia");
     burbuja("Tus marcas, notas y preferencias son solo tuyas. Las preguntas, tus preferencias y los datos de tu lista se envían a Gemini a través del script del administrador. Si aparece «código 429», se agotó la cuota diaria compartida; vuelve mañana.", "ia");
   }
 
@@ -10268,6 +10286,18 @@ document.addEventListener("DOMContentLoaded", () => {
 #chatAbrir.modo-ia::after{background:#34c759}
 #chatAbrir.modo-local::after{background:#ff9f0a}
 #chatAbrir.escuchando::after{background:#ff453a}
+</style>
+<style id="panel-ajuste-inferior">
+#chatPanel{height:min(720px, calc(100dvh - 130px - env(safe-area-inset-top,0px))) !important;max-height:min(720px, calc(100dvh - 130px)) !important;bottom:calc(104px + env(safe-area-inset-bottom,0px)) !important;flex-direction:column !important;overflow:hidden !important}
+#chatPanel > *{flex-shrink:0}
+#chatPanel.abierto{display:flex !important}
+#chatPanel:not(.abierto){display:none !important}
+#chatMensajes{flex:1 1 0 !important;min-height:0 !important;overflow-y:auto}
+#chatMensajes > *{flex-shrink:0}
+#chatForm{flex:0 0 auto !important;display:flex !important;align-items:center;gap:8px;padding:10px 14px 14px !important;min-height:64px}
+#chatForm #chatInput{flex:1 1 auto;min-width:0;height:44px}
+#chatForm #chatVoz,#chatForm button[type=submit]{flex:0 0 44px;width:44px !important;height:44px !important;border-radius:50% !important}
+#chatSugerencias{flex:0 0 auto !important;min-height:48px}
 </style>
 </body>
 </html>
