@@ -1615,6 +1615,15 @@ body.premiere #app > header .segmentado button.activa { background:transparent !
 .segmentado button:active { transform:scale(.96); }
 @media (prefers-reduced-motion: reduce) { .segmentado .indicador, #tabbar .indicador { transition:none !important; } }
 </style>
+<style id="deslizar-barra">
+#tabbar > .indicador { display:none !important; }
+#tabbar .lg-indicador {
+  transition: left .42s cubic-bezier(.32,.72,0,1), width .42s cubic-bezier(.32,.72,0,1), opacity .2s ease !important;
+}
+#tabbar button { position:relative; z-index:1; }
+#tabbar button:active { transform:scale(.96); }
+@media (prefers-reduced-motion: reduce) { #tabbar .lg-indicador { transition:none !important; } }
+</style>
 </head>
 <body>
 <div id="bannerSinConexion" class="banner-offline" hidden></div>
@@ -9943,7 +9952,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const a = medir(act);
     ind.style.left = a.x + "px";
     ind.style.width = a.w + "px";
-    if (animar && ultimo && (ultimo.x !== a.x || ultimo.w !== a.w) && ind.animate) {
+    if (false && animar && ultimo && (ultimo.x !== a.x || ultimo.w !== a.w) && ind.animate) {
       const de = ultimo;
       const izq = Math.min(de.x, a.x);
       const ancho = Math.abs(a.x - de.x) + Math.min(de.w, a.w);
