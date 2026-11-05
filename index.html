@@ -9395,5 +9395,51 @@ document.addEventListener("DOMContentLoaded", () => {
   colocar();
 })();
 </script>
+<style id="deslizador-suave">
+/* Pastilla que se desliza suavemente hacia la opción activa, y regresa al cambiar */
+.segmentado { position:relative; }
+.segmentado .indicador,
+#tabbar .indicador {
+  position:absolute; left:0; top:0; z-index:0; pointer-events:none;
+  border-radius:999px; opacity:0;
+  transition: transform .5s cubic-bezier(.22,.9,.3,1), width .5s cubic-bezier(.22,.9,.3,1), height .5s cubic-bezier(.22,.9,.3,1), opacity .25s ease;
+}
+.segmentado .indicador { background:var(--tarjeta); box-shadow:var(--sombra); }
+#tabbar .indicador { background:var(--tema-bg); }
+.segmentado > button, .segmentado > * { position:relative; z-index:1; }
+.segmentado .activa { background:transparent !important; box-shadow:none !important; }
+#tabbar > button, #tabbar > .tab-rolo { position:relative; z-index:1; }
+@media (prefers-reduced-motion: reduce) {
+  .segmentado .indicador, #tabbar .indicador { transition:none; }
+}
+</style>
+<script>
+/* Coloca la pastilla sobre la opción activa de cada selector y de la barra inferior */
+(function () {
+  function asegurar(cont) {
+    if (!cont.querySelector(":scope > .indicador")) {
+      const ind = document.createElement("span");
+      ind.className = "indicador";
+      cont.insertBefore(ind, cont.firstChild);
+    }
+    return cont.querySelector(":scope > .indicador");
+  }
+  function mover(cont) {
+    const ind = asegurar(cont);
+    const act = cont.querySelector(".activa");
+    if (!act || !act.offsetWidth) { ind.style.opacity = 0; return; }
+    ind.style.opacity = 1;
+    ind.style.width = act.offsetWidth + "px";
+    ind.style.height = act.offsetHeight + "px";
+    ind.style.transform = "translate(" + act.offsetLeft + "px," + act.offsetTop + "px)";
+  }
+  function todos() {
+    document.querySelectorAll(".segmentado, #tabbar").forEach(mover);
+  }
+  todos();
+  setInterval(todos, 300);
+  window.addEventListener("resize", todos);
+})();
+</script>
 </body>
 </html>
