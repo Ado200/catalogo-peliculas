@@ -1179,6 +1179,31 @@ h1 { letter-spacing:-.02em; }
 .fila-form { display:flex; gap:8px; align-items:center; margin:8px 0 12px; }
 .fila-form input { flex:1; min-width:0; padding:10px 12px; border-radius:var(--radio-chico); border:1px solid var(--borde); background:var(--boton-suave); color:var(--texto); font:inherit; }
 </style>
+<style id="actores-mapa-dictado">
+.actores-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:10px}
+.actor-card{display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 6px 10px;border:1px solid var(--borde);border-radius:var(--radio);background:var(--tarjeta);color:var(--texto);font:inherit;cursor:pointer;text-align:center}
+.actor-card b{font-size:13px;line-height:1.2}
+.actor-card .meta{font-size:12px}
+.actor-avatar{width:84px;height:84px;border-radius:50%;object-fit:cover;box-shadow:0 6px 16px rgba(0,0,0,.14)}
+.sin-foto{display:grid;place-items:center;background:linear-gradient(135deg,#0a84ff,#7d5cff);color:#fff;font-weight:700}
+.actor-cabecera{display:flex;gap:16px;align-items:flex-start;margin-bottom:12px}
+.actor-foto-grande{width:120px;height:120px;border-radius:50%;object-fit:cover;flex:0 0 auto;font-size:34px}
+.actor-bio{margin:6px 0;font-size:14px;line-height:1.5}
+.actor-films-titulo{margin:16px 0 8px;font-size:14px}
+.actor-films{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.actor-film{display:flex;flex-direction:column;gap:4px;padding:0;border:0;background:none;color:var(--texto);font:inherit;text-align:left;cursor:pointer}
+.actor-film b{font-size:12px;line-height:1.2}
+.actor-film .meta{font-size:11px}
+.actor-film-poster{width:100%;aspect-ratio:2/3;object-fit:cover;border-radius:14px;box-shadow:0 6px 16px rgba(0,0,0,.14)}
+.pais-sugerencia{margin:14px 0 0;font-size:14px}
+#paisDetalle{margin-top:12px}
+#paisDetalle h4{margin:6px 0;font-size:14px}
+#paisDetalle .explorar-item{margin-bottom:6px}
+.ayuda-caja > [data-cerrar]{margin-top:14px}
+#chatEnviar::before{content:none !important}
+#chatForm #chatEnviar svg{display:block}
+@media (min-width:700px){ .actores-grid{grid-template-columns:repeat(5,1fr)} .actor-films{grid-template-columns:repeat(5,1fr)} }
+</style>
 </head>
 <body>
 <div id="bannerSinConexion" class="banner-offline" hidden></div>
@@ -2338,6 +2363,32 @@ function actoresAgrupados() {
     .slice(0, 30);
 }
 
+function infoActores() {
+  const mapa = {};
+  peliculas.forEach(p => {
+    let m = {};
+    try { m = JSON.parse(p.actores_info || "{}") || {}; } catch (e) { m = {}; }
+    Object.keys(m).forEach(n => {
+      if (!mapa[n] || (!mapa[n].bio && m[n].bio)) mapa[n] = m[n];
+    });
+  });
+  return mapa;
+}
+
+function fotoDeActor(nombre, info) {
+  if (datosLimitados()) return "";
+  return (info && info.foto) || fotosActores[nombre] || "";
+}
+
+function inicialesDe(nombre) {
+  return nombre.split(/\s+/).slice(0, 2).map(x => x[0] || "").join("").toUpperCase();
+}
+
+function fechaLarga(iso) {
+  const d = new Date(String(iso) + "T12:00:00");
+  return isNaN(d) ? "" : d.toLocaleDateString("es-MX", { day: "numeric", month: "long", year: "numeric" });
+}
+
 function renderActores() {
   const sec = $("actores");
   if (!peliculas.length || hayFiltros() || pestana !== "catalogo") {
@@ -2346,43 +2397,65 @@ function renderActores() {
   }
   const lista = actoresAgrupados();
   if (!lista.length) { sec.style.display = "none"; return; }
-  sec.innerHTML = '<div class="actividad-card"><h3>Actores</h3><div class="actor-chips">' +
-    lista.map(([n, films]) =>
-      '<button class="etiqueta" data-actor="' + esc(n) + '">' +
-        ((fotosActores[n] && !datosLimitados()) ? '<img class="actor-chip-foto" src="' + esc(fotosActores[n]) + '" alt="">' : '') +
-        esc(n) + ' · ' + films.length + '</button>'
-    ).join("") +
-    '</div></div>';
+  const info = infoActores();
+  sec.innerHTML = '<div class="actividad-card"><h3>Actores</h3><div class="actores-grid">' +
+    lista.map(([n, films]) => {
+      const foto = fotoDeActor(n, info[n]);
+      return '<button class="actor-card" data-actor="' + esc(n) + '">' +
+        (foto ? '<img class="actor-avatar" src="' + esc(foto) + '" alt="" loading="lazy">'
+              : '<span class="actor-avatar sin-foto">' + esc(inicialesDe(n)) + '</span>') +
+        '<b>' + esc(n) + '</b><span class="meta">' + films.length + (films.length === 1 ? ' título' : ' títulos') + '</span>' +
+        '</button>';
+    }).join("") + '</div></div>';
   sec.style.display = "block";
 }
 
 function abrirActor(nombre) {
   const films = peliculas.filter(p => nombresReparto(p).includes(nombre));
+  const info = infoActores()[nombre] || {};
+  const foto = fotoDeActor(nombre, info);
   const vistas = films.filter(p => estadoDe(p).vista).length;
   const pendientes = films.filter(p => estadoDe(p).pendiente).length;
   const calificadas = films.filter(p => estadoDe(p).estrellas);
   const promedio = calificadas.length
     ? (calificadas.reduce((a, p) => a + estadoDe(p).estrellas, 0) / calificadas.length).toFixed(1)
     : "—";
+  const nacio = info.nacimiento ? "Nació el " + fechaLarga(info.nacimiento) + (info.lugar ? " en " + info.lugar : "") : (info.lugar ? "Nació en " + info.lugar : "");
+  const bio = info.bio
+    ? '<p class="actor-bio" id="actorBio">' + esc(info.bio.slice(0, 280)) + (info.bio.length > 280 ? '…' : '') + '</p>' +
+      (info.bio.length > 280 ? '<button type="button" class="pildora" id="actorBioMas" data-completa="' + esc(info.bio) + '">Leer más</button>' : '')
+    : '<p class="meta">Sin biografía todavía. Se llena al correr completarActoresInfo en Apps Script.</p>';
   $("actorTitulo").textContent = nombre;
   $("actorBody").innerHTML =
-    ((fotosActores[nombre] && !datosLimitados()) ? '<img class="actor-foto-grande" src="' + esc(fotosActores[nombre]) + '" alt="">' : '') +
+    '<div class="actor-cabecera">' +
+      (foto ? '<img class="actor-foto-grande" src="' + esc(foto) + '" alt="">'
+            : '<span class="actor-foto-grande sin-foto">' + esc(inicialesDe(nombre)) + '</span>') +
+      '<div><p class="meta">' + esc(nacio) + '</p>' + bio + '</div>' +
+    '</div>' +
     '<div class="stats-resumen">' +
       '<div class="stat"><b>' + films.length + '</b><span>títulos</span></div>' +
       '<div class="stat"><b>' + vistas + '</b><span>vistas</span></div>' +
       '<div class="stat"><b>' + pendientes + '</b><span>pendientes</span></div>' +
       '<div class="stat"><b>' + promedio + '</b><span>promedio ★</span></div>' +
     '</div>' +
-    films.map(p => {
-      const s = estadoDe(p);
-      const estado = (marcas[p.titulo] || {}).descartada ? "descartada" : s.vista ? "vista" : s.pendiente ? "pendiente" : "sin ver";
-      const miniatura = p.portada && !datosLimitados()
-        ? '<img class="actor-thumb" src="' + esc(p.portada) + '" alt="">'
-        : '<div class="actor-thumb sinportada-mini">🎬</div>';
-      return '<div class="actor-fila" data-actor-titulo="' + esc(p.titulo) + '">' +
-        '<div style="display:flex;gap:10px;align-items:center">' + miniatura + '<div><b>' + esc(p.titulo) + '</b><div class="meta">' + esc(p["año"]) + ' · ' + estado +
-        (s.estrellas ? ' · ' + s.estrellas + '★' : '') + '</div></div></div></div>';
-    }).join("");
+    '<h4 class="actor-films-titulo">Películas en tu catálogo</h4>' +
+    '<div class="actor-films">' + films.map(p => {
+      const s2 = estadoDe(p);
+      const estado = (marcas[p.titulo] || {}).descartada ? "descartada" : s2.vista ? "vista" : s2.pendiente ? "pendiente" : "sin ver";
+      const portada = p.portada && !datosLimitados()
+        ? '<img class="actor-film-poster" src="' + esc(p.portada) + '" alt="" loading="lazy">'
+        : '<span class="actor-film-poster sinportada-mini">🎬</span>';
+      return '<button type="button" class="actor-film" data-actor-titulo="' + esc(p.titulo) + '">' + portada +
+        '<b>' + esc(p.titulo) + '</b><span class="meta">' + esc(p["año"] || "") + ' · ' + estado +
+        (s2.estrellas ? ' · ' + s2.estrellas + '★' : '') + '</span></button>';
+    }).join("") + '</div>';
+  $("actorBody").onclick = e => {
+    const mas = e.target.closest("#actorBioMas");
+    if (mas) {
+      $("actorBio").textContent = mas.dataset.completa;
+      mas.remove();
+    }
+  };
   $("actorModal").classList.add("abierto");
 }
 
@@ -6631,7 +6704,13 @@ function abrirSorpresa() {
       (!gen || String(p.genero || "").toLowerCase().includes(gen.toLowerCase())) &&
       (!act || String(p.reparto || "").toLowerCase().includes(act)));
     const res = document.getElementById("sorpRes");
-    if (!pool.length) { res.textContent = "Ninguna pendiente cumple esas reglas. Relaja alguna."; return; }
+    if (!pool.length) {
+      const soloGenero = pendientesNoVistas().filter(p => !gen || String(p.genero || "").toLowerCase().includes(gen.toLowerCase())).length;
+      res.textContent = soloGenero
+        ? "Hay " + soloGenero + " pendiente(s) de ese género, pero ninguna cumple también la duración o el actor. Relaja una regla."
+        : "No tienes pendientes de ese género. Elige «Cualquiera» o agrega películas.";
+      return;
+    }
     const p = elegirAlAzar(pool);
     res.innerHTML = "Te toca: <b>" + esc(p.titulo) + "</b>";
     document.querySelector("#sorpresa [data-cerrar]").click();
@@ -6752,27 +6831,62 @@ function marcarAnimo() {
 const PAISES_MAPA = ["Estados Unidos", "México", "Francia", "Italia", "España", "Japón", "Corea del Sur", "India",
   "Brasil", "Reino Unido", "Alemania", "China", "Argentina", "Canadá", "Irán", "Australia", "Rusia", "Suecia"];
 
+const PAIS_ALIAS = {
+  "United States of America": "Estados Unidos", "United States": "Estados Unidos", "USA": "Estados Unidos", "EE. UU.": "Estados Unidos",
+  "Mexico": "México", "Spain": "España", "France": "Francia", "Italy": "Italia", "Japan": "Japón",
+  "South Korea": "Corea del Sur", "Korea": "Corea del Sur", "Germany": "Alemania", "United Kingdom": "Reino Unido",
+  "Brazil": "Brasil", "Canada": "Canadá", "Iran": "Irán", "Russia": "Rusia", "Sweden": "Suecia"
+};
+function normPais(c) {
+  const x = String(c || "").trim();
+  return PAIS_ALIAS[x] || x;
+}
 function paisesDe(p) {
-  return String(p.pais || "").split(/[,\/]/).map(x => x.trim()).filter(Boolean);
+  return String(p.pais || "").split(/[,\/]/).map(x => normPais(x)).filter(Boolean);
 }
 
 function abrirMapaViaje() {
-  const vistas = peliculas.filter(p => (marcas[p.titulo] || {}).vista);
-  const cuenta = {};
-  vistas.forEach(p => paisesDe(p).forEach(c => cuenta[c] = (cuenta[c] || 0) + 1));
-  const vistos = new Set(Object.keys(cuenta));
-  const grid = PAISES_MAPA.map(c => '<span class="pais-chip' + (vistos.has(c) ? ' visto' : '') + '">' +
-    esc(c) + (cuenta[c] ? ' · ' + cuenta[c] : '') + '</span>').join("");
-  const nuevos = peliculas.filter(p => !(marcas[p.titulo] || {}).vista && paisesDe(p).some(c => !vistos.has(c)));
-  let sugerencia = "";
-  if (nuevos.length) {
-    const p = elegirAlAzar(nuevos);
-    const pais = paisesDe(p).find(c => !vistos.has(c));
-    sugerencia = '<p>Un país nuevo para ti: <b>' + esc(pais) + '</b> con «' + esc(p.titulo) + '».</p>';
-  }
+  const mapa = {};
+  peliculas.forEach(p => {
+    const o = marcas[p.titulo] || {};
+    paisesDe(p).forEach(c => {
+      mapa[c] = mapa[c] || { total: 0, vistas: 0, films: [] };
+      mapa[c].total++;
+      if (o.vista) mapa[c].vistas++;
+      mapa[c].films.push(p);
+    });
+  });
+  const paises = Object.keys(mapa).sort((x, y) => x.localeCompare(y, "es"));
+  const visitados = paises.filter(c => mapa[c].vistas > 0).length;
+  const sugerido = paises.filter(c => mapa[c].vistas === 0).sort((x, y) => mapa[y].total - mapa[x].total)[0];
   abrirVentanaSimple("mapaViaje", "Mapa de viaje",
-    '<p class="meta">Países de tus películas vistas: ' + vistos.size + ' de ' + PAISES_MAPA.length + ' en esta lista.</p>' +
-    '<div class="paises-grid">' + grid + '</div>' + sugerencia);
+    '<p class="meta">Has visto películas de ' + visitados + ' de ' + paises.length + ' países de tu catálogo. Toca un país para ver sus películas.</p>' +
+    '<div class="paises-grid">' + paises.map(c =>
+      '<button type="button" class="pais-chip' + (mapa[c].vistas ? ' visto' : '') + '" data-pais="' + esc(c) + '">' +
+      esc(c) + ' · ' + mapa[c].total + '</button>').join("") + '</div>' +
+    (sugerido ? '<p class="pais-sugerencia">Te sugiero <b>' + esc(sugerido) + '</b>, donde aún no has visto ninguna.</p>' : '') +
+    '<div id="paisDetalle"></div>');
+  const ventana = document.getElementById("mapaViaje");
+  ventana.addEventListener("click", e => {
+    const pais = e.target.closest("[data-pais]");
+    const peli = e.target.closest("[data-titulo]");
+    if (peli) {
+      const p = peliculas.find(x => x.titulo === peli.dataset.titulo);
+      ventana.remove();
+      if (p) abrirDetalle(p);
+      return;
+    }
+    if (!pais) return;
+    const c = pais.dataset.pais;
+    const films = mapa[c].films;
+    document.getElementById("paisDetalle").innerHTML = '<h4>' + esc(c) + ' (' + films.length + ')</h4>' +
+      films.map(p => {
+        const o = marcas[p.titulo] || {};
+        const estado = o.vista ? "✓ vista" : o.pendiente ? "⏳ pendiente" : "sin ver";
+        return '<button type="button" class="explorar-item" data-titulo="' + esc(p.titulo) + '"><b>' + esc(p.titulo) +
+          '</b><span class="meta">' + esc(p["año"] || "") + ' · ' + estado + '</span></button>';
+      }).join("");
+  });
 }
 
 /* ---------- Etapa 3b: rachas de gustos ---------- */
@@ -7378,7 +7492,7 @@ document.getElementById("salirDispositivo").addEventListener("click", salirDeEst
   <form id="chatForm">
     <button type="button" id="chatVoz" aria-label="Dictar" hidden><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button>
     <input id="chatInput" type="text" maxlength="600" placeholder="Pregúntame sobre tu catálogo…" autocomplete="off">
-    <button type="submit" id="chatEnviar">Enviar</button>
+    <button type="submit" id="chatEnviar" aria-label="Enviar"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5"/><path d="M5.5 11.5L12 5l6.5 6.5"/></svg></button>
   </form>
 </div>
 <script>
@@ -7683,26 +7797,50 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
     lista.scrollTop = lista.scrollHeight;
   }
 
-  // Dictado: llena el campo para que revises antes de enviar
+  // Dictado: llena el campo para que revises antes de enviar. Siempre visible, con aviso de lo que pasa.
   (function () {
     const Rec = window.SpeechRecognition || window.webkitSpeechRecognition;
     const vozBtn = document.getElementById("chatVoz");
-    if (!Rec || !vozBtn) return;
+    if (!vozBtn) return;
     vozBtn.hidden = false;
+    if (!Rec) {
+      vozBtn.addEventListener("click", () => avisar("Tu navegador no tiene dictado. Prueba con Chrome o Edge."));
+      return;
+    }
     const rec = new Rec();
     rec.lang = "es-MX";
     rec.interimResults = false;
     rec.maxAlternatives = 1;
+    let llegoTexto = false;
+    rec.onstart = () => { vozBtn.classList.add("escuchando"); input.placeholder = "Escuchando… habla ahora"; };
     rec.onresult = e => {
       const t = (e.results[0] && e.results[0][0] && e.results[0][0].transcript || "").trim();
-      if (t) { input.value = t; input.focus(); }
+      if (t) { llegoTexto = true; input.value = t; input.focus(); avisar("Revisa el texto y pulsa enviar."); }
     };
-    rec.onend = () => vozBtn.classList.remove("escuchando");
-    rec.onerror = () => vozBtn.classList.remove("escuchando");
+    const limpiar = () => { vozBtn.classList.remove("escuchando"); input.placeholder = "Pregúntame sobre tu catálogo…"; };
+    rec.onend = () => {
+      limpiar();
+      if (!llegoTexto) avisar("No entendí. Intenta de nuevo, hablando cerca del micrófono.");
+      llegoTexto = false;
+    };
+    rec.onerror = e => {
+      limpiar();
+      const msg = {
+        "not-allowed": "Permite el micrófono en el navegador (toca el candado de la barra de direcciones).",
+        "service-not-allowed": "Permite el micrófono en el navegador para usar el dictado.",
+        "no-speech": "No escuché nada. Intenta de nuevo.",
+        "network": "El dictado necesita conexión a internet.",
+        "audio-capture": "No encuentro un micrófono conectado."
+      }[e.error] || "No pude usar el dictado. Intenta de nuevo.";
+      avisar(msg);
+    };
     vozBtn.addEventListener("click", () => {
       if (vozBtn.classList.contains("escuchando")) { rec.stop(); return; }
+      llegoTexto = false;
       vozBtn.classList.add("escuchando");
-      try { rec.start(); } catch (e) { vozBtn.classList.remove("escuchando"); }
+      avisar("Escuchando… habla ahora.");
+      try { rec.start(); }
+      catch (e) { avisar("Espera un segundo y vuelve a pulsar el micrófono."); }
     });
   })();
 
