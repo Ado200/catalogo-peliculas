@@ -1210,6 +1210,111 @@ body.oscuro #chatAbrir { background:radial-gradient(circle at 50% 35%, #2c2c30 0
 #chatAbrir .rolo-ia { filter:drop-shadow(0 2px 4px rgba(120,90,240,.25)); }
 #chatAbrir.escuchando { box-shadow:0 0 0 6px rgba(255,69,58,.18), 0 6px 18px rgba(60,64,90,.18) !important; }
 </style>
+<style id="vidrio-y-fluidez">
+/* Vidrio suave (sin el efecto de Apple): tinte translúcido, desenfoque ligero, borde fino.
+   Se controla con el deslizador «Transparencia del vidrio». */
+:root { --vidrio-borde:rgba(255,255,255,.55); }
+body.oscuro { --vidrio-borde:rgba(255,255,255,.08); }
+.ayuda-caja, .panel-avanzados, #panelMas, .hoy, #chatPanel, #modal .ventana, #actorModal .ventana, #statsModal .ventana, #clasificador .clas-caja {
+  background:rgba(255,255,255,var(--vidrio-a,.72)) !important;
+  -webkit-backdrop-filter:saturate(140%) blur(14px);
+  backdrop-filter:saturate(140%) blur(14px);
+  border:1px solid var(--vidrio-borde);
+}
+body.oscuro .ayuda-caja, body.oscuro .panel-avanzados, body.oscuro #panelMas, body.oscuro .hoy, body.oscuro #chatPanel,
+body.oscuro #modal .ventana, body.oscuro #actorModal .ventana, body.oscuro #statsModal .ventana {
+  background:rgba(28,28,30,var(--vidrio-a,.72)) !important;
+}
+/* Legibilidad: nunca bajar tanto que el texto se pierda */
+.ayuda-caja, .panel-avanzados, #panelMas, .hoy, #chatPanel { background-clip:padding-box; }
+
+/* Fluidez: solo transform y opacity, curvas suaves y tiempos cortos */
+:root { --ease-fluido: cubic-bezier(.22,.9,.3,1); }
+.animar { animation-duration:.42s; animation-timing-function:var(--ease-fluido); }
+#modal.abierto .ventana, #actorModal.abierto .ventana, #statsModal.abierto .ventana {
+  animation:crecer .32s var(--ease-fluido) both;
+}
+.pildora, .tarjeta, .explorar-item, .actor-card, .explorar-tile, .pais-chip {
+  transition:transform .2s var(--ease-fluido), background-color .25s ease, box-shadow .25s ease, opacity .25s ease;
+}
+.pildora:active, .explorar-item:active, .actor-card:active, .explorar-tile:active { transform:scale(.96); }
+.tarjeta:hover { transform:translateY(-2px); }
+.tarjeta { backface-visibility:hidden; }
+img { transition:opacity .3s ease; }
+img[loading="lazy"]:not([src]) { opacity:0; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important; scroll-behavior:auto !important; }
+}
+</style>
+<style id="liquid-glass">
+/* Liquid glass: translúcido, con desenfoque fuerte, brillo superior y borde luminoso */
+:root { --lg-blanco:255,255,255; --lg-sombra:0,0,0; --lg-ease:cubic-bezier(.34,1.35,.64,1); --lg-fluido:cubic-bezier(.22,.9,.3,1); }
+body.oscuro { --lg-blanco:255,255,255; }
+.lg, #tabbar, #app > header, .ayuda-caja, .panel-avanzados, #panelMas, #chatPanel, #modal .ventana, #actorModal .ventana, #statsModal .ventana, .hoy, .toast-app {
+  background:linear-gradient(180deg, rgba(var(--lg-blanco), calc(var(--vidrio-a,.72) * .62)), rgba(var(--lg-blanco), calc(var(--vidrio-a,.72) * .34))) !important;
+  -webkit-backdrop-filter:saturate(190%) blur(26px);
+  backdrop-filter:saturate(190%) blur(26px);
+  border:1px solid rgba(255,255,255,.55) !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.75), inset 0 -1px 0 rgba(0,0,0,.035), 0 12px 34px rgba(0,0,0,.13) !important;
+}
+body.oscuro .lg, body.oscuro #tabbar, body.oscuro #app > header, body.oscuro .ayuda-caja, body.oscuro .panel-avanzados, body.oscuro #panelMas,
+body.oscuro #chatPanel, body.oscuro #modal .ventana, body.oscuro #actorModal .ventana, body.oscuro #statsModal .ventana, body.oscuro .hoy {
+  background:linear-gradient(180deg, rgba(60,60,66,calc(var(--vidrio-a,.72) * .7)), rgba(24,24,28,calc(var(--vidrio-a,.72) * .45))) !important;
+  border-color:rgba(255,255,255,.12) !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.14), inset 0 -1px 0 rgba(0,0,0,.2), 0 14px 38px rgba(0,0,0,.45) !important;
+}
+
+/* Botones y tarjetas: brillo que sigue al dedo o al cursor, y pulsación con rebote */
+.pildora, #tabbar button, .explorar-item, .explorar-tile, .actor-card, .pais-chip, .tarjeta {
+  position:relative; overflow:hidden; isolation:isolate;
+}
+.pildora::after, #tabbar button::after, .explorar-item::after, .explorar-tile::after, .actor-card::after, .tarjeta::after {
+  content:""; position:absolute; inset:0; pointer-events:none; opacity:0; z-index:-1;
+  background:radial-gradient(180px circle at var(--mx,50%) var(--my,50%), rgba(255,255,255,.55), rgba(255,255,255,0) 60%);
+  transition:opacity .35s var(--lg-fluido);
+}
+body.oscuro .pildora::after, body.oscuro #tabbar button::after, body.oscuro .explorar-item::after, body.oscuro .explorar-tile::after, body.oscuro .actor-card::after, body.oscuro .tarjeta::after {
+  background:radial-gradient(180px circle at var(--mx,50%) var(--my,50%), rgba(255,255,255,.14), rgba(255,255,255,0) 60%);
+}
+.pildora:hover::after, #tabbar button:hover::after, .explorar-item:hover::after, .explorar-tile:hover::after, .actor-card:hover::after, .tarjeta:hover::after,
+.pildora:active::after, #tabbar button:active::after, .explorar-item:active::after, .actor-card:active::after { opacity:1; }
+.pildora, .explorar-item, .explorar-tile, .actor-card, .pais-chip, #tabbar button {
+  transition:transform .45s var(--lg-ease), background-color .3s var(--lg-fluido), box-shadow .3s var(--lg-fluido), color .3s var(--lg-fluido);
+}
+.pildora:active, .explorar-item:active, .explorar-tile:active, .actor-card:active, #tabbar button:active { transform:scale(.93); transition-duration:.12s; }
+.tarjeta { transition:transform .5s var(--lg-ease), box-shadow .4s var(--lg-fluido); }
+.tarjeta:active { transform:scale(.985); transition-duration:.12s; }
+.tarjeta { overflow:visible; }
+
+/* Barra inferior: la selección se desliza como una gota de agua entre pestañas */
+#tabbar { position:fixed; }
+#tabbar .lg-indicador {
+  position:absolute; top:6px; bottom:6px; left:0; width:0; border-radius:999px; pointer-events:none; z-index:0;
+  background:linear-gradient(180deg, rgba(255,255,255,.85), rgba(255,255,255,.45));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.9), 0 4px 14px rgba(0,0,0,.12);
+  transition:transform .55s var(--lg-ease), width .55s var(--lg-ease);
+}
+body.oscuro #tabbar .lg-indicador { background:linear-gradient(180deg, rgba(255,255,255,.2), rgba(255,255,255,.08)); box-shadow:inset 0 1px 0 rgba(255,255,255,.22), 0 4px 14px rgba(0,0,0,.35); }
+#tabbar button { z-index:1; }
+#tabbar button.activa { background:transparent !important; }
+#tabbar button.activa { color:var(--azul); }
+
+/* Entradas y ventanas: crecen con un poco de rebote, como un líquido que se asienta */
+#modal.abierto .ventana, #actorModal.abierto .ventana, #statsModal.abierto .ventana, .ayuda-atajos .ayuda-caja {
+  animation:lgEntrar .5s var(--lg-ease) both;
+}
+@keyframes lgEntrar { from { opacity:0; transform:translateY(18px) scale(.96); } to { opacity:1; transform:none; } }
+.animar { animation-duration:.6s; animation-timing-function:var(--lg-fluido); }
+@keyframes aparecer { from { opacity:0; transform:translateY(16px) scale(.985); } to { opacity:1; transform:none; } }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration:.01ms !important; transition-duration:.01ms !important; }
+}
+/* Limpieza de la lista: filtro de vistas y contador/estado viven ahora en Configuración */
+#toolbarVistas{display:none !important}
+.estado-datos{margin-top:6px}
+</style>
 </head>
 <body>
 <div id="bannerSinConexion" class="banner-offline" hidden></div>
@@ -1253,7 +1358,6 @@ body.oscuro #chatAbrir { background:radial-gradient(circle at 50% 35%, #2c2c30 0
     <button type="button" data-seg="favoritas">Favoritas</button>
   </div>
   <div id="chips" class="solo-catalogo" data-zona="lista"></div>
-  <div class="fila-estado" data-zona="lista"><div id="contador"></div><div id="estadoGuardado"></div></div>
   </div>
 </header>
 
@@ -1347,6 +1451,7 @@ body.oscuro #chatAbrir { background:radial-gradient(circle at 50% 35%, #2c2c30 0
       <button id="respaldarMarcas" class="pildora">⬇ Respaldar</button>
       <button id="restaurarMarcas" class="pildora">⬆ Restaurar</button>
       <p id="estadoRespaldo" class="estado-respaldo"></p>
+      <div class="fila-estado estado-datos"><div id="contador"></div><div id="estadoGuardado"></div></div>
     </div>
     <div class="grupo-menu">
       <span class="grupo-titulo">Ajustes</span>
@@ -8907,6 +9012,41 @@ document.addEventListener("DOMContentLoaded", () => {
     b.appendChild(document.createTextNode(resto));
   });
 });
+</script>
+<script id="liquid-js">
+(function () {
+  // Brillo que sigue al dedo o al cursor
+  document.addEventListener("pointermove", e => {
+    const el = e.target.closest && e.target.closest(".pildora, #tabbar button, .explorar-item, .explorar-tile, .actor-card, .tarjeta");
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    el.style.setProperty("--mx", (e.clientX - r.left) + "px");
+    el.style.setProperty("--my", (e.clientY - r.top) + "px");
+  }, { passive: true });
+  document.addEventListener("pointerdown", e => {
+    const el = e.target.closest && e.target.closest(".pildora, #tabbar button, .explorar-item, .explorar-tile, .actor-card, .tarjeta");
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    el.style.setProperty("--mx", (e.clientX - r.left) + "px");
+    el.style.setProperty("--my", (e.clientY - r.top) + "px");
+  }, { passive: true });
+
+  // Indicador deslizante de la barra inferior
+  const barra = document.getElementById("tabbar");
+  if (!barra) return;
+  const ind = document.createElement("span");
+  ind.className = "lg-indicador";
+  barra.insertBefore(ind, barra.firstChild);
+  const colocar = () => {
+    const act = barra.querySelector("button.activa");
+    if (!act) { ind.style.width = "0px"; return; }
+    ind.style.width = act.offsetWidth + "px";
+    ind.style.transform = "translateX(" + act.offsetLeft + "px)";
+  };
+  new MutationObserver(colocar).observe(barra, { attributes: true, subtree: true, attributeFilter: ["class"] });
+  window.addEventListener("resize", colocar);
+  colocar();
+})();
 </script>
 </body>
 </html>
