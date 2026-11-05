@@ -1578,6 +1578,31 @@ body.premiere #app > header .segmentado button.activa { background:#2a2620 !impo
 <style id="asistente-sin-inicio">
 body:not(.con-sesion) #chatAbrir { display:none !important; }
 </style>
+<style id="saludo-personal">
+.saludo-personal { position:relative; margin:14px 16px 4px; padding:18px 18px 16px; border-radius:24px; border:1px solid var(--borde); background:linear-gradient(135deg, color-mix(in srgb, var(--azul) 16%, transparent), var(--tarjeta)); color:var(--texto); box-shadow:0 10px 30px rgba(0,0,0,.06); animation:saludoEntrar .45s cubic-bezier(.2,.8,.2,1) both; }
+.saludo-titulo { margin:0 34px 4px 0; font-size:22px; font-weight:700; letter-spacing:-.02em; line-height:1.2; }
+.saludo-linea { margin:6px 0 0; font-size:15px; line-height:1.45; color:var(--texto); }
+.saludo-meta { margin:8px 0 0; font-size:13px; color:var(--gris); line-height:1.4; }
+.saludo-acciones { display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; }
+.saludo-cerrar { position:absolute; top:12px; right:12px; width:30px; height:30px; border-radius:50%; border:0; background:var(--boton-suave); color:var(--gris); font-size:18px; line-height:1; cursor:pointer; }
+.saludo-cerrar:focus-visible, .saludo-acciones button:focus-visible { outline:2px solid var(--azul); outline-offset:2px; }
+@keyframes saludoEntrar { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
+.nombre-fondo { position:fixed; inset:0; z-index:70; background:rgba(0,0,0,.32); display:none; }
+.nombre-fondo.visible { display:block; }
+.nombre-modal { position:fixed; inset:0; z-index:71; display:none; align-items:center; justify-content:center; padding:16px; }
+.nombre-modal.visible { display:flex; }
+.nombre-caja { width:100%; max-width:400px; padding:26px 22px 20px; border-radius:28px; background:var(--tarjeta); color:var(--texto); text-align:center; box-shadow:0 24px 60px rgba(0,0,0,.22); animation:saludoEntrar .4s cubic-bezier(.2,.8,.2,1) both; }
+.nombre-icono { font-size:40px; line-height:1; }
+.nombre-caja h2 { margin:10px 0 6px; font-size:22px; font-weight:700; letter-spacing:-.02em; }
+.nombre-texto { margin:0 0 14px; font-size:15px; line-height:1.45; color:var(--gris); }
+#nombreInput { width:100%; box-sizing:border-box; padding:12px 16px; border-radius:999px; border:1px solid var(--borde); background:var(--boton-suave); color:var(--texto); font:inherit; font-size:16px; text-align:center; }
+.nombre-error { min-height:18px; margin:6px 0 0; font-size:13px; color:#ff453a; }
+.nombre-acciones { display:flex; gap:10px; justify-content:center; margin-top:12px; }
+.saludo-personal.hablando { border-color:color-mix(in srgb, var(--azul) 55%, transparent); box-shadow:0 0 0 4px color-mix(in srgb, var(--azul) 14%, transparent), 0 10px 30px rgba(0,0,0,.06); }
+.saludo-personal.hablando .saludo-titulo { animation:saludoRespira 1.8s ease-in-out infinite; }
+@keyframes saludoRespira { 0%, 100% { opacity:1; } 50% { opacity:.72; } }
+@media (prefers-reduced-motion: reduce) { .saludo-personal, .nombre-caja, .saludo-personal.hablando .saludo-titulo { animation:none; } }
+</style>
 </head>
 <body>
 <div id="bannerSinConexion" class="banner-offline" hidden></div>
@@ -1759,6 +1784,16 @@ body:not(.con-sesion) #chatAbrir { display:none !important; }
         <option value="ahorro">Siempre ahorro</option>
         <option value="normal">Siempre normal</option>
       </select></div>
+    <div class="campo"><label for="saludo-modo">Saludo al entrar</label>
+      <select id="saludo-modo">
+        <option value="si">Mostrar con mi nombre</option>
+        <option value="no">No mostrar</option>
+      </select></div>
+    <div class="campo"><label for="saludo-voz">Saludo en voz alta</label>
+      <select id="saludo-voz">
+        <option value="si">Sí, al entrar</option>
+        <option value="no">Solo texto</option>
+      </select></div>
       <div class="ajuste-vidrio" id="ajusteVidrio"><label for="vidrioAlfa">Transparencia del vidrio <span id="vidrioAlfaValor">72</span>%</label><input type="range" id="vidrioAlfa" min="40" max="95" step="1" value="72" aria-label="Transparencia del vidrio"></div>
     </div>
     <div class="grupo-menu grupo-peligro">
@@ -1772,6 +1807,7 @@ body:not(.con-sesion) #chatAbrir { display:none !important; }
 
 
 <div class="firma-agc firma-inicio" aria-hidden="true"><svg class="firma-svg" viewBox="-6 -6 167.9 112.0" aria-label="AG" role="img" xmlns="http://www.w3.org/2000/svg"><path fill="currentColor" d="M80.29020556227329 66.38452237001209C66.62636033857316 68.07738814993954 64.93349455864572 66.74727932285369 64.93349455864572 60.94316807738815C64.93349455864572 57.557436517533255 70.73760580411125 10.640870616686819 72.4304715840387 1.2091898428053156L70.85852478839179 0.0C69.16565900846433 1.6928657799274447 67.47279322853689 3.748488512696497 64.81257557436518 3.748488512696497C62.152357920193474 3.748488512696497 49.93954050785973 2.055622732769038 47.27932285368803 2.055622732769038C40.02418379685611 2.055622732769038 36.03385731559855 4.836759371221277 29.987908101571946 10.399032648125754C24.78839177750907 15.235792019347038 20.918984280532044 20.67714631197098 20.918984280532044 26.844014510278114C20.918984280532044 30.471584038694076 21.523579201934705 33.85731559854897 22.49093107617896 37.001209189842804L31.318016928657798 31.801692865779927C30.22974607013301 28.536880290205566 28.778718258766627 23.700120918984283 28.778718258766627 19.951632406287786C28.778718258766627 13.905683192261186 34.3409915356711 9.310761789600967 41.958887545344616 9.310761789600967C44.619105199516326 9.310761789600967 57.67835550181378 10.882708585247883 59.854897218863364 10.882708585247883L25.876662636033856 54.89721886336155C21.523579201934705 60.33857315598549 16.68681983071342 63.11970979443773 9.915356711003628 63.11970979443773C8.94800483675937 63.11970979443773 5.441354292623942 62.75695284159613 4.474002418379686 62.6360338573156L0.0 70.97944377267231C2.418379685610641 71.58403869407498 4.594921402660217 71.82587666263603 6.529625151148731 71.82587666263603C13.05925030229746 71.82587666263603 17.533252720677147 68.6819830713422 22.97460701330109 63.603385731559854C24.667472793228537 62.031438935912945 32.769044740024185 52.84159613059251 35.79201934703749 49.09310761789601C40.507859733978236 49.09310761789601 53.08343409915357 49.214026602176546 56.9528415961306 49.697702539298675C55.8645707376058 57.19467956469166 54.89721886336155 63.966142684401454 54.29262394195889 70.49576783555018C54.17170495767836 71.94679564691657 55.62273276904474 72.91414752116083 57.19467956469166 72.91414752116083C59.250302297460706 72.91414752116083 73.03506650544136 69.52841596130592 78.35550181378477 69.0447400241838ZM57.67835550181378 44.74002418379686H38.93591293833132L62.27327690447401 13.422007255139057ZM153.32527206771465 39.05683192261185C148.48851269649336 38.694074969770256 137.3639661426844 38.45223700120919 126.11850060459494 38.45223700120919L118.74244256348248 42.20072551390568V43.16807738814994L136.39661426844015 42.44256348246675L132.043530834341 59.854897218863364C126.96493349455866 64.69165659008465 119.70979443772674 67.95646916565902 114.14752116082227 67.95646916565902C105.19951632406288 67.95646916565902 99.63724304715842 60.94316807738815 99.63724304715842 49.93954050785973C99.63724304715842 26.360338573155985 115.59854897218864 4.3530834340991476 132.52720677146314 4.3530834340991476C137.48488512696494 4.3530834340991476 141.71704957678355 6.4087061668682 144.01451027811368 10.03627569528416C145.58645707376058 12.454655380894799 146.19105199516326 14.510278113663844 146.91656590084645 19.588875453446192L155.86457073760582 9.552599758162032C153.56711003627572 2.660217654171703 149.093107617896 0.0 139.90326481257557 0.0C126.72309552599759 0.0 114.75211608222492 5.4413542926239415 105.07859733978236 15.840386940749696C95.28415961305926 26.360338573155985 89.11729141475213 41.23337363966143 89.11729141475213 53.92986698911729C89.11729141475213 65.6590084643289 95.52599758162032 72.91414752116083 105.92503022974608 72.91414752116083C113.42200725513908 72.91414752116083 119.83071342200726 70.97944377267231 130.59250302297463 65.53808948004837C128.77871825876665 72.79322853688029 126.60217654171706 80.65296251511488 125.51390568319226 83.31318016928658C123.09552599758163 89.8428053204353 119.5888754534462 92.50302297460702 113.180169286578 92.50302297460702C109.67351874244258 92.50302297460702 103.7484885126965 92.01934703748489 100.12091898428054 91.41475211608223L95.0423216444982 99.39540507859735C99.39540507859735 99.87908101571946 101.33010882708587 100.0 103.7484885126965 100.0C113.42200725513908 100.0 121.64449818621524 95.64691656590085 129.62515114873037 86.33615477629988C134.82466747279324 80.41112454655381 137.00120918984283 75.33252720677146 140.50785973397825 61.305925030229744L145.22370012091898 42.44256348246675H147.76299879081017Z"/></svg></div>
+<section id="saludoPersonal" class="saludo-personal solo-catalogo" data-zona="inicio" style="display:none" aria-live="polite"></section>
 <section id="hoy" class="hoy solo-catalogo" data-zona="inicio" style="display:none"></section>
 <div id="avisoFecha" class="aviso-estancados solo-catalogo" data-zona="inicio" style="display:none">
   <div class="aviso-cabecera">
@@ -1865,6 +1901,20 @@ body:not(.con-sesion) #chatAbrir { display:none !important; }
   <button data-tab="vistas"><span class="ico">✓</span>Vistas</button>
 </nav>
 
+<div id="nombreFondo" class="nombre-fondo" aria-hidden="true"></div>
+<div id="nombreModal" class="nombre-modal" role="dialog" aria-modal="true" aria-labelledby="nombreTitulo">
+  <div class="nombre-caja">
+    <div class="nombre-icono" aria-hidden="true">👋</div>
+    <h2 id="nombreTitulo">Qué bueno tenerte aquí</h2>
+    <p class="nombre-texto">¿Cómo te gustaría que te llamara? Puede ser tu nombre o un apodo.</p>
+    <input id="nombreInput" type="text" maxlength="24" autocomplete="nickname" placeholder="Tu nombre o apodo" aria-label="Tu nombre o apodo">
+    <p id="nombreError" class="nombre-error" role="alert"></p>
+    <div class="nombre-acciones">
+      <button type="button" id="nombreOmitir" class="pildora">Ahora no</button>
+      <button type="button" id="nombreGuardar" class="pildora destacado">Continuar</button>
+    </div>
+  </div>
+</div>
 <div id="modal">
   <div class="ventana">
     <button class="cerrar" id="cerrarModal" aria-label="Cerrar">×</button>
@@ -4817,6 +4867,7 @@ function pintar() {
   const { vistas, pendientes } = contarEstados();
   $("destacados").style.display = hayFiltros() ? "none" : "block";
   renderRecomendaciones();
+  if (typeof renderSaludoPersonal === "function") renderSaludoPersonal();
   renderHoy();
   actualizarAhora();
   renderAvisoEstancados();
@@ -8605,6 +8656,8 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
   const NOMBRE_COMPA = "Estela";
   // Nombre del usuario, si lo guardó con «recuerda que me llamo …»
   function nombreUsuario() {
+    const guardado = nombreGuardado();
+    if (guardado) return guardado;
     for (const n of notas) {
       const m = String(n).match(/me llamo\s+([A-Za-zÁÉÍÓÚáéíóúÑñ]+)/i);
       if (m) return m[1].charAt(0).toUpperCase() + m[1].slice(1).toLowerCase();
@@ -9974,6 +10027,219 @@ function planearNoche(minutosPedidos, tema, dir) {
   setInterval(todos, 300);
   window.addEventListener("resize", todos);
 })();
+</script>
+<script id="saludo-personal-js">
+/* ---------- Saludo personal: bienvenida cálida al entrar ---------- */
+const SALUDO_NOMBRE = "nombre_usuario";
+const SALUDO_VISITA = "ultima_visita";
+const SALUDO_OMITIDO = "nombre_omitido";
+const SALUDO_MODO = "saludo_modo";
+let saludoSnap = null;
+let saludoCerrado = false;
+
+function leerLS(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+function escribirLS(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+function quitarLS(k) { try { localStorage.removeItem(k); } catch (e) {} }
+
+function nombreGuardado() {
+  const v = (leerLS(SALUDO_NOMBRE) || "").trim();
+  return v || null;
+}
+
+function plural(n, uno, varios) { return n + " " + (n === 1 ? uno : varios); }
+
+function calcularSaludo() {
+  const ultima = Number(leerLS(SALUDO_VISITA) || 0);
+  const dias = ultima ? Math.floor((Date.now() - ultima) / 86400000) : null;
+  const pend = pendientesNoVistas().length;
+  const planes = recordatoriosActivos().length;
+  return { dias: dias, pend: pend, planes: planes, reto: retoActual() };
+}
+
+function textoSaludo(d) {
+  const n = nombreGuardado();
+  const nom = n ? ", " + esc(n) : "";
+  const h = new Date().getHours();
+  const icono = h < 12 ? "☀️" : h < 19 ? "🌤️" : "🌙";
+  const franja = h < 12 ? "Buenos días" : h < 19 ? "Buenas tardes" : "Buenas noches";
+  let titulo, linea;
+  if (d.dias === null) {
+    titulo = icono + " " + (n ? "Qué bueno que llegaste, " + esc(n) + "." : "Qué bueno que llegaste.");
+    linea = "Aquí guardas lo que viste, lo que quieres ver y lo que te gustó. Empieza marcando una película, o pregúntame qué ver.";
+  } else if (d.dias === 0) {
+    titulo = icono + " " + franja + nom + ". Qué bueno verte otra vez.";
+    linea = d.pend ? "Te esperan " + plural(d.pend, "pendiente", "pendientes") + " cuando quieras." : "Aún no tienes pendientes. ¿Qué te apetece agregar?";
+  } else if (d.dias <= 2) {
+    titulo = icono + " Qué gusto tenerte de vuelta" + nom + ".";
+    linea = d.pend ? "Tienes " + plural(d.pend, "pendiente", "pendientes") + " por ver." : "Cuando quieras, te ayudo a elegir algo.";
+  } else {
+    titulo = icono + " Te extrañé" + nom + ". Hace " + d.dias + " días que no entrabas.";
+    linea = d.pend ? "Tienes " + plural(d.pend, "pendiente", "pendientes") + " esperándote." : "Hay películas nuevas por descubrir. ¿Buscamos algo?";
+  }
+  const extras = [];
+  if (d.planes) extras.push("📅 Tienes " + plural(d.planes, "plan", "planes") + " con alguien en los próximos días.");
+  extras.push("🏆 " + esc(d.reto.texto) + " · " + d.reto.hecho + "/" + d.reto.meta);
+  return { titulo: titulo, linea: linea, extras: extras, tieneNombre: !!n };
+}
+
+function renderSaludoPersonal() {
+  const sec = $("saludoPersonal");
+  if (!sec || !document.body.classList.contains("con-sesion")) return;
+  if (!saludoSnap) {
+    saludoSnap = calcularSaludo();
+    escribirLS(SALUDO_VISITA, String(Date.now()));
+    if (!nombreGuardado() && !leerLS(SALUDO_OMITIDO)) abrirNombre(false);
+  }
+  const modo = leerLS(SALUDO_MODO) || "si";
+  if (modo === "no" || saludoCerrado) { sec.style.display = "none"; return; }
+  const t = textoSaludo(saludoSnap);
+  sec.innerHTML =
+    '<button type="button" class="saludo-cerrar" data-accion="cerrar" aria-label="Cerrar saludo">×</button>' +
+    '<h2 class="saludo-titulo">' + t.titulo + '</h2>' +
+    '<p class="saludo-linea">' + t.linea + '</p>' +
+    t.extras.map(x => '<p class="saludo-meta">' + x + '</p>').join("") +
+    '<div class="saludo-acciones"><button type="button" class="pildora" data-accion="escuchar">🔊 Escuchar</button><button type="button" class="pildora" data-accion="nombre">✎ ' +
+    (t.tieneNombre ? "Cambiar mi nombre" : "Ponerme un nombre") + '</button></div>';
+  sec.style.display = "block";
+  if (speechSynthesis && speechSynthesis.speaking) marcarHablando(true);
+  if (!saludoHablo) { saludoHablo = true; setTimeout(hablarSaludo, 500); }
+}
+
+function abrirNombre(editar) {
+  detenerSaludo();
+  const input = $("nombreInput");
+  input.value = nombreGuardado() || "";
+  $("nombreError").textContent = "";
+  $("nombreTitulo").textContent = editar ? "¿Cómo te llamo?" : "Qué bueno tenerte aquí";
+  $("nombreFondo").classList.add("visible");
+  $("nombreModal").classList.add("visible");
+  setTimeout(() => input.focus(), 60);
+}
+
+function cerrarNombre() {
+  $("nombreFondo").classList.remove("visible");
+  $("nombreModal").classList.remove("visible");
+}
+
+function guardarNombre() {
+  let val = $("nombreInput").value.trim().replace(/\s+/g, " ");
+  if (!val) { $("nombreError").textContent = "Escribe cómo te gustaría que te llamara."; return; }
+  if (!/^[\p{L}][\p{L} .'-]{0,23}$/u.test(val)) {
+    $("nombreError").textContent = "Usa solo letras, por ejemplo tu nombre o un apodo corto.";
+    return;
+  }
+  val = val.charAt(0).toUpperCase() + val.slice(1);
+  escribirLS(SALUDO_NOMBRE, val);
+  quitarLS(SALUDO_OMITIDO);
+  cerrarNombre();
+  renderSaludoPersonal();
+}
+
+function omitirNombre() {
+  escribirLS(SALUDO_OMITIDO, "1");
+  cerrarNombre();
+  renderSaludoPersonal();
+}
+
+$("nombreGuardar").addEventListener("click", guardarNombre);
+$("nombreOmitir").addEventListener("click", omitirNombre);
+$("nombreFondo").addEventListener("click", omitirNombre);
+$("nombreInput").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); guardarNombre(); } });
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape" && $("nombreModal").classList.contains("visible")) omitirNombre();
+});
+
+$("saludoPersonal").addEventListener("click", e => {
+  const b = e.target.closest("[data-accion]");
+  if (!b) return;
+  if (b.dataset.accion === "cerrar") { saludoCerrado = true; renderSaludoPersonal(); }
+  if (b.dataset.accion === "nombre") abrirNombre(true);
+  if (b.dataset.accion === "escuchar") {
+    if ($("saludoPersonal").classList.contains("hablando")) detenerSaludo(); else hablarSaludo();
+  }
+});
+
+const selSaludo = $("saludo-modo");
+selSaludo.value = leerLS(SALUDO_MODO) || "si";
+selSaludo.addEventListener("change", () => {
+  escribirLS(SALUDO_MODO, selSaludo.value);
+  saludoCerrado = false;
+  renderSaludoPersonal();
+});
+
+/* ---------- Saludo en voz alta (voz del navegador, sin conexión a datos del catálogo) ---------- */
+let saludoHablo = false;
+let saludoVozTimer = null;
+
+function vozSaludoActiva() {
+  if (!("speechSynthesis" in window) || typeof SpeechSynthesisUtterance === "undefined") return false;
+  if ((leerLS("saludo_voz") || "si") === "no") return false;
+  if (leerLS("chat_voz") === "0") return false;
+  return true;
+}
+
+function vozEspanola() {
+  const vs = speechSynthesis.getVoices().filter(v => /^es/i.test(v.lang));
+  if (!vs.length) return null;
+  const calidad = /natural|neural|premium|enhanced|google|mejorad|plus/i;
+  const puntos = v => (/^es[-_]MX/i.test(v.lang) ? 3 : 0) + (calidad.test(v.name) ? 2 : 0) + (v.localService ? 0 : 1);
+  return vs.slice().sort((a, b) => puntos(b) - puntos(a))[0];
+}
+
+function textoParaVoz() {
+  const sec = $("saludoPersonal");
+  return [...sec.querySelectorAll(".saludo-titulo, .saludo-linea, .saludo-meta")]
+    .map(el => el.textContent.trim()).filter(Boolean).join(". ")
+    .replace(/\p{Extended_Pictographic}\uFE0F?/gu, "")
+    .replace(/·/g, ",").replace(/\s+/g, " ").replace(/\.\s*\./g, ".").trim();
+}
+
+function marcarHablando(on) {
+  const sec = $("saludoPersonal");
+  if (!sec) return;
+  sec.classList.toggle("hablando", on);
+  const b = sec.querySelector('[data-accion="escuchar"]');
+  if (b) b.textContent = on ? "⏹ Detener" : "🔊 Escuchar";
+}
+
+function detenerSaludo() {
+  if (saludoVozTimer) { clearTimeout(saludoVozTimer); saludoVozTimer = null; }
+  if ("speechSynthesis" in window) speechSynthesis.cancel();
+  marcarHablando(false);
+}
+
+function hablarSaludo() {
+  if (!vozSaludoActiva() || !$("saludoPersonal")) return;
+  const texto = textoParaVoz();
+  if (!texto) return;
+  detenerSaludo();
+  const u = new SpeechSynthesisUtterance(texto);
+  const voz = vozEspanola();
+  u.lang = voz ? voz.lang : "es-MX";
+  if (voz) u.voice = voz;
+  u.rate = 0.98;
+  u.pitch = 1.04;
+  u.onstart = () => { if (saludoVozTimer) { clearTimeout(saludoVozTimer); saludoVozTimer = null; } marcarHablando(true); };
+  u.onend = () => marcarHablando(false);
+  u.onerror = () => marcarHablando(false);
+  marcarHablando(true);
+  speechSynthesis.speak(u);
+  // Algunos navegadores bloquean la voz sin un toque previo: si no empieza, lo intenta en el primer toque
+  saludoVozTimer = setTimeout(() => {
+    saludoVozTimer = null;
+    if (!speechSynthesis.speaking) {
+      marcarHablando(false);
+      document.addEventListener("pointerdown", () => { if (!speechSynthesis.speaking) hablarSaludo(); }, { once: true });
+    }
+  }, 1200);
+}
+
+const selVoz = $("saludo-voz");
+selVoz.value = leerLS("saludo_voz") || "si";
+selVoz.addEventListener("change", () => {
+  escribirLS("saludo_voz", selVoz.value);
+  if (selVoz.value === "no") detenerSaludo();
+});
 </script>
 </body>
 </html>
