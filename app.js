@@ -7718,7 +7718,56 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
     return t;
   }
 
+  // ---------- Abrir la película de la que estamos hablando ("veamos esa") ----------
+  function titulosDeUltimaRespuesta() {
+    const bs = lista.querySelectorAll(".chat-burbuja.ia");
+    const ultima = bs.length ? bs[bs.length - 1].textContent : "";
+    const txt = normalizarChat(ultima);
+    if (!txt) return [];
+    return peliculas.filter(p => {
+      const tn = normalizarChat(p.titulo);
+      return tn.length >= 4 && txt.includes(tn);
+    });
+  }
+
+  function intentoAbrirSugerida(t) {
+    const n = normalizarChat(t);
+    if (!n || n.length > 60) return false;
+    const confirma = /^(si|sip|ok|okey|va|dale|claro|veamos|vamos|ver|esa|esa mera|esa misma|la de|abrela|abre la|abrir|muestrame|muestra|quiero verla|quiero ver esa|quiero ver la|vamos con esa|veamos esa|esa peli|esa pelicula)\b/;
+    const ordinal = /(primera|primer|segunda|segundo|tercera|tercero)/;
+    if (!confirma.test(n) && !ordinal.test(n)) {
+      // Si escriben solo el título (o tocan una opción con el título), también se abre
+      const solo = tituloPedido(n);
+      if (!(solo && normalizarChat(solo.titulo) === n)) return false;
+    }
+
+    const cand = (ultimasSugeridas && ultimasSugeridas.length) ? ultimasSugeridas : titulosDeUltimaRespuesta();
+    // 1) Si el mensaje trae el título, esa gana
+    let p = tituloPedido(n);
+    // 2) Si no, usa lo que acaba de sugerir la IA
+    if (!p && cand.length) {
+      if (cand.length === 1) p = cand[0];
+      else {
+        const orden = { primera: 0, primer: 0, segunda: 1, segundo: 1, tercera: 2, tercero: 2 };
+        const m = n.match(/(primera|primer|segunda|segundo|tercera|tercero)/);
+        if (m && cand[orden[m[1]]]) p = cand[orden[m[1]]];
+      }
+    }
+    if (!p) {
+      if (cand.length > 1) {
+        burbuja("¿Cuál quieres abrir?", "ia");
+        ponerChips(cand.map(x => x.titulo).slice(0, 4));
+        return true;
+      }
+      return false;
+    }
+    burbuja("Va, abriendo «" + p.titulo + "».", "ia");
+    abrirDetalle(p);
+    return true;
+  }
+
   function procesarEntrada(t) {
+    if (intentoAbrirSugerida(t)) return;
     const nt = normalizarChat(t);
     if (/^(vota|votemos|dos opciones|a o b|cual prefieres|cual te late)/.test(nt)) { votacionAB(); return; }
     if (/^(mi racha|racha|cuantas semanas)/.test(nt)) {
