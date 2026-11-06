@@ -7311,6 +7311,7 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
       return;
     }
     if (!oculta) burbuja(texto, "yo");
+    if (!oculta && intentoAbrirSugerida(texto)) return;
     if (!oculta && consultasPersonalesHoy() >= LIMITE_IA_PERSONAL_DIA) {
       burbuja("Hoy ya usaste tus " + LIMITE_IA_PERSONAL_DIA + " consultas con IA. Sigo contigo en modo sin IA; la IA vuelve a medianoche (hora del Pacífico).", "ia");
       responderLocal(texto);
@@ -7338,11 +7339,17 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
         }
         return previa;
       }
-      const r = await fetch(CHAT_URL, {
-        method: "POST",
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify({ token: accessToken, pregunta: texto + "\n\n[Perfil de gustos del usuario: " + perfilGustos() + ".]", historial: historial, catalogo: catalogo, gustos: perfilGustos() })
-      });
+      const control = new AbortController();
+      const tiempo = setTimeout(() => control.abort(), 25000);
+      let r;
+      try {
+        r = await fetch(CHAT_URL, {
+          method: "POST",
+          signal: control.signal,
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify({ token: accessToken, pregunta: texto + "\n\n[Perfil de gustos del usuario: " + perfilGustos() + ".]", historial: historial, catalogo: catalogo, gustos: perfilGustos() })
+        });
+      } finally { clearTimeout(tiempo); }
       const j = await r.json();
       pensando.remove();
       if (j.uso) pintarUso(j.uso);
@@ -7357,6 +7364,8 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
         if (!j.accion) respuestasCache.set(clave, j.respuesta);
         if (!oculta) {
           burbuja(j.respuesta, "ia");
+          const nombradas = titulosEnTexto(j.respuesta);
+          if (nombradas.length) ultimasSugeridas = nombradas;
           mostrarPosters(j.respuesta);
           if (j.accion) proponerAccionIA(j.accion);
           historial.push({ role: "user", content: texto });
@@ -7367,8 +7376,9 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
       }
     } catch (e) {
       pensando.remove();
-      if (oculta) burbuja("No pude conectar con el asistente. Revisa tu conexión.", "error");
-      else caeASinIA("No pude conectar con la IA. Revisa tu conexión.");
+      const lento = e && e.name === "AbortError";
+      if (oculta) burbuja(lento ? "La IA tardó demasiado. Intenta de nuevo." : "No pude conectar con el asistente. Revisa tu conexión.", "error");
+      else caeASinIA(lento ? "La IA tardó demasiado en responder. Intenta de nuevo." : "No pude conectar con la IA. Revisa tu conexión.");
     } finally {
       enviar.disabled = false;
     }
@@ -7871,7 +7881,7 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
       return false;
     }
     burbuja("Va, abriendo «" + p.titulo + "».", "ia");
-    abrirDetalle(p);
+    try { abrirDetalle(p); } catch (e) { burbuja("No pude abrir la ficha. Intenta tocar el póster.", "error"); }
     return true;
   }
 
