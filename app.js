@@ -3957,43 +3957,118 @@ function abrirTodasCuriosidades(temaElegido) {
 }
 
 function renderCuriosidadDia() {
-  let sec = document.getElementById("curiosidades");
-  if (!sec) {
-    const ref = document.getElementById("destacados");
-    if (!ref) return;
-    sec = document.createElement("section");
-    sec.id = "curiosidades";
-    sec.className = "destacados solo-catalogo";
-    sec.dataset.zona = "estrenos";
-    sec.innerHTML = '<h3>Curiosidades</h3><div id="curiosidadDia" class="curiosidad-dia"></div>';
-    ref.insertAdjacentElement("afterend", sec);
-  }
-  const el = document.getElementById("curiosidadDia");
-  const c = curiosidadDelDia();
-  if (!c) { el.innerHTML = ""; return; }
-  el.innerHTML =
-    '<div class="cur-tema">' + esc(c.tema || "Dato") + ' · ' + esc(c.peli.titulo) + '</div>' +
-    '<p class="cur-texto">' + esc(c.texto) + '</p>' +
-    (c.fuente ? '<small class="cur-fuente">Fuente: ' + esc(c.fuente) + '</small>' : '') +
-    '<div class="cur-pie">' +
-      '<button type="button" class="pildora" data-cur="ver">Ver ficha</button>' +
-      '<button type="button" class="pildora" data-cur="otra">Otra curiosidad</button>' +
-      '<button type="button" class="pildora" data-cur="todas">Todas</button>' +
-      '<button type="button" class="pildora" data-cur="copiar">Copiar</button>' +
-    '</div>';
-  el.onclick = e => {
-    const b = e.target.closest("[data-cur]");
-    if (!b) return;
-    if (b.dataset.cur === "otra") { curioOffset++; renderCuriosidadDia(); }
-    else if (b.dataset.cur === "copiar") {
-      navigator.clipboard.writeText(c.peli.titulo + ": " + c.texto)
-        .then(() => { b.textContent = "¡Copiado!"; setTimeout(() => { b.textContent = "Copiar"; }, 1500); })
-        .catch(() => {});
-    }
-    else if (b.dataset.cur === "ver") abrirDetalle(c.peli);
-    else abrirTodasCuriosidades();
-  };
+  // Fase 1: en la pestaña aparece solo un botón; la curiosidad se abre en una hoja.
+  if (document.getElementById("curiosidades")) return;
+  const ref = document.getElementById("destacados");
+  if (!ref) return;
+  const sec = document.createElement("section");
+  sec.id = "curiosidades";
+  sec.className = "cur-boton-wrap solo-catalogo";
+  sec.dataset.zona = "estrenos";
+  sec.innerHTML = '<button type="button" id="curiosidadBtn" class="cur-btn">✨ Curiosidad</button>';
+  ref.insertAdjacentElement("afterend", sec);
+  document.getElementById("curiosidadBtn").onclick = abrirCuriosidadSheet;
 }
+
+// URL del servidor (la misma Aplicación web de Apps Script que usa el asistente)
+const CURIO_URL = "PEGA_AQUI_LA_URL_DE_TU_APPS_SCRIPT";
+const CURIO_HIST = "curio_historial";
+
+function historialCurio() {
+  try { return JSON.parse(localStorage.getItem(CURIO_HIST) || "[]"); } catch (e) { return []; }
+}
+function guardarHistorialCurio(lista) {
+  try { localStorage.setItem(CURIO_HIST, JSON.stringify(lista.slice(-60))); } catch (e) {}
+}
+
+function elegirPeliculaCurio() {
+  const hist = historialCurio();
+  const pool = peliculas.filter(p => p.titulo && !/serie/i.test(String(p.tipo || "")));
+  const nuevas = pool.filter(p => !hist.some(h => h.titulo === p.titulo));
+  const base = nuevas.length ? nuevas : pool;
+  return base[Math.floor(Math.random() * base.length)];
+}
+
+function abrirCuriosidadSheet() {
+  let hoja = document.getElementById("curioSheet");
+  if (!hoja) {
+    hoja = document.createElement("div");
+    hoja.id = "curioSheet";
+    hoja.className = "cur-sheet";
+    hoja.innerHTML = '<div class="cur-sheet-caja" role="dialog" aria-label="Curiosidad"><div class="cur-sheet-cuerpo" id="curioSheetCuerpo"></div></div>';
+    hoja.addEventListener("click", e => { if (e.target === hoja) hoja.classList.remove("abierta"); });
+    document.body.appendChild(hoja);
+  }
+  hoja.classList.add("abierta");
+  generarCuriosidadNueva();
+}
+
+async function generarCuriosidadNueva() {
+  const cuerpo = document.getElementById("curioSheetCuerpo");
+  const peli = elegirPeliculaCurio();
+  if (!peli) { cuerpo.innerHTML = '<p class="cur-texto">Agrega películas para ver curiosidades.</p>'; return; }
+  cuerpo.innerHTML = '<div class="cur-tema">' + esc(peli.titulo) + '</div><p class="cur-texto cur-cargando">Buscando una curiosidad verificada…</p>';
+
+  const hist = historialCurio();
+  try {
+    const r = await fetch(CURIO_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({
+        token: accessToken,
+        accion: "curiosidad",
+        pelicula: { titulo: peli.titulo, año: peli.año, director: peli.director, reparto: peli.reparto, genero: peli.genero, pais: peli.pais },
+        evitar: hist.map(h => h.texto)
+      })
+    });
+    const j = await r.json();
+    if (j.error) {
+      cuerpo.innerHTML = '<div class="cur-tema">' + esc(peli.titulo) + '</div><p class="cur-texto">' + esc(j.error) + '</p>' + pieCurio(peli, null);
+      return;
+    }
+    hist.push({ titulo: peli.titulo, texto: j.texto });
+    guardarHistorialCurio(hist);
+    cuerpo.innerHTML =
+      '<div class="cur-tema">' + esc(j.tema) + ' · ' + esc(peli.titulo) + '</div>' +
+      '<p class="cur-texto">' + esc(j.texto) + '</p>' +
+      '<small class="cur-fuente">Fuente: <a href="' + esc(j.url) + '" target="_blank" rel="noopener">' + esc(j.fuente || j.url) + '</a></small>' +
+      pieCurio(peli, j.texto);
+  } catch (e) {
+    cuerpo.innerHTML = '<p class="cur-texto">No pude conectar. Revisa tu conexión e inténtalo de nuevo.</p>' + pieCurio(peli, null);
+  }
+}
+
+function pieCurio(peli, texto) {
+  return '<div class="cur-pie">' +
+    '<button type="button" class="pildora" data-cur="otra">Otra</button>' +
+    '<button type="button" class="pildora" data-cur="ver">Ver ficha</button>' +
+    (texto ? '<button type="button" class="pildora" data-cur="copiar">Copiar</button>' : '') +
+    '<button type="button" class="pildora" data-cur="cerrar">Cerrar</button>' +
+    '</div>';
+}
+
+document.addEventListener("click", e => {
+  const b = e.target.closest && e.target.closest("#curioSheet [data-cur]");
+  if (!b) return;
+  const hoja = document.getElementById("curioSheet");
+  const accion = b.dataset.cur;
+  if (accion === "otra") generarCuriosidadNueva();
+  else if (accion === "cerrar") hoja.classList.remove("abierta");
+  else if (accion === "ver") {
+    hoja.classList.remove("abierta");
+    const h = historialCurio();
+    const ult = h[h.length - 1];
+    const p = peliculas.find(x => x.titulo === (ult && ult.titulo));
+    if (p) abrirDetalle(p);
+  }
+  else if (accion === "copiar") {
+    const h = historialCurio();
+    const ult = h[h.length - 1];
+    if (ult) navigator.clipboard.writeText(ult.titulo + ": " + ult.texto)
+      .then(() => { b.textContent = "¡Copiado!"; setTimeout(() => { b.textContent = "Copiar"; }, 1500); })
+      .catch(() => {});
+  }
+});
 
 async function cargarCuriosidades() {
   try {

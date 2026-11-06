@@ -1789,3 +1789,15 @@ small, .meta, .saludo-meta, .hoy-sub { font-size: max(11px, 0.8rem); }
 .cap.visto .cap-check { background:var(--azul); border-color:var(--azul); color:#fff; }
 .cap .meta { font-size:12px; white-space:nowrap; }
 @media (prefers-reduced-motion: no-preference) { .serie-card, .cap { transition:background .2s ease; } }
+
+
+/* ---------- Curiosidad: botón y hoja (fase 1) ---------- */
+.cur-boton-wrap { padding: 4px 0 10px; }
+.cur-btn { width: 100%; padding: 12px 16px; border: none; border-radius: 16px; background: var(--boton-suave); color: var(--texto); font-size: 14px; font-weight: 600; cursor: pointer; }
+.cur-sheet { position: fixed; inset: 0; z-index: 60; display: none; align-items: flex-end; justify-content: center; padding: 12px; background: rgba(0,0,0,.35); }
+.cur-sheet.abierta { display: flex; }
+.cur-sheet-caja { width: min(520px, 100%); background: var(--tarjeta); color: var(--texto); border-radius: 22px; box-shadow: 0 10px 40px rgba(0,0,0,.2); padding: 18px 18px 14px; max-height: 80vh; overflow-y: auto; }
+.cur-sheet .cur-tema { font-size: 12px; color: var(--gris); text-transform: uppercase; letter-spacing: .4px; }
+.cur-sheet .cur-texto { font-size: 16px; line-height: 1.5; margin: 10px 0; }
+.cur-sheet .cur-fuente { color: var(--gris); }
+.cur-sheet .cur-pie { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
