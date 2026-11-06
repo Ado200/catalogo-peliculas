@@ -1,5 +1,5 @@
 // Versión de la caché: súbela (catalogo-v2, v3…) cada vez que cambies index.html o los iconos.
-const VERSION = "catalogo-20261106055507";
+const VERSION = "catalogo-v1";
 const SHELL = [
   "./",
   "./index.html",
@@ -41,13 +41,18 @@ self.addEventListener("fetch", e => {
 
   // Páginas: primero la red (para recibir cambios); sin conexión, la copia guardada
   if (req.mode === "navigate") {
-    e.respondWith(
-      fetch(req).then(r => {
-        const copia = r.clone();
-        caches.open(VERSION).then(c => c.put("./index.html", copia));
+    // Responde de inmediato con la copia guardada y actualiza en segundo plano.
+    // Así recargar (por ejemplo, al tocar Actualizar) no espera a la red.
+    e.respondWith((async () => {
+      const cache = await caches.open(VERSION);
+      const cached = await cache.match("./index.html");
+      const red = fetch(req).then(r => {
+        if (r.ok) cache.put("./index.html", r.clone());
         return r;
-      }).catch(() => caches.match("./index.html"))
-    );
+      }).catch(() => null);
+      if (cached) { e.waitUntil(red); return cached; }
+      return (await red) || caches.match("./index.html");
+    })());
     return;
   }
 
