@@ -74,7 +74,8 @@
     <div class="botones-barra">
     <button type="button" class="boton-circular" id="aleatorio" aria-label="Sugerir una película al azar" title="Aleatorio">🎲</button>
     <button type="button" class="boton-circular" id="queVerNoche" aria-label="Qué ver esta noche" title="Qué ver esta noche">🍿</button>
-    <button type="button" class="boton-circular" id="toggleAvanzados" aria-label="Filtros avanzados">⚙</button>
+    <button type="button" class="boton-circular" id="verSeries" aria-label="Series" title="Series">📺</button>
+     <button type="button" class="boton-circular" id="toggleAvanzados" aria-label="Filtros avanzados">⚙</button>
        </div>
   </div>
   <div id="selectorZona" class="segmentado selector-zona" role="group" aria-label="Secciones" style="display:none"></div>
@@ -356,6 +357,13 @@
       <button type="button" id="nombreOmitir" class="pildora">Ahora no</button>
       <button type="button" id="nombreGuardar" class="pildora destacado">Continuar</button>
     </div>
+  </div>
+</div>
+<div id="seriesModal" class="series-modal" role="dialog" aria-modal="true" aria-label="Series">
+  <div class="series-caja">
+    <button class="cerrar" id="cerrarSeries" aria-label="Cerrar">×</button>
+    <h2 class="series-h2">Series</h2>
+    <div id="seriesLista"></div>
   </div>
 </div>
 <div id="modal">

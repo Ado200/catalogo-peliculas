@@ -1762,3 +1762,30 @@ body.oscuro { --gris-legible: #a1a1a6; }
 small, .meta, .saludo-meta, .hoy-sub { font-size: max(11px, 0.8rem); }
 /* Pantalla y texto ampliados: sin cortes ni encimados */
 @media (min-resolution: 2dppx) { body { text-rendering: optimizeLegibility; } }
+
+/* ===== FASE 8 · PARTE 3: Series ===== */
+.series-modal { position:fixed; inset:0; z-index:65; display:none; align-items:flex-end; justify-content:center; background:rgba(0,0,0,.32); }
+.series-modal.abierto { display:flex; }
+.series-caja { position:relative; width:100%; max-width:560px; max-height:92vh; overflow-y:auto; overscroll-behavior:contain; background:var(--tarjeta); color:var(--texto); border-radius:28px 28px 0 0; padding:24px 20px 28px; box-shadow:var(--sombra); }
+@media (min-width:641px) { .series-modal { align-items:center; } .series-caja { border-radius:28px; } }
+.series-h2 { margin:0 40px 12px 0; font-size:22px; font-weight:700; letter-spacing:-.02em; }
+.serie-grupo h3 { margin:16px 0 8px; font-size:15px; font-weight:700; color:var(--gris); }
+.serie-card { display:flex; gap:12px; align-items:flex-start; width:100%; padding:10px; margin-bottom:8px; border:0; border-radius:18px; background:var(--boton-suave); color:var(--texto); text-align:left; cursor:pointer; }
+.serie-card img { width:56px; height:84px; border-radius:12px; object-fit:cover; flex:none; }
+.serie-info { display:flex; flex-direction:column; gap:4px; min-width:0; flex:1; }
+.serie-info strong { font-size:15px; }
+.serie-barra { height:6px; border-radius:999px; background:var(--tarjeta); overflow:hidden; margin:4px 0; }
+.serie-barra span { display:block; height:100%; background:var(--azul); }
+.serie-sinopsis { font-size:15px; line-height:1.45; margin:8px 0 14px; }
+.serie-titulo { margin:8px 0 2px; font-size:22px; font-weight:700; letter-spacing:-.02em; }
+.temp { margin-top:16px; }
+.temp-h { display:flex; align-items:center; gap:10px; margin-bottom:6px; }
+.temp-h .meta { flex:1; }
+.temp-h .pildora { min-height:36px; padding:6px 12px; }
+.cap { display:flex; align-items:center; gap:10px; width:100%; min-height:44px; padding:6px 0; border:0; border-bottom:1px solid var(--borde); background:transparent; color:var(--texto); text-align:left; font-size:15px; cursor:pointer; }
+.cap.visto { color:var(--gris); }
+.cap span:nth-child(2) { flex:1; min-width:0; }
+.cap-check { width:24px; height:24px; border-radius:50%; border:2px solid var(--borde); display:grid; place-items:center; font-size:13px; flex:none; }
+.cap.visto .cap-check { background:var(--azul); border-color:var(--azul); color:#fff; }
+.cap .meta { font-size:12px; white-space:nowrap; }
+@media (prefers-reduced-motion: no-preference) { .serie-card, .cap { transition:background .2s ease; } }

@@ -9063,3 +9063,164 @@ setTimeout(renderTarjetaAuto, 15000);
     }
   });
 })();
+
+
+/* ===== FASE 8 · PARTE 3: Series en la app ===== */
+(function seriesApp() {
+  let seriesCat = [];
+  let episodiosCat = {};
+  let serieActual = null;
+
+  const claveCap = e => e.temporada + "x" + e.episodio;
+  const capsDe = titulo => ((marcas[titulo] || {}).capitulos) || {};
+
+  function aplicarSeries(copia) {
+    const filas = f => { const enc = f[0] || []; return f.slice(1).map(r => Object.fromEntries(enc.map((h, i) => [h, r[i] || ""]))); };
+    seriesCat = filas(copia.series || []).filter(s => s.titulo);
+    episodiosCat = {};
+    filas(copia.episodios || []).forEach(e => {
+      if (!e.serie) return;
+      (episodiosCat[e.serie] = episodiosCat[e.serie] || []).push(e);
+    });
+    Object.values(episodiosCat).forEach(l => l.sort((a, b) =>
+      (Number(a.temporada) - Number(b.temporada)) || (Number(a.episodio) - Number(b.episodio))));
+  }
+
+  function usarCache() {
+    try { const c = JSON.parse(localStorage.getItem("series_cache") || "null"); if (c) aplicarSeries(c); } catch (e) {}
+  }
+
+  async function cargarSeriesApp() {
+    if (!accessToken || !navigator.onLine || !HOJA_ID) { usarCache(); return; }
+    try {
+      const cab = { headers: { Authorization: "Bearer " + accessToken } };
+      const [rs, re] = await Promise.all([
+        fetch(`https://sheets.googleapis.com/v4/spreadsheets/${HOJA_ID}/values/series!A:Z`, cab),
+        fetch(`https://sheets.googleapis.com/v4/spreadsheets/${HOJA_ID}/values/episodios!A:I`, cab)
+      ]);
+      if (!rs.ok || !re.ok) { usarCache(); return; }
+      const copia = { series: (await rs.json()).values || [], episodios: (await re.json()).values || [] };
+      localStorage.setItem("series_cache", JSON.stringify(copia));
+      aplicarSeries(copia);
+    } catch (e) { usarCache(); }
+  }
+
+  function progresoSerie(s) {
+    const lista = episodiosCat[s.titulo] || [];
+    const caps = capsDe(s.titulo);
+    const vistos = lista.filter(e => caps[claveCap(e)]).length;
+    const siguiente = lista.find(e => !caps[claveCap(e)]);
+    return { total: lista.length, vistos: vistos, siguiente: siguiente };
+  }
+
+  function renderSeriesLista() {
+    const cont = document.getElementById("seriesLista");
+    if (!cont) return;
+    if (!seriesCat.length) {
+      cont.innerHTML = '<p class="meta">Aún no hay series cargadas. Revisa que se hayan ejecutado cargarSeries y cargarEpisodios en Apps Script.</p>';
+      return;
+    }
+    const grupos = {};
+    seriesCat.forEach(s => { const g = s.genero_principal || "Otros"; (grupos[g] = grupos[g] || []).push(s); });
+    cont.innerHTML = Object.keys(grupos).map(g =>
+      '<div class="serie-grupo"><h3>' + esc(g) + '</h3>' + grupos[g].map(s => {
+        const pr = progresoSerie(s);
+        const pct = pr.total ? Math.round(pr.vistos / pr.total * 100) : 0;
+        const sig = pr.siguiente ? "Sigue: T" + pr.siguiente.temporada + " · E" + pr.siguiente.episodio
+          : (pr.total ? "¡Al día!" : "Sin capítulos cargados");
+        return '<button type="button" class="serie-card" data-serie="' + esc(s.titulo) + '">' +
+          (s.portada ? '<img src="' + esc(s.portada) + '" alt="" loading="lazy" decoding="async">' : '') +
+          '<span class="serie-info"><strong>' + esc(s.titulo) + '</strong>' +
+          '<span class="meta">' + esc(s.año || "") + ' · ' + esc(s.temporadas || "?") + ' temp. · ' + pr.vistos + '/' + pr.total + ' capítulos</span>' +
+          '<span class="serie-barra"><span style="width:' + pct + '%"></span></span>' +
+          '<span class="meta">' + esc(sig) + '</span></span></button>';
+      }).join("") + '</div>').join("");
+  }
+
+  function abrirSerieDetalle(titulo) {
+    const s = seriesCat.find(x => x.titulo === titulo);
+    const cont = document.getElementById("seriesLista");
+    if (!s || !cont) return;
+    serieActual = titulo;
+    const caps = capsDe(titulo);
+    const porTemp = {};
+    (episodiosCat[titulo] || []).forEach(e => { (porTemp[e.temporada] = porTemp[e.temporada] || []).push(e); });
+    cont.innerHTML =
+      '<button type="button" class="pildora" id="serieVolver">← Series</button>' +
+      '<h2 class="serie-titulo">' + esc(s.titulo) + '</h2>' +
+      '<p class="meta">' + esc(s.año || "") + ' · ' + esc(s.genero || "") + '</p>' +
+      '<p class="serie-sinopsis">' + esc(s.sinopsis || "") + '</p>' +
+      Object.keys(porTemp).map(t => {
+        const eps = porTemp[t];
+        const v = eps.filter(e => caps[claveCap(e)]).length;
+        return '<section class="temp"><div class="temp-h"><strong>Temporada ' + esc(t) + '</strong>' +
+          '<span class="meta">' + v + '/' + eps.length + '</span>' +
+          '<button type="button" class="pildora" data-marcar-temp="' + esc(t) + '">' + (v === eps.length ? "Desmarcar" : "Marcar todo") + '</button></div>' +
+          eps.map(e => '<button type="button" class="cap' + (caps[claveCap(e)] ? ' visto' : '') + '" data-cap="' + claveCap(e) + '">' +
+            '<span class="cap-check">' + (caps[claveCap(e)] ? "✓" : "") + '</span>' +
+            '<span>' + esc(e.episodio) + '. ' + esc(e.titulo) + '</span>' +
+            '<span class="meta">' + esc(e.estreno || "") + '</span></button>').join("") +
+          '</section>';
+      }).join("") || '<p class="meta">Esta serie todavía no tiene capítulos cargados.</p>';
+  }
+
+  function guardarCaps(titulo, caps) {
+    cambiarEstado(titulo, { capitulos: caps });
+  }
+
+  function alternarCapitulo(clave) {
+    const titulo = serieActual;
+    const caps = Object.assign({}, capsDe(titulo));
+    if (caps[clave]) delete caps[clave]; else caps[clave] = true;
+    guardarCaps(titulo, caps);
+    recargarDetalle();
+  }
+
+  function alternarTemporada(t) {
+    const titulo = serieActual;
+    const eps = (episodiosCat[titulo] || []).filter(e => String(e.temporada) === String(t));
+    const caps = Object.assign({}, capsDe(titulo));
+    const todoVisto = eps.every(e => caps[claveCap(e)]);
+    eps.forEach(e => { if (todoVisto) delete caps[claveCap(e)]; else caps[claveCap(e)] = true; });
+    guardarCaps(titulo, caps);
+    recargarDetalle();
+  }
+
+  function recargarDetalle() {
+    const cont = document.getElementById("seriesLista");
+    const y = cont ? cont.parentElement.scrollTop : 0;
+    abrirSerieDetalle(serieActual);
+    if (cont) cont.parentElement.scrollTop = y;
+  }
+
+  const ventana = document.getElementById("seriesModal");
+  const boton = document.getElementById("verSeries");
+  if (!ventana || !boton) return;
+
+  boton.addEventListener("click", () => {
+    serieActual = null;
+    renderSeriesLista();
+    ventana.classList.add("abierto");
+    cargarSeriesApp();
+    setTimeout(() => { const c = document.getElementById("cerrarSeries"); if (c) c.focus(); }, 60);
+  });
+  document.getElementById("cerrarSeries").addEventListener("click", () => ventana.classList.remove("abierto"));
+  ventana.addEventListener("click", e => { if (e.target === ventana) ventana.classList.remove("abierto"); });
+  document.addEventListener("keydown", e => {
+    if (e.key === "Escape" && ventana.classList.contains("abierto")) ventana.classList.remove("abierto");
+  });
+
+  document.getElementById("seriesLista").addEventListener("click", e => {
+    const tarjeta = e.target.closest("[data-serie]");
+    if (tarjeta) { abrirSerieDetalle(tarjeta.dataset.serie); return; }
+    if (e.target.closest("#serieVolver")) { serieActual = null; renderSeriesLista(); return; }
+    const cap = e.target.closest("[data-cap]");
+    if (cap) { alternarCapitulo(cap.dataset.cap); return; }
+    const temp = e.target.closest("[data-marcar-temp]");
+    if (temp) alternarTemporada(temp.dataset.marcarTemp);
+  });
+
+  // Carga inicial y actualización cada 10 minutos, con sesión iniciada
+  setTimeout(() => { if (document.body.classList.contains("con-sesion")) cargarSeriesApp(); }, 6000);
+  setInterval(() => { if (document.body.classList.contains("con-sesion")) cargarSeriesApp(); }, 10 * 60 * 1000);
+})();
