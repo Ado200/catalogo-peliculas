@@ -6416,6 +6416,16 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
     });
     if (notas.length) base.unshift({ preferencias_del_usuario: notas });
     if (memoriaGustosActiva()) base.unshift({ gustos_del_usuario: resumenGustos() });
+    if (window.seriesApi) {
+      const S = window.seriesApi;
+      const resumen = S.lista().slice(0, 40).map(s => {
+        const pr = S.progreso(s);
+        return { titulo: s.titulo, genero: s.genero_principal, año: s.año,
+          capitulos_vistos: pr.vistos + "/" + pr.total,
+          siguiente: pr.siguiente ? "T" + pr.siguiente.temporada + "E" + pr.siguiente.episodio : "ninguno" };
+      });
+      if (resumen.length) base.unshift({ series_del_usuario: resumen });
+    }
     return base;
   }
 
@@ -6816,6 +6826,7 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
 
   function respuestaSugerencia(intro, filtro) {
     ultimoFiltro = filtro;
+    ultimasSeriesSugeridas = [];
     const texto = sugerirLocal(filtro);
     if (!texto) return "Ya te propuse todo lo que encaja con tu lista. Marca algunas películas más como vistas y afino las sugerencias.";
     return intro + "\n\n" + texto;
@@ -7719,6 +7730,83 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
   }
 
   // ---------- Abrir la película de la que estamos hablando ("veamos esa") ----------
+  let ultimasSeriesSugeridas = [];
+
+  function generoSerieDe(n) {
+    const S = window.seriesApi;
+    if (!S) return null;
+    const generos = [...new Set(S.lista().map(s => s.genero_principal).filter(Boolean))];
+    const sinon = {
+      terror: "terror", miedo: "terror", comedia: "comedia", risa: "comedia", romance: "romance", romantica: "romance",
+      drama: "drama", animacion: "animacion", animada: "animacion", documental: "documental", historia: "historica",
+      historica: "historica", accion: "accion", aventura: "accion", suspenso: "crimen", crimen: "crimen", misterio: "crimen",
+      ciencia: "ciencia", fantasia: "ciencia"
+    };
+    const directo = generos.find(g => n.includes(normalizarChat(g)));
+    if (directo) return directo;
+    for (const palabra of Object.keys(sinon)) {
+      if (n.includes(palabra)) {
+        const g = generos.find(x => normalizarChat(x).includes(sinon[palabra]));
+        if (g) return g;
+      }
+    }
+    return null;
+  }
+
+  // Respuestas sobre series: capítulo siguiente, una serie concreta o recomendaciones de series
+  function respuestaSeriesChat(t) {
+    const S = window.seriesApi;
+    if (!S) return false;
+    const lista = S.lista();
+    if (!lista.length) return false;
+    const n = normalizarChat(t);
+
+    if (/(que capitulo sigo|capitulo siguiente|siguiente capitulo|que serie sigo|por donde voy|que sigo viendo de series)/.test(n)) {
+      const enCurso = lista.map(s => ({ s: s, pr: S.progreso(s) })).filter(x => x.pr.siguiente && x.pr.vistos > 0);
+      if (!enCurso.length) {
+        burbuja("Aún no tienes series en curso. Marca un capítulo en 📺 Series y te digo por dónde vas.", "ia");
+      } else {
+        burbuja("Estas son tus series en curso:\n\n" + enCurso.slice(0, 6).map(x =>
+          "• " + x.s.titulo + ": T" + x.pr.siguiente.temporada + " · E" + x.pr.siguiente.episodio +
+          " (" + x.pr.vistos + "/" + x.pr.total + ")").join("\n"), "ia");
+        ponerChips(enCurso.slice(0, 3).map(x => x.s.titulo));
+      }
+      return true;
+    }
+
+    const serie = lista.find(s => { const tn = normalizarChat(s.titulo); return tn.length >= 4 && n.includes(tn); });
+    if (serie && !tituloPedido(n)) {
+      const pr = S.progreso(serie);
+      ultimasSugeridas = [];
+      ultimasSeriesSugeridas = [serie];
+      burbuja(serie.titulo + (serie.año ? " (" + serie.año + ")" : "") + ". " + (serie.genero || "") +
+        ".\n\n" + (serie.sinopsis || "Sin sinopsis.") +
+        "\n\nVas " + pr.vistos + " de " + pr.total + " capítulos." +
+        (pr.siguiente ? " Sigue T" + pr.siguiente.temporada + " · E" + pr.siguiente.episodio + "." : ""), "ia");
+      ponerChips(["Abrir en Series"]);
+      return true;
+    }
+
+    if (/\bseries?\b/.test(n)) {
+      const genero = generoSerieDe(n);
+      let pool = lista.filter(s => { const pr = S.progreso(s); return !(pr.total && pr.vistos === pr.total); });
+      if (genero) pool = pool.filter(s => normalizarChat(s.genero_principal) === normalizarChat(genero));
+      if (!pool.length) {
+        burbuja("No encuentro series" + (genero ? " de " + genero.toLowerCase() : "") + " pendientes. ¿Probamos otro género?", "ia");
+        return true;
+      }
+      const elegidas = pool.sort(() => Math.random() - 0.5).slice(0, 3);
+      ultimasSugeridas = [];
+      ultimasSeriesSugeridas = elegidas;
+      burbuja("Te propongo estas series" + (genero ? " de " + genero.toLowerCase() : "") + ":\n\n" +
+        elegidas.map(s => "• " + s.titulo + (s.año ? " (" + s.año + ")" : "")).join("\n") +
+        "\n\nDime «veamos esa» o «la primera» y la abro en Series.", "ia");
+      ponerChips(elegidas.map(s => s.titulo));
+      return true;
+    }
+    return false;
+  }
+
   function titulosDeUltimaRespuesta() {
     const bs = lista.querySelectorAll(".chat-burbuja.ia");
     const ultima = bs.length ? bs[bs.length - 1].textContent : "";
@@ -7735,6 +7823,26 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
     if (!n || n.length > 60) return false;
     const confirma = /^(si|sip|ok|okey|va|dale|claro|veamos|vamos|ver|esa|esa mera|esa misma|la de|abrela|abre la|abrir|muestrame|muestra|quiero verla|quiero ver esa|quiero ver la|vamos con esa|veamos esa|esa peli|esa pelicula)\b/;
     const ordinal = /(primera|primer|segunda|segundo|tercera|tercero)/;
+    const S = window.seriesApi;
+    const serieExacta = S ? S.lista().find(s => normalizarChat(s.titulo) === n) : null;
+    if (serieExacta) {
+      burbuja("Abriendo la serie «" + serieExacta.titulo + "» en Series.", "ia");
+      S.abrir(serieExacta.titulo);
+      return true;
+    }
+    if (ultimasSeriesSugeridas.length && (confirma.test(n) || ordinal.test(n))) {
+      const orden = { primera: 0, primer: 0, segunda: 1, segundo: 1, tercera: 2, tercero: 2 };
+      const m = n.match(/(primera|primer|segunda|segundo|tercera|tercero)/);
+      let s = ultimasSeriesSugeridas.length === 1 ? ultimasSeriesSugeridas[0] : (m ? ultimasSeriesSugeridas[orden[m[1]]] : null);
+      if (!s) {
+        burbuja("¿Cuál serie quieres abrir?", "ia");
+        ponerChips(ultimasSeriesSugeridas.map(x => x.titulo));
+        return true;
+      }
+      burbuja("Va, abriendo la serie «" + s.titulo + "».", "ia");
+      S.abrir(s.titulo);
+      return true;
+    }
     if (!confirma.test(n) && !ordinal.test(n)) {
       // Si escriben solo el título (o tocan una opción con el título), también se abre
       const solo = tituloPedido(n);
@@ -7768,6 +7876,7 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
 
   function procesarEntrada(t) {
     if (intentoAbrirSugerida(t)) return;
+    if (respuestaSeriesChat(t)) return;
     const nt = normalizarChat(t);
     if (/^(vota|votemos|dos opciones|a o b|cual prefieres|cual te late)/.test(nt)) { votacionAB(); return; }
     if (/^(mi racha|racha|cuantas semanas)/.test(nt)) {
@@ -9223,4 +9332,13 @@ setTimeout(renderTarjetaAuto, 15000);
   // Carga inicial y actualización cada 10 minutos, con sesión iniciada
   setTimeout(() => { if (document.body.classList.contains("con-sesion")) cargarSeriesApp(); }, 6000);
   setInterval(() => { if (document.body.classList.contains("con-sesion")) cargarSeriesApp(); }, 10 * 60 * 1000);
+  window.seriesApi = {
+    lista: () => seriesCat,
+    progreso: progresoSerie,
+    abrir: titulo => {
+      ventana.classList.add("abierto");
+      renderSeriesLista();
+      abrirSerieDetalle(titulo);
+    }
+  };
 })();
