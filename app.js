@@ -8335,6 +8335,30 @@ function calcularSaludo() {
   return { dias: dias, pend: pend, planes: planes, viejos: pendientesViejos(), reto: retoActual() };
 }
 
+function consejoSaludo(d) {
+  const ahora = new Date();
+  const h = ahora.getHours();
+  const dia = ahora.getDay();
+  const cand = [];
+  if (dia === 0 || dia === 6) cand.push("Es fin de semana: buen momento para una maratón.");
+  if (dia === 5) cand.push("Viernes: ¿qué te vas a ver esta noche?");
+  if (dia === 1) cand.push("Empieza la semana con algo ligero.");
+  if (h < 12) cand.push("Una película corta para empezar bien el día.");
+  if (h >= 21) cand.push("Ya es tarde: algo tranquilo estaría bien.");
+  if (d.pend > 0) cand.push("¿Te saco una al azar de tus pendientes?");
+  if (window.seriesApi) {
+    const S = window.seriesApi;
+    const enCurso = S.lista().filter(s => { const pr = S.progreso(s); return pr.vistos > 0 && pr.siguiente; });
+    if (enCurso.length) cand.push("Tienes " + plural(enCurso.length, "serie", "series") + " a medias. ¿Por dónde vamos?");
+  }
+  if (!cand.length) return "";
+  const ultimo = leerLS("saludo_consejo_ultimo");
+  const opciones = cand.filter(c => c !== ultimo);
+  const elegido = (opciones.length ? opciones : cand)[Math.floor(Math.random() * (opciones.length || cand.length))];
+  escribirLS("saludo_consejo_ultimo", elegido);
+  return elegido;
+}
+
 function textoSaludo(d) {
   const n = nombreGuardado();
   const nom = n ? ", " + esc(n) : "";
@@ -8356,6 +8380,7 @@ function textoSaludo(d) {
     linea = d.pend ? "Tienes " + plural(d.pend, "pendiente", "pendientes") + " esperándote." : "Hay películas nuevas por descubrir. ¿Buscamos algo?";
   }
   const extras = [];
+  if (d.consejo) extras.push("💬 " + esc(d.consejo));
   if (d.planes) extras.push("📅 Tienes " + plural(d.planes, "plan", "planes") + " con alguien en los próximos días.");
   if (d.viejos && d.viejos.length) extras.push("📌 " + plural(d.viejos.length, "pendiente lleva", "pendientes llevan") + " más de 2 meses esperando, como «" + esc(d.viejos[0]) + "».");
   extras.push("🏆 " + esc(d.reto.texto));
@@ -8372,13 +8397,23 @@ function renderSaludoPersonal() {
   }
   const modo = leerLS(SALUDO_MODO) || "si";
   if (modo === "no" || saludoCerrado) { sec.style.display = "none"; return; }
+  const frescos = calcularSaludo();
+  saludoSnap.pend = frescos.pend;
+  saludoSnap.planes = frescos.planes;
+  saludoSnap.viejos = frescos.viejos;
+  saludoSnap.reto = frescos.reto;
+  saludoSnap.consejo = consejoSaludo(saludoSnap);
   const t = textoSaludo(saludoSnap);
   sec.innerHTML =
     '<button type="button" class="saludo-cerrar" data-accion="cerrar" aria-label="Cerrar saludo">×</button>' +
     '<h2 class="saludo-titulo">' + t.titulo + '</h2>' +
     '<p class="saludo-linea">' + t.linea + '</p>' +
     t.extras.map(x => '<p class="saludo-meta">' + x + '</p>').join("") +
-    '<div class="saludo-acciones"><button type="button" class="pildora" data-accion="escuchar">🔊 Escuchar</button></div>';
+    '<div class="saludo-acciones"><button type="button" class="pildora" data-accion="escuchar">🔊 Escuchar</button>' +
+    '<button type="button" class="pildora" data-accion="sorpresa">🎲 Sorpréndeme</button>' +
+    '<button type="button" class="pildora" data-accion="platicar">💬 Platicar</button>' +
+    (window.seriesApi ? '<button type="button" class="pildora" data-accion="series">📺 Series</button>' : '') +
+    '</div>';
   sec.style.display = "block";
   if (speechSynthesis && speechSynthesis.speaking) marcarHablando(true);
   if (!saludoHablo) { saludoHablo = true; setTimeout(hablarSaludo, 500); }
@@ -8435,6 +8470,12 @@ $("saludoPersonal").addEventListener("click", e => {
   if (b.dataset.accion === "escuchar") {
     if ($("saludoPersonal").classList.contains("hablando")) detenerSaludo(); else hablarSaludo();
   }
+  if (b.dataset.accion === "sorpresa") {
+    const pend = peliculas.filter(p => (marcas[p.titulo] || {}).pendiente && !(marcas[p.titulo] || {}).vista);
+    if (pend.length) abrirDetalle(pend[Math.floor(Math.random() * pend.length)]);
+  }
+  if (b.dataset.accion === "platicar") { const c = document.getElementById("chatAbrir"); if (c) c.click(); }
+  if (b.dataset.accion === "series") { const s = document.getElementById("verSeries"); if (s) s.click(); }
 });
 
 const selSaludo = $("saludo-modo");
@@ -8459,8 +8500,8 @@ function vozSaludoActiva() {
 function vozEspanola() {
   const vs = speechSynthesis.getVoices().filter(v => /^es/i.test(v.lang));
   if (!vs.length) return null;
-  const calidad = /natural|neural|premium|enhanced|google|mejorad|plus/i;
-  const puntos = v => (/^es[-_]MX/i.test(v.lang) ? 3 : 0) + (calidad.test(v.name) ? 2 : 0) + (v.localService ? 0 : 1);
+  const calidad = /natural|neural|online|premium|enhanced|google|mejorad|plus/i;
+  const puntos = v => (/^es[-_]MX/i.test(v.lang) ? 4 : 0) + (calidad.test(v.name) ? 3 : 0) + (v.localService ? 0 : 1);
   return vs.slice().sort((a, b) => puntos(b) - puntos(a))[0];
 }
 
@@ -8491,17 +8532,20 @@ function hablarSaludo() {
   const texto = textoParaVoz();
   if (!texto) return;
   detenerSaludo();
-  const u = new SpeechSynthesisUtterance(texto);
   const voz = vozEspanola();
-  u.lang = voz ? voz.lang : "es-MX";
-  if (voz) u.voice = voz;
-  u.rate = 0.98;
-  u.pitch = 1.04;
-  u.onstart = () => { if (saludoVozTimer) { clearTimeout(saludoVozTimer); saludoVozTimer = null; } marcarHablando(true); };
-  u.onend = () => marcarHablando(false);
-  u.onerror = () => marcarHablando(false);
-  marcarHablando(true);
-  speechSynthesis.speak(u);
+  // Frases separadas: la voz respira entre una y otra, como al hablar
+  const frases = texto.split(/(?<=[.!?])\s+/).filter(Boolean);
+  frases.forEach((frase, k) => {
+    const u = new SpeechSynthesisUtterance(frase);
+    u.lang = voz ? voz.lang : "es-MX";
+    if (voz) u.voice = voz;
+    u.rate = 0.92;
+    u.pitch = 1.0;
+    u.onstart = () => { if (saludoVozTimer) { clearTimeout(saludoVozTimer); saludoVozTimer = null; } marcarHablando(true); };
+    if (k === frases.length - 1) u.onend = () => marcarHablando(false);
+    u.onerror = () => marcarHablando(false);
+    speechSynthesis.speak(u);
+  });
   // Algunos navegadores bloquean la voz sin un toque previo: si no empieza, lo intenta en el primer toque
   saludoVozTimer = setTimeout(() => {
     saludoVozTimer = null;
