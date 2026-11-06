@@ -3078,8 +3078,8 @@ function pintarPestana() {
   lista.innerHTML = heroHtml + items.map((p, i) => filaPestana(p, i, extra ? extra(p) : "")).join("");
 }
 
-function iframeTrailer(codigo, titulo) {
-  const parametros = "?cc_load_policy=1&cc_lang_pref=es&hl=es&rel=0";
+function iframeTrailer(codigo, titulo, auto = false) {
+  const parametros = "?cc_load_policy=1&cc_lang_pref=es&hl=es&rel=0" + (auto ? "&autoplay=1" : "");
   return '<iframe src="https://www.youtube.com/embed/' + esc(codigo) + parametros + '" title="Tráiler de ' + esc(titulo) + '" ' +
     'allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" ' +
     'allowfullscreen loading="lazy"></iframe>';
@@ -3121,9 +3121,10 @@ function urlReproducible(link) {
   if (yt) return "https://www.youtube.com/embed/" + yt[1] + "?rel=0&hl=es";
   return /^https:\/\//.test(t) ? t : "";
 }
-function abrirVerPelicula(titulo, es, en, link) {
+function abrirVerPelicula(titulo, es, en, link, auto = false) {
   const codigo = (es && es !== "sin tráiler") ? es : ((en && en !== "sin tráiler") ? en : "");
   const peli = urlReproducible(link);
+  const peliSrc = auto && /youtube\.com\/embed/.test(peli) ? peli + (peli.includes("?") ? "&" : "?") + "autoplay=1" : peli;
   const previo = document.getElementById("miniReproductor");
   if (previo) previo.remove();
   const div = document.createElement("div");
@@ -3150,12 +3151,12 @@ function abrirVerPelicula(titulo, es, en, link) {
   const mostrar = (modo) => {
     div.querySelectorAll("[data-mr=peli],[data-mr=trailer]").forEach(b => b.classList.toggle("activo", b.dataset.mr === modo));
     if (modo === "peli" && peli) {
-      caja.innerHTML = '<div class="mr-recorte" data-ancho="0"><iframe src="' + esc(peli) + '" allow="autoplay; encrypted-media; fullscreen; picture-in-picture" allowfullscreen referrerpolicy="strict-origin-when-cross-origin" title="' + esc(titulo) + '"></iframe></div>';
+      caja.innerHTML = '<div class="mr-recorte" data-ancho="0"><iframe src="' + esc(peliSrc) + '" allow="autoplay; encrypted-media; fullscreen; picture-in-picture" allowfullscreen referrerpolicy="strict-origin-when-cross-origin" title="' + esc(titulo) + '"></iframe></div>';
       const bRec = div.querySelector("[data-mr=recorte]");
       if (bRec) bRec.hidden = false;
       nota.innerHTML = 'Si la pantalla sale en blanco, esa página no permite verla dentro de la app. <a href="' + esc(link) + '" target="_blank" rel="noopener">Abrir en otra pestaña</a>';
     } else {
-      caja.innerHTML = codigo ? iframeTrailer(codigo, titulo) : '<div class="mr-vacio">Esta película no tiene tráiler disponible.</div>';
+      caja.innerHTML = codigo ? iframeTrailer(codigo, titulo, auto) : '<div class="mr-vacio">Esta película no tiene tráiler disponible.</div>';
       const bRec2 = div.querySelector("[data-mr=recorte]");
       if (bRec2) bRec2.hidden = true;
       nota.textContent = "Tráiler en la app.";
@@ -6251,6 +6252,11 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
       .replace(/\p{Extended_Pictographic}/gu, " ")
       .replace(/★/g, " estrellas")
       .replace(/[•«»"]/g, " ")
+      .replace(/\((\d{4})\)/g, ", $1, ")
+      .replace(/\b(\d+)\s*min\b\.?/g, "$1 minutos")
+      .replace(/\s[—–-]\s/g, ", ")
+      .replace(/…/g, ". ")
+      .replace(/\s+([,.;:!?])/g, "$1")
       .replace(/\n+/g, ". ")
       .replace(/\s+/g, " ")
       .replace(/\.\s*\./g, ".")
@@ -6702,7 +6708,12 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
   }
 
   // Cambio automático a modo sin IA, avisando una sola vez en el chat
-  function caeASinIA(motivo) {
+  function caeASinIA(motivo, pregunta) {
+    if (pregunta) {
+      burbuja(motivo + "\n\nTe contesto sin IA:", "ia");
+      responderLocal(pregunta);
+      return;
+    }
     burbuja(motivo + "\n\nCambié automáticamente al modo sin IA. Pregúntame lo que quieras.", "ia");
   }
 
@@ -6720,6 +6731,15 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
   }
 
   const normalizarChat = t => String(t || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+  // Sinónimos del habla cotidiana (México): se traducen a las frases que el asistente ya entiende
+  const expandirChat = s => s
+    .replace(/\b(pelis?|filmes?|cintas?|movies?)\b/g, "pelicula")
+    .replace(/\b(dame algo|recomiendame|recomiendame algo|que me recomiendas|que me sugieres|me sugieres|sugierem|sugiereme)\b/g, "sugiereme algo")
+    .replace(/\b(quiero reir|tengo ganas de reir|me quiero reir|morir de risa|reirme un rato)\b/g, "para reirme")
+    .replace(/\b(quiero llorar|para llorar|llorar un rato)\b/g, "triste")
+    .replace(/\b(no se que ver|no se que pongo|que pongo|que me pongo)\b/g, "que veo")
+    .replace(/\b(sin pensar|sin complicarme|algo ligero|algo light)\b/g, "relajado")
+    .replace(/\b(hay algo bueno|algo bueno)\b/g, "algo bueno");
   const elegir = arr => arr[Math.floor(Math.random() * arr.length)];
   const listaTitulos = arr => arr.slice(0, 5).map(p => "• " + p.titulo + (p["año"] ? " (" + p["año"] + ")" : "")).join("\n");
   const pendientesDe = () => peliculas.filter(p => estadoDe(p).pendiente && !(marcas[p.titulo] || {}).descartada);
@@ -6908,7 +6928,9 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
   }
 
   function respuestaLocal(t) {
-    const n = normalizarChat(t);
+    const n = expandirChat(normalizarChat(t));
+    const refin = refinarUltimo(n);
+    if (refin) return refin;
     const pend = pendientesDe();
     const vistas = vistasDe();
 
@@ -6996,7 +7018,12 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
     // Algo parecido a una película de tu catálogo
     if (titulo && /parecid|como la |como el |similar|algo como/.test(n)) {
       const gensT = generosDe(titulo);
-      return respuestaSugerencia("Si te gustó «" + titulo.titulo + "», va algo en esa línea:", p => p !== titulo && generosDe(p).some(g => gensT.includes(g)));
+      const dirT = directoresDe(titulo), perT = personasDe(titulo);
+      return respuestaSugerencia("Si te gustó «" + titulo.titulo + "», va algo en esa línea:", p => p !== titulo && (
+        generosDe(p).some(g => gensT.includes(g)) ||
+        directoresDe(p).some(d => dirT.includes(d)) ||
+        personasDe(p).some(x => perT.includes(x))
+      ));
     }
     if (titulo) {
       const est = estadoDe(titulo);
@@ -7275,6 +7302,23 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
     return texto;
   }
 
+  // Recuerda la última búsqueda y la refina: «más corta», «más larga», «sin drama»
+  function refinarUltimo(n) {
+    const previo = ultimoFiltro || (() => true);
+    if (/^(mas corto|mas cortas?|algo mas corto|mas cortita|mas corta)\b/.test(n)) {
+      return respuestaSugerencia("Con ese mismo gusto, pero más corta:", p => previo(p) && minutos(p) > 0 && minutos(p) <= 100);
+    }
+    if (/^(mas larg[oa]|algo mas largo|mas larga)\b/.test(n)) {
+      return respuestaSugerencia("Con ese mismo gusto, pero más larga:", p => previo(p) && minutos(p) >= 110);
+    }
+    const sin = n.match(/^(?:sin|nada de|menos)\s+(terror|drama|violencia|sangre|miedo|romance|comedia|animacion|accion)\b/);
+    if (sin) {
+      const g = sin[1];
+      return respuestaSugerencia("Lo que te propongo, sin " + g + ":", p => previo(p) && !generosDe(p).some(x => normalizarChat(x).includes(g)));
+    }
+    return null;
+  }
+
   async function responderLocal(t) {
     const escribiendo = document.createElement("div");
     escribiendo.className = "chat-pensando";
@@ -7286,6 +7330,7 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
     const texto = respuestaFlexible(t) || (await respuestaConModelo(t)) || respuestaLocal(t);
     burbuja(texto, "ia");
     if (/•/.test(texto)) ponerChips(["Otra", "¿Por qué?", "Decide tú"]);
+    else if (/Prueba con «sugiéreme algo»|Intenta con «qué he visto»/.test(texto)) ponerChips(["Sugiéreme algo", "Qué tengo pendiente", "Algo de comedia"]);
     mostrarPosters(texto);
   }
 
@@ -7390,7 +7435,7 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
         if (cuota) { try { localStorage.setItem("cuota_agotada_" + fechaPacifico(), "1"); } catch (e) {} }
         const motivo = cuota ? mensajeCuota() : "La IA no está disponible ahora (" + j.error + ").";
         if (oculta) burbuja(motivo, "error");
-        else caeASinIA(motivo);
+        else caeASinIA(motivo, texto);
       } else {
         contarConsultaPersonal();
         if (!j.accion) respuestasCache.set(clave, j.respuesta);
@@ -7410,7 +7455,7 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
       pensando.remove();
       const lento = e && e.name === "AbortError";
       if (oculta) burbuja(lento ? "La IA tardó demasiado. Intenta de nuevo." : "No pude conectar con el asistente. Revisa tu conexión.", "error");
-      else caeASinIA(lento ? "La IA tardó demasiado en responder. Intenta de nuevo." : "No pude conectar con la IA. Revisa tu conexión.");
+      else caeASinIA(lento ? "La IA tardó demasiado en responder." : "No pude conectar con la IA.", texto);
     } finally {
       enviar.disabled = false;
     }
@@ -7886,7 +7931,9 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
       S.abrir(s.titulo);
       return true;
     }
-    if (!confirma.test(n) && !ordinal.test(n)) {
+    const quiereVer = n.length <= 30 && !/\b(algo|alguna|algun|una|un|para|que|recomie|sugier|de)\b/.test(n) &&
+      /(quiero ver|la quiero ver|lo quiero ver|me late|reproduc|abre|ponla|ponlo|pon la|verla|verlo|dale play|ver esa)/.test(n);
+    if (!confirma.test(n) && !quiereVer && !ordinal.test(n)) {
       // Si escriben solo el título (o tocan una opción con el título), también se abre
       const solo = tituloPedido(n);
       if (!(solo && normalizarChat(solo.titulo) === n)) return false;
@@ -7912,8 +7959,17 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
       }
       return false;
     }
-    burbuja("Va, abriendo «" + p.titulo + "».", "ia");
-    try { abrirDetalle(p); } catch (e) { burbuja("No pude abrir la ficha. Intenta tocar el póster.", "error"); }
+    const quiereFicha = /(ficha|detalle|informacion|cuentame|de que trata|sinopsis)/.test(n);
+    const tieneTrailer = [p.trailer_es, p.trailer_en].some(x => x && String(x).trim() && String(x).trim() !== "sin tráiler");
+    const abrirFicha = () => { try { abrirDetalle(p); } catch (e) { burbuja("No pude abrir la ficha. Intenta tocar el póster.", "error"); } };
+    if (quiereFicha || (!urlReproducible(p.link) && !tieneTrailer)) {
+      burbuja(quiereFicha ? "Va, abriendo la ficha de «" + p.titulo + "»." : "No tengo tráiler ni enlace para «" + p.titulo + "», así que te abro la ficha.", "ia");
+      abrirFicha();
+      return true;
+    }
+    burbuja("Va, la pongo aquí mismo: «" + p.titulo + "».", "ia");
+    try { abrirVerPelicula(p.titulo, p.trailer_es, p.trailer_en, p.link, true); }
+    catch (e) { burbuja("No pude abrir el reproductor. Te abro la ficha.", "error"); abrirFicha(); }
     return true;
   }
 
