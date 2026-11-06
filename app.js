@@ -3802,17 +3802,85 @@ function indiceDirectores() {
   return mapa;
 }
 
+// Rankings, sagas, países, actores y calificaciones de TODA la colección; se calculan una sola vez
+let indiceDatosCache = { ref: null, n: -1, d: null };
+function indiceDatos() {
+  if (indiceDatosCache.ref === peliculas && indiceDatosCache.n === peliculas.length) return indiceDatosCache.d;
+  const anios = [], mins = [], sagas = new Map(), paises = new Map(), actores = new Map();
+  let suma = 0, cuantas = 0;
+  peliculas.forEach(x => {
+    const serie = /serie/i.test(String(x.tipo || ""));
+    const a = Number(x["año"]);
+    if (a && !serie) anios.push(a);
+    const m = parseInt(String(x.duracion || ""), 10);
+    if (m && !serie) mins.push(m);
+    const s = String(x.saga || "").trim();
+    if (s && s !== "-") sagas.set(s, (sagas.get(s) || 0) + 1);
+    String(x.pais || "").split(",").map(t => t.trim()).filter(Boolean).forEach(t => paises.set(t, (paises.get(t) || 0) + 1));
+    nombresReparto(x).forEach(n => actores.set(n, (actores.get(n) || 0) + 1));
+    const e = Number(estadoDe(x).estrellas);
+    if (e) { suma += e; cuantas++; }
+  });
+  anios.sort((a, b) => a - b);
+  mins.sort((a, b) => a - b);
+  const d = { anios, mins, sagas, paises, actores, promEst: cuantas ? suma / cuantas : null };
+  indiceDatosCache = { ref: peliculas, n: peliculas.length, d };
+  return d;
+}
+
+// Cuántos valores de una lista ordenada son menores que v (búsqueda binaria)
+function menoresQue(arr, v) {
+  let lo = 0, hi = arr.length;
+  while (lo < hi) { const mid = (lo + hi) >> 1; if (arr[mid] < v) lo = mid + 1; else hi = mid; }
+  return lo;
+}
+
 function curiosidadesAuto(p) {
   const out = [];
+  const D = indiceDatos();
+  const fuente = "Tu catálogo";
+  const esSerie = /serie/i.test(String(p.tipo || ""));
+
+  // Récords: solo aparecen cuando la película está entre las extremas de tu colección
+  const a = Number(p["año"]);
+  if (!esSerie && a && D.anios.length > 10) {
+    const masViejas = menoresQue(D.anios, a);
+    const masNuevas = D.anios.length - menoresQue(D.anios, a + 1);
+    if (masViejas < 10) out.push({ tema: "Récord", texto: "Solo hay " + masViejas + " películas más antiguas que ella en tu colección.", fuente });
+    else if (masNuevas < 10) out.push({ tema: "Récord", texto: "Solo hay " + masNuevas + " películas más nuevas que ella en tu colección.", fuente });
+  }
+  const m = parseInt(String(p.duracion || ""), 10);
+  if (!esSerie && m && D.mins.length > 10) {
+    const masCortas = menoresQue(D.mins, m);
+    const masLargas = D.mins.length - menoresQue(D.mins, m + 1);
+    if (masLargas < 10) out.push({ tema: "Récord", texto: "Solo hay " + masLargas + " películas más largas que ella en tu colección.", fuente });
+    else if (masCortas < 10) out.push({ tema: "Récord", texto: "Solo hay " + masCortas + " películas más cortas que ella en tu colección.", fuente });
+  }
+
+  const s = String(p.saga || "").trim();
+  if (s && s !== "-" && (D.sagas.get(s) || 0) > 1) {
+    out.push({ tema: "Saga", texto: "Forma parte de la saga «" + s + "»: tienes " + D.sagas.get(s) + " películas de ella en tu colección.", fuente });
+  }
+
+  const pais = String(p.pais || "").split(",")[0].trim();
+  if (pais && (D.paises.get(pais) || 0) > 1) {
+    out.push({ tema: "País", texto: "De " + pais + " tienes " + D.paises.get(pais) + " películas en tu colección, incluida esta.", fuente });
+  }
+
   const dir = directoresDe(p);
-  if (p["año"] && p.pais) out.push({ tema: "Datos", texto: "Se estrenó en " + p["año"] + " y se produjo en " + p.pais + ".", fuente: "Tu catálogo" });
-  if (p.duracion) out.push({ tema: "Datos", texto: "Dura " + p.duracion + ".", fuente: "Tu catálogo" });
   if (dir.length) {
     const total = indiceDirectores().get(dir[0]) || 0;
-    if (total > 1) out.push({ tema: "Director", texto: "De " + dir[0] + " tienes " + total + " películas en tu colección, incluida esta.", fuente: "Tu catálogo" });
+    if (total > 1) out.push({ tema: "Director", texto: "De " + dir[0] + " tienes " + total + " películas en tu colección, incluida esta.", fuente });
   }
-  const rep = nombresReparto(p).slice(0, 3);
-  if (rep.length >= 2) out.push({ tema: "Reparto", texto: "En el reparto aparecen " + rep.join(", ") + ".", fuente: "Tu catálogo" });
+
+  // El actor de esta película que más se repite en tu colección
+  const actor = nombresReparto(p).map(n => [n, D.actores.get(n) || 0]).sort((x, y) => y[1] - x[1])[0];
+  if (actor && actor[1] > 1) out.push({ tema: "Reparto", texto: actor[0] + " aparece en " + actor[1] + " películas de tu colección, incluida esta.", fuente });
+
+  // Tu calificación frente a tu promedio
+  const e = Number(estadoDe(p).estrellas);
+  if (e && D.promEst) out.push({ tema: "Tu calificación", texto: "Le diste " + e + "★. Tu promedio general es " + D.promEst.toFixed(1) + "★.", fuente: "Tus calificaciones" });
+
   return out;
 }
 
@@ -3822,7 +3890,16 @@ function curiosidadesDe(p) {
   return curadas.concat(curiosidadesAuto(p));
 }
 
+// Cache: con cientos de películas, recalcular todas las curiosidades en cada pintado sería lento
+let todasCache = { peliculas: null, n: -1, tabla: null, lista: null };
 function todasLasCuriosidades() {
+  if (todasCache.lista && todasCache.peliculas === peliculas && todasCache.n === peliculas.length && todasCache.tabla === curiosidadesTabla) return todasCache.lista;
+  const lista = calcularTodasLasCuriosidades();
+  todasCache = { peliculas, n: peliculas.length, tabla: curiosidadesTabla, lista };
+  return lista;
+}
+
+function calcularTodasLasCuriosidades() {
   const curadas = curiosidadesTabla.map(c => {
     const peli = peliculas.find(p => (c.tmdb && String(p.tmdb_id || "").trim() === c.tmdb) || (c.titulo && String(p.titulo).toLowerCase() === c.titulo.toLowerCase()));
     return Object.assign({}, c, { peli: peli || null });
@@ -3902,11 +3979,17 @@ function renderCuriosidadDia() {
       '<button type="button" class="pildora" data-cur="ver">Ver ficha</button>' +
       '<button type="button" class="pildora" data-cur="otra">Otra curiosidad</button>' +
       '<button type="button" class="pildora" data-cur="todas">Todas</button>' +
+      '<button type="button" class="pildora" data-cur="copiar">Copiar</button>' +
     '</div>';
   el.onclick = e => {
     const b = e.target.closest("[data-cur]");
     if (!b) return;
     if (b.dataset.cur === "otra") { curioOffset++; renderCuriosidadDia(); }
+    else if (b.dataset.cur === "copiar") {
+      navigator.clipboard.writeText(c.peli.titulo + ": " + c.texto)
+        .then(() => { b.textContent = "¡Copiado!"; setTimeout(() => { b.textContent = "Copiar"; }, 1500); })
+        .catch(() => {});
+    }
     else if (b.dataset.cur === "ver") abrirDetalle(c.peli);
     else abrirTodasCuriosidades();
   };
