@@ -1,5 +1,5 @@
 // Versión de la caché: súbela (catalogo-v2, v3…) cada vez que cambies index.html o los iconos.
-const VERSION = "catalogo-20261106011845";
+const VERSION = "catalogo-v1";
 const SHELL = [
   "./",
   "./index.html",
@@ -7,7 +7,9 @@ const SHELL = [
   "./icon-192.png",
   "./icon-512.png",
   "./icon-maskable-512.png",
-  "./apple-touch-icon.png"
+  "./apple-touch-icon.png",
+  "./estilos.css",
+  "./app.js"
 ];
 
 // Estas direcciones SIEMPRE van a la red y nunca se guardan: datos, APIs, IA e imágenes externas.
