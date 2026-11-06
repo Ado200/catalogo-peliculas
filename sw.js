@@ -1,5 +1,5 @@
 // Versión de la caché: súbela (catalogo-v2, v3…) cada vez que cambies index.html o los iconos.
-const VERSION = "catalogo-20261106005937";
+const VERSION = "catalogo-20261106011845";
 const SHELL = [
   "./",
   "./index.html",
