@@ -8953,3 +8953,64 @@ setTimeout(renderTarjetaAuto, 15000);
     }
   }).observe(modal, { attributes: true, attributeFilter: ["class"] });
 })();
+
+
+/* ===== FASE 7: foco de teclado en la ficha ===== */
+(function focoFicha() {
+  const modal = document.getElementById("modal");
+  if (!modal) return;
+  let quienAbrio = null;
+
+  // Semántica: la ficha se anuncia como diálogo
+  const caja0 = modal.querySelector(".ventana");
+  if (caja0) {
+    caja0.setAttribute("role", "dialog");
+    caja0.setAttribute("aria-modal", "true");
+    caja0.setAttribute("aria-label", "Ficha de película");
+  }
+
+  function enfocables() {
+    const caja = modal.querySelector(".ventana");
+    if (!caja) return [];
+    return [...caja.querySelectorAll(
+      'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+    )].filter(el => el.offsetParent !== null || el.getClientRects().length);
+  }
+
+  // Al abrir: recordar quién abrió y llevar el foco dentro de la hoja
+  new MutationObserver(() => {
+    if (modal.classList.contains("abierto")) {
+      quienAbrio = document.activeElement;
+      setTimeout(() => {
+        const primero = document.getElementById("cerrarModal") || enfocables()[0];
+        if (primero) primero.focus({ preventScroll: true });
+      }, 60);
+    } else if (quienAbrio) {
+      // Al cerrar: devolver el foco a quien abrió la ficha, si todavía existe
+      const destino = quienAbrio;
+      quienAbrio = null;
+      if (document.body.contains(destino) && typeof destino.focus === "function") {
+        destino.focus({ preventScroll: true });
+      }
+    }
+  }).observe(modal, { attributes: true, attributeFilter: ["class"] });
+
+  // Tab no sale de la ficha mientras está abierta
+  document.addEventListener("keydown", e => {
+    if (e.key !== "Tab" || !modal.classList.contains("abierto")) return;
+    const lista = enfocables();
+    if (!lista.length) return;
+    const primero = lista[0], ultimo = lista[lista.length - 1];
+    const dentro = modal.contains(document.activeElement);
+    if (!dentro) {
+      e.preventDefault();
+      (e.shiftKey ? ultimo : primero).focus();
+    } else if (e.shiftKey && document.activeElement === primero) {
+      e.preventDefault();
+      ultimo.focus();
+    } else if (!e.shiftKey && document.activeElement === ultimo) {
+      e.preventDefault();
+      primero.focus();
+    }
+  });
+})();
