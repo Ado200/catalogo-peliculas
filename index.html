@@ -1633,6 +1633,47 @@ body.premiere #app > header .segmentado button.activa { background:transparent !
 @media (prefers-reduced-motion: no-preference) { .pwa-aviso { animation:pwaEntrar .35s cubic-bezier(.2,.8,.2,1) both; } }
 @keyframes pwaEntrar { from { opacity:0; transform:translateY(-8px); } to { opacity:1; transform:none; } }
 </style>
+<style id="tarjeta-auto">
+.tarjeta-auto { position:relative; margin:14px 16px 4px; padding:18px 18px 16px; border-radius:24px; border:1px solid var(--borde); background:var(--tarjeta); color:var(--texto); box-shadow:0 10px 30px rgba(0,0,0,.06); animation:saludoEntrar .45s cubic-bezier(.2,.8,.2,1) both; }
+.tarjeta-auto h2 { margin:0 34px 6px 0; font-size:18px; font-weight:700; letter-spacing:-.02em; line-height:1.25; }
+.tarjeta-auto p { margin:0; font-size:15px; line-height:1.45; color:var(--texto); }
+.tarjeta-auto .meta { margin-top:8px; font-size:13px; color:var(--gris); }
+@media (prefers-reduced-motion: reduce) { .tarjeta-auto { animation:none; } }
+</style>
+<style id="pulido-final">
+/* Capa final de pulido: un solo juego de tokens para claro y oscuro.
+   Solo cambia estilos. No toca funciones, IDs ni clases del JavaScript. */
+:root {
+  --azul: #0a84ff;
+  --tema-texto: #0a84ff;
+  --tema-bg: rgba(10, 132, 255, .12);
+  --gris: #6e6e73;
+  --borde: rgba(60, 60, 67, .14);
+  --boton-suave: #e5e5ea;
+  --radio-chico: 12px;
+  --radio: 18px;
+  --radio-grande: 28px;
+  --sombra: 0 1px 2px rgba(0, 0, 0, .04), 0 10px 30px rgba(0, 0, 0, .08);
+  --ease: cubic-bezier(.2, .8, .2, 1);
+}
+body.oscuro {
+  --azul: #0a84ff;
+  --tema-texto: #0a84ff;
+  --tema-bg: rgba(10, 132, 255, .18);
+  --gris: #98989d;
+  --borde: rgba(84, 84, 88, .6);
+  --boton-suave: #2c2c2e;
+  --radio-chico: 12px;
+  --radio: 18px;
+  --radio-grande: 28px;
+  --sombra: 0 1px 2px rgba(0, 0, 0, .4), 0 10px 30px rgba(0, 0, 0, .5);
+}
+body {
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+.pildora { border-radius: 999px; }
+</style>
 </head>
 <body>
 <div id="bannerSinConexion" class="banner-offline" hidden></div>
@@ -1839,6 +1880,12 @@ body.premiere #app > header .segmentado button.activa { background:transparent !
         <option value="no">No usarlos (borra la memoria para la IA)</option>
       </select>
       <p style="margin:6px 0 0;font-size:13px;color:var(--gris)">Se calcula de tus calificaciones y marcas. Apagarla no borra esas calificaciones.</p></div>
+    <div class="campo"><label for="auto-lunes">Resumen semanal (lunes)</label>
+      <select id="auto-lunes"><option value="si">Mostrar</option><option value="no">No mostrar</option></select></div>
+    <div class="campo"><label for="auto-viernes">Sugerencia del fin de semana</label>
+      <select id="auto-viernes"><option value="si">Mostrar</option><option value="no">No mostrar</option></select></div>
+    <div class="campo"><label for="auto-sagas">Avisos de sagas</label>
+      <select id="auto-sagas"><option value="si">Mostrar</option><option value="no">No mostrar</option></select></div>
     <div class="campo" id="campoInstalar"><button type="button" id="instalarApp" class="pildora">📲 Instalar la app</button>
       <p id="instalarEstado" style="margin:8px 0 0;font-size:13px;color:var(--gris)">Ábrela como una app, con su icono y sin barra de direcciones.</p></div>
       <div class="ajuste-vidrio" id="ajusteVidrio"><label for="vidrioAlfa">Transparencia del vidrio <span id="vidrioAlfaValor">72</span>%</label><input type="range" id="vidrioAlfa" min="40" max="95" step="1" value="72" aria-label="Transparencia del vidrio"></div>
@@ -1855,6 +1902,7 @@ body.premiere #app > header .segmentado button.activa { background:transparent !
 
 <div class="firma-agc firma-inicio" aria-hidden="true"><svg class="firma-svg" viewBox="-6 -6 167.9 112.0" aria-label="AG" role="img" xmlns="http://www.w3.org/2000/svg"><path fill="currentColor" d="M80.29020556227329 66.38452237001209C66.62636033857316 68.07738814993954 64.93349455864572 66.74727932285369 64.93349455864572 60.94316807738815C64.93349455864572 57.557436517533255 70.73760580411125 10.640870616686819 72.4304715840387 1.2091898428053156L70.85852478839179 0.0C69.16565900846433 1.6928657799274447 67.47279322853689 3.748488512696497 64.81257557436518 3.748488512696497C62.152357920193474 3.748488512696497 49.93954050785973 2.055622732769038 47.27932285368803 2.055622732769038C40.02418379685611 2.055622732769038 36.03385731559855 4.836759371221277 29.987908101571946 10.399032648125754C24.78839177750907 15.235792019347038 20.918984280532044 20.67714631197098 20.918984280532044 26.844014510278114C20.918984280532044 30.471584038694076 21.523579201934705 33.85731559854897 22.49093107617896 37.001209189842804L31.318016928657798 31.801692865779927C30.22974607013301 28.536880290205566 28.778718258766627 23.700120918984283 28.778718258766627 19.951632406287786C28.778718258766627 13.905683192261186 34.3409915356711 9.310761789600967 41.958887545344616 9.310761789600967C44.619105199516326 9.310761789600967 57.67835550181378 10.882708585247883 59.854897218863364 10.882708585247883L25.876662636033856 54.89721886336155C21.523579201934705 60.33857315598549 16.68681983071342 63.11970979443773 9.915356711003628 63.11970979443773C8.94800483675937 63.11970979443773 5.441354292623942 62.75695284159613 4.474002418379686 62.6360338573156L0.0 70.97944377267231C2.418379685610641 71.58403869407498 4.594921402660217 71.82587666263603 6.529625151148731 71.82587666263603C13.05925030229746 71.82587666263603 17.533252720677147 68.6819830713422 22.97460701330109 63.603385731559854C24.667472793228537 62.031438935912945 32.769044740024185 52.84159613059251 35.79201934703749 49.09310761789601C40.507859733978236 49.09310761789601 53.08343409915357 49.214026602176546 56.9528415961306 49.697702539298675C55.8645707376058 57.19467956469166 54.89721886336155 63.966142684401454 54.29262394195889 70.49576783555018C54.17170495767836 71.94679564691657 55.62273276904474 72.91414752116083 57.19467956469166 72.91414752116083C59.250302297460706 72.91414752116083 73.03506650544136 69.52841596130592 78.35550181378477 69.0447400241838ZM57.67835550181378 44.74002418379686H38.93591293833132L62.27327690447401 13.422007255139057ZM153.32527206771465 39.05683192261185C148.48851269649336 38.694074969770256 137.3639661426844 38.45223700120919 126.11850060459494 38.45223700120919L118.74244256348248 42.20072551390568V43.16807738814994L136.39661426844015 42.44256348246675L132.043530834341 59.854897218863364C126.96493349455866 64.69165659008465 119.70979443772674 67.95646916565902 114.14752116082227 67.95646916565902C105.19951632406288 67.95646916565902 99.63724304715842 60.94316807738815 99.63724304715842 49.93954050785973C99.63724304715842 26.360338573155985 115.59854897218864 4.3530834340991476 132.52720677146314 4.3530834340991476C137.48488512696494 4.3530834340991476 141.71704957678355 6.4087061668682 144.01451027811368 10.03627569528416C145.58645707376058 12.454655380894799 146.19105199516326 14.510278113663844 146.91656590084645 19.588875453446192L155.86457073760582 9.552599758162032C153.56711003627572 2.660217654171703 149.093107617896 0.0 139.90326481257557 0.0C126.72309552599759 0.0 114.75211608222492 5.4413542926239415 105.07859733978236 15.840386940749696C95.28415961305926 26.360338573155985 89.11729141475213 41.23337363966143 89.11729141475213 53.92986698911729C89.11729141475213 65.6590084643289 95.52599758162032 72.91414752116083 105.92503022974608 72.91414752116083C113.42200725513908 72.91414752116083 119.83071342200726 70.97944377267231 130.59250302297463 65.53808948004837C128.77871825876665 72.79322853688029 126.60217654171706 80.65296251511488 125.51390568319226 83.31318016928658C123.09552599758163 89.8428053204353 119.5888754534462 92.50302297460702 113.180169286578 92.50302297460702C109.67351874244258 92.50302297460702 103.7484885126965 92.01934703748489 100.12091898428054 91.41475211608223L95.0423216444982 99.39540507859735C99.39540507859735 99.87908101571946 101.33010882708587 100.0 103.7484885126965 100.0C113.42200725513908 100.0 121.64449818621524 95.64691656590085 129.62515114873037 86.33615477629988C134.82466747279324 80.41112454655381 137.00120918984283 75.33252720677146 140.50785973397825 61.305925030229744L145.22370012091898 42.44256348246675H147.76299879081017Z"/></svg></div>
 <section id="saludoPersonal" class="saludo-personal solo-catalogo" data-zona="inicio" style="display:none" aria-live="polite"></section>
+<section id="tarjetaAuto" class="tarjeta-auto solo-catalogo" data-zona="inicio" style="display:none" aria-live="polite"></section>
 <section id="hoy" class="hoy solo-catalogo" data-zona="inicio" style="display:none"></section>
 <div id="avisoFecha" class="aviso-estancados solo-catalogo" data-zona="inicio" style="display:none">
   <div class="aviso-cabecera">
@@ -4915,6 +4963,7 @@ function pintar() {
   $("destacados").style.display = hayFiltros() ? "none" : "block";
   renderRecomendaciones();
   if (typeof renderSaludoPersonal === "function") renderSaludoPersonal();
+  if (typeof renderTarjetaAuto === "function") renderTarjetaAuto();
   renderHoy();
   actualizarAhora();
   renderAvisoEstancados();
@@ -10624,23 +10673,34 @@ function pintarEstadoModelo(texto) {
   else estadoModelo.textContent = "Sin descargar. Conviene hacerlo con Wi-Fi.";
 }
 
+let descargaEnCurso = false;
+
 async function descargarModelo() {
+  if (descargaEnCurso || motorLocal) { pintarEstadoModelo(); return; }
   if (!navigator.gpu) { pintarEstadoModelo(); return; }
+  descargaEnCurso = true;
   btnModelo.disabled = true;
   pintarEstadoModelo("Preparando la descarga…");
+  // Si tarda demasiado, lo dice en vez de quedarse en silencio. Lo ya descargado se conserva.
+  const vigilante = setTimeout(() => {
+    if (!motorLocal) pintarEstadoModelo("Tarda más de lo normal. Revisa tu conexión y que tu navegador tenga WebGPU. Puedes dejarlo y volver después.");
+  }, 45000);
   try {
     await cargarModeloLocal(r => pintarEstadoModelo("Descargando… " + Math.round((r.progress || 0) * 100) + "%"));
     escribirLS("modelo_local_modo", "si");
     selModelo.value = "si";
-    pintarEstadoModelo();
+    pintarEstadoModelo("Listo: Estela entiende frases libres sin internet.");
   } catch (e) {
-    pintarEstadoModelo("No se pudo descargar el modelo. Revisa tu conexión y vuelve a intentarlo.");
+    const detalle = e && e.message ? " (" + String(e.message).slice(0, 80) + ")" : "";
+    pintarEstadoModelo("No se pudo descargar el modelo" + detalle + ". Revisa tu conexión y vuelve a intentarlo.");
   } finally {
+    clearTimeout(vigilante);
+    descargaEnCurso = false;
     btnModelo.disabled = false;
   }
 }
 
-btnModelo.addEventListener("click", descargarModelo);
+btnModelo.addEventListener("click", () => descargarModelo());
 selModelo.addEventListener("change", () => escribirLS("modelo_local_modo", selModelo.value));
 pintarEstadoModelo();
 
@@ -10783,6 +10843,196 @@ if ("serviceWorker" in navigator) {
 setTimeout(() => {
   if (document.body.classList.contains("con-sesion")) ofrecerInstalarUnaVez();
 }, 9000);
+</script>
+<script id="modelo-auto">
+/* ---------- Descarga automática del modelo (con permiso, solo con Wi-Fi y batería) ---------- */
+function wifiDisponible() {
+  const c = navigator.connection;
+  return !!(c && c.type === "wifi");
+}
+
+async function bateriaSuficiente() {
+  try {
+    if (!navigator.getBattery) return true;
+    const b = await navigator.getBattery();
+    return b.charging || b.level >= 0.5;
+  } catch (e) { return true; }
+}
+
+async function intentarDescargaAutomatica() {
+  if (leerLS("modelo_auto") !== "si" || leerLS("modelo_local_modo") === "no") return;
+  if (motorLocal || descargaEnCurso || !navigator.gpu) return;
+  if (!wifiDisponible()) { pintarEstadoModelo("Se descargará sola cuando estés en Wi-Fi."); return; }
+  if (!(await bateriaSuficiente())) { pintarEstadoModelo("Se descargará sola cuando tengas más batería o conectes el cargador."); return; }
+  descargarModelo();
+}
+
+function pedirPermisoModelo() {
+  mostrarAvisoPwa("¿Quieres que Estela se descargue sola para funcionar sin internet? Pesa unos 400 MB y solo se descarga con Wi-Fi y batería suficiente.", [
+    { texto: "Sí, con Wi-Fi", principal: true, accion: () => {
+        escribirLS("modelo_auto", "si");
+        cerrarAvisoPwa("pwaAvisoModelo");
+        intentarDescargaAutomatica();
+    } },
+    { texto: "No por ahora", accion: () => {
+        escribirLS("modelo_auto", "no");
+        cerrarAvisoPwa("pwaAvisoModelo");
+    } }
+  ], "pwaAvisoModelo");
+}
+
+// Una sola vez, cuando ya cargó la app y no hay otros avisos encima
+setTimeout(() => {
+  if (!document.body.classList.contains("con-sesion")) return;
+  if (!navigator.gpu || motorLocal || leerLS("modelo_local_modo") === "no") return;
+  if (leerLS("modelo_auto") !== null) { intentarDescargaAutomatica(); return; }
+  if (document.getElementById("pwaAviso") || document.getElementById("pwaAvisoInstalar")) return;
+  pedirPermisoModelo();
+}, 20000);
+
+// Reintenta cuando cambia la conexión o cada 10 minutos
+if (navigator.connection && navigator.connection.addEventListener) {
+  navigator.connection.addEventListener("change", intentarDescargaAutomatica);
+}
+setInterval(intentarDescargaAutomatica, 10 * 60 * 1000);
+</script>
+<script id="automatizacion">
+/* ---------- Automatización de la experiencia (etapa 4) ---------- */
+let tarjetaMostradaSesion = false;
+
+// Fecha actual; para probar, guarda una fecha en el navegador: localStorage.setItem("fecha_prueba", "2026-11-09")
+function fechaAuto() {
+  const p = leerLS("fecha_prueba");
+  if (p && /^\d{4}-\d{2}-\d{2}$/.test(p)) { const [y, m, d] = p.split("-").map(Number); return new Date(y, m - 1, d, 12); }
+  return new Date();
+}
+function isoAuto(d) {
+  return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+}
+function semanaAuto(d) {
+  const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  const dia = t.getUTCDay() || 7;
+  t.setUTCDate(t.getUTCDate() + 4 - dia);
+  const y0 = new Date(Date.UTC(t.getUTCFullYear(), 0, 1));
+  const n = Math.ceil(((t - y0) / 86400000 + 1) / 7);
+  return t.getUTCFullYear() + "-S" + String(n).padStart(2, "0");
+}
+function lunesAuto(d) {
+  const x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  x.setDate(x.getDate() - ((x.getDay() || 7) - 1));
+  return x;
+}
+function interruptorAuto(clave) { return leerLS(clave) !== "no"; }
+function sugeridasRecientes() {
+  try { return JSON.parse(leerLS("auto_sugeridas") || "[]"); } catch (e) { return []; }
+}
+
+function candidataSaga(hoy) {
+  const mk = t => marcas[t] || {};
+  const empezadas = new Set(peliculas
+    .filter(p => mk(p.titulo).vista && String(p.saga || "").trim() && String(p.saga).trim() !== "-")
+    .map(p => String(p.saga).trim()));
+  const ahora = hoy.getTime();
+  const p = peliculas.find(x => {
+    const s = String(x.saga || "").trim();
+    if (!s || s === "-" || !empezadas.has(s)) return false;
+    const m = mk(x.titulo);
+    if (m.vista || m.descartada || leerLS("auto_saga_" + x.titulo) === "1") return false;
+    const f = Date.parse(String(x.estreno || "").slice(0, 10));
+    if (!f) return false;
+    const dias = (f - ahora) / 86400000;
+    return dias >= -14 && dias <= 30;
+  });
+  if (!p) return null;
+  const f = String(p.estreno).slice(0, 10);
+  return {
+    clave: "auto_saga_" + p.titulo, tipo: "Saga",
+    titulo: "Se estrena algo de «" + p.saga + "»",
+    texto: "«" + p.titulo + "» " + (f > isoAuto(hoy) ? "llega el " + f : "se estrenó el " + f) + ". Ya empezaste esta saga."
+  };
+}
+
+function candidataFinde(hoy) {
+  const dia = hoy.getDay();
+  if (dia !== 5 && dia !== 6 && dia !== 0) return null;
+  const clave = "auto_finde_" + semanaAuto(hoy);
+  if (leerLS(clave) === "1") return null;
+  const mk = t => marcas[t] || {};
+  const recientes = new Set(sugeridasRecientes().filter(x => Date.now() - x.f < 7 * 86400000).map(x => x.t));
+  const pool = peliculas.filter(p => {
+    const m = mk(p.titulo);
+    const min = minutos(p);
+    return m.pendiente && !m.vista && !m.descartada && min > 0 && min <= 120 && !recientes.has(p.titulo);
+  });
+  if (!pool.length) return null;
+  const elegida = pool[Math.floor(Math.random() * pool.length)];
+  let texto = "Para esta noche: «" + elegida.titulo + "» (" + minutos(elegida) + " min).";
+  const resto = pool.filter(p => p !== elegida).sort(() => Math.random() - 0.5);
+  let total = minutos(elegida);
+  const maraton = [elegida];
+  for (const p of resto) {
+    if (maraton.length >= 3) break;
+    if (total + minutos(p) <= 240) { maraton.push(p); total += minutos(p); }
+  }
+  if (maraton.length >= 2) texto += " Si quieres maratón: " + maraton.map(p => "«" + p.titulo + "»").join(" + ") + " (" + total + " min en total).";
+  const guardar = JSON.parse(leerLS("auto_sugeridas") || "[]").concat(maraton.map(p => ({ t: p.titulo, f: Date.now() })));
+  escribirLS("auto_sugeridas", JSON.stringify(guardar.slice(-30)));
+  return { clave: clave, tipo: "Fin de semana", titulo: "Para este fin de semana", texto: texto };
+}
+
+function candidataLunes(hoy) {
+  const clave = "auto_lunes_" + semanaAuto(hoy);
+  if (leerLS(clave) === "1") return null;
+  const mk = t => marcas[t] || {};
+  const inicioSem = lunesAuto(hoy);
+  const inicioAnt = new Date(inicioSem); inicioAnt.setDate(inicioAnt.getDate() - 7);
+  const finAnt = new Date(inicioSem); finAnt.setDate(finAnt.getDate() - 1);
+  const a = isoAuto(inicioAnt), b = isoAuto(finAnt);
+  const vistas = peliculas.filter(p => { const d = String(mk(p.titulo).vistaDesde || ""); return mk(p.titulo).vista && d >= a && d <= b; }).length;
+  const pend = peliculas.filter(p => mk(p.titulo).pendiente && !mk(p.titulo).vista && !mk(p.titulo).descartada).length;
+  const reto = retoActual();
+  const planes = recordatoriosActivos().length;
+  let texto = vistas
+    ? "La semana pasada viste " + vistas + " película" + (vistas === 1 ? "" : "s") + ". Te quedan " + pend + " pendiente" + (pend === 1 ? "" : "s") + "."
+    : "Semana tranquila. ¿Retomamos algún pendiente?";
+  texto += " 🏆 " + reto.texto + ".";
+  if (planes) texto += " Tienes " + planes + " plan" + (planes === 1 ? "" : "es") + " con alguien en los próximos días.";
+  return { clave: clave, tipo: "Resumen", titulo: "Tu semana", texto: texto };
+}
+
+function renderTarjetaAuto() {
+  const sec = $("tarjetaAuto");
+  if (!sec || tarjetaMostradaSesion || !document.body.classList.contains("con-sesion") || !peliculas.length) return;
+  const hoy = fechaAuto();
+  const opciones = [
+    { on: "auto-lunes", fn: () => candidataLunes(hoy) },
+    { on: "auto-viernes", fn: () => candidataFinde(hoy) },
+    { on: "auto-sagas", fn: () => candidataSaga(hoy) }
+  ];
+  // Prioridad: saga, fin de semana, resumen. Una tarjeta por entrada.
+  const orden = [opciones[2], opciones[1], opciones[0]];
+  for (const o of orden) {
+    const clave = o.on === "auto-sagas" ? "auto_sagas" : o.on === "auto-viernes" ? "auto_viernes" : "auto_lunes";
+    if (leerLS(clave) === "no") continue;
+    const c = o.fn();
+    if (!c) continue;
+    if (c.clave.indexOf("auto_lunes_") === 0 || c.clave.indexOf("auto_finde_") === 0) escribirLS(c.clave, "1");
+    if (c.clave.indexOf("auto_saga_") === 0) escribirLS(c.clave, "1");
+    sec.innerHTML =
+      '<button type="button" class="saludo-cerrar" data-accion="cerrar-auto" aria-label="Cerrar">×</button>' +
+      '<h2>' + esc(c.titulo) + '</h2><p>' + esc(c.texto) + '</p>';
+    sec.style.display = "block";
+    tarjetaMostradaSesion = true;
+    return;
+  }
+}
+
+$("tarjetaAuto").addEventListener("click", e => {
+  if (e.target.closest("[data-accion='cerrar-auto']")) {
+    $("tarjetaAuto").style.display = "none";
+  }
+});
+setTimeout(renderTarjetaAuto, 15000);
 </script>
 </body>
 </html>
