@@ -1,5 +1,6 @@
-// Versión de la caché: súbela (catalogo-v2, v3…) cada vez que cambies index.html o los iconos.
-const VERSION = "catalogo-20261106064702";
+// Versión de la caché: súbela (catalogo-v3, v4…) cuando cambies index.html, iconos o estilos.
+// app.js y estilos.css ya se piden primero a la red, así que sus cambios llegan sin subir la versión.
+const VERSION = "catalogo-v2";
 const SHELL = [
   "./",
   "./index.html",
@@ -53,6 +54,17 @@ self.addEventListener("fetch", e => {
       if (cached) { e.waitUntil(red); return cached; }
       return (await red) || caches.match("./index.html");
     })());
+    return;
+  }
+
+  // Código y estilos: primero la red (para no ejecutar una versión vieja); sin conexión, la copia guardada
+  if (/\.(js|css)$/.test(url.pathname)) {
+    e.respondWith(
+      fetch(req).then(r => {
+        if (r.ok) { const copia = r.clone(); caches.open(VERSION).then(c => c.put(req, copia)); }
+        return r;
+      }).catch(() => caches.match(req))
+    );
     return;
   }
 

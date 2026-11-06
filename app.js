@@ -867,13 +867,18 @@ function nombresReparto(p) {
   return [...new Set([...de_reparto, ...de_info])];
 }
 
+// Caché: el agrupado depende solo del catálogo; se recalcula cuando cambia la lista de películas
+let actoresCache = { ref: null, n: -1, datos: null };
 function actoresAgrupados() {
+  if (actoresCache.ref === peliculas && actoresCache.n === peliculas.length) return actoresCache.datos;
   const mapa = {};
   peliculas.forEach(p => {
     nombresReparto(p).forEach(n => { (mapa[n] = mapa[n] || []).push(p); });
   });
-  return Object.entries(mapa)
+  const datos = Object.entries(mapa)
     .sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0], "es"));
+  actoresCache = { ref: peliculas, n: peliculas.length, datos };
+  return datos;
 }
 
 function infoActores() {
@@ -3240,6 +3245,7 @@ function abrirDetalle(p) {
     historialHtml(p) +
     preguntasFichaHtml(p) +
     '<p class="sinopsis">' + esc(p.sinopsis) + '</p>' +
+    curiosidadesFichaHtml(p) +
     '<div class="nota-bloque"><label for="notaTexto">Mi nota</label>' +
       '<textarea id="notaTexto" placeholder="Escribe lo que te pareció. Usa #etiquetas para encontrarla después.">' + esc(notaActual) + '</textarea>' +
       '<div id="etiquetasFicha" class="etiquetas-fila">' + etiquetasFichaHtml(notaActual) + '</div>' +
@@ -3779,10 +3785,182 @@ async function cargarHoja() {
   }
 }
 
+/* ---------- Curiosidades ----------
+   Fuentes: (1) pestaña «curiosidades» de tu hoja (tmdb_id, titulo, tema, texto, fuente)
+            (2) datos de tu propio catálogo (año, país, duración, director, reparto): siempre verificables.
+   Sin internet se usa la copia guardada en el dispositivo. */
+let curiosidadesTabla = [];
+let curioOffset = 0;
+const CURIOS_CACHE = "curiosidades_cache";
+
+let indiceDirectoresCache = { ref: null, n: -1, mapa: null };
+function indiceDirectores() {
+  if (indiceDirectoresCache.ref === peliculas && indiceDirectoresCache.n === peliculas.length) return indiceDirectoresCache.mapa;
+  const mapa = new Map();
+  peliculas.forEach(x => directoresDe(x).forEach(d => mapa.set(d, (mapa.get(d) || 0) + 1)));
+  indiceDirectoresCache = { ref: peliculas, n: peliculas.length, mapa };
+  return mapa;
+}
+
+function curiosidadesAuto(p) {
+  const out = [];
+  const dir = directoresDe(p);
+  if (p["año"] && p.pais) out.push({ tema: "Datos", texto: "Se estrenó en " + p["año"] + " y se produjo en " + p.pais + ".", fuente: "Tu catálogo" });
+  if (p.duracion) out.push({ tema: "Datos", texto: "Dura " + p.duracion + ".", fuente: "Tu catálogo" });
+  if (dir.length) {
+    const total = indiceDirectores().get(dir[0]) || 0;
+    if (total > 1) out.push({ tema: "Director", texto: "De " + dir[0] + " tienes " + total + " películas en tu colección, incluida esta.", fuente: "Tu catálogo" });
+  }
+  const rep = nombresReparto(p).slice(0, 3);
+  if (rep.length >= 2) out.push({ tema: "Reparto", texto: "En el reparto aparecen " + rep.join(", ") + ".", fuente: "Tu catálogo" });
+  return out;
+}
+
+function curiosidadesDe(p) {
+  const id = String(p.tmdb_id || "").trim();
+  const curadas = curiosidadesTabla.filter(c => (c.tmdb && c.tmdb === id) || (c.titulo && c.titulo.toLowerCase() === String(p.titulo).toLowerCase()));
+  return curadas.concat(curiosidadesAuto(p));
+}
+
+function todasLasCuriosidades() {
+  const curadas = curiosidadesTabla.map(c => {
+    const peli = peliculas.find(p => (c.tmdb && String(p.tmdb_id || "").trim() === c.tmdb) || (c.titulo && String(p.titulo).toLowerCase() === c.titulo.toLowerCase()));
+    return Object.assign({}, c, { peli: peli || null });
+  }).filter(c => c.peli);
+  const autos = peliculas.flatMap(p => curiosidadesAuto(p).map(c => Object.assign({}, c, { peli: p })));
+  return curadas.concat(autos);
+}
+
+function curiosidadDelDia() {
+  const lista = todasLasCuriosidades();
+  if (!lista.length) return null;
+  const dia = Math.floor(Date.parse(hoyLocalISO() + "T00:00") / 86400000);
+  return lista[(dia + curioOffset) % lista.length];
+}
+
+function curiosidadesFichaHtml(p) {
+  const lista = curiosidadesDe(p).slice(0, 3);
+  if (!lista.length) return "";
+  return '<h4 class="ficha-h">Lo que quizá no sabías</h4><ul class="cur-lista">' +
+    lista.map(c => '<li><span class="cur-tema">' + esc(c.tema || "Dato") + '</span> ' + esc(c.texto) +
+      (c.fuente ? ' <small>' + esc(c.fuente) + '</small>' : '') + '</li>').join("") + '</ul>';
+}
+
+function abrirTodasCuriosidades(temaElegido) {
+  const todas = todasLasCuriosidades();
+  const temas = [...new Set(todas.map(c => c.tema || "Dato"))];
+  const filtradas = temaElegido ? todas.filter(c => (c.tema || "Dato") === temaElegido) : todas;
+  let panel = document.getElementById("curiosidadesTodas");
+  if (!panel) {
+    panel = document.createElement("div");
+    panel.id = "curiosidadesTodas";
+    document.body.appendChild(panel);
+  }
+  panel.innerHTML =
+    '<div class="cur-panel-caja" role="dialog" aria-label="Todas las curiosidades">' +
+      '<div class="cur-panel-cab"><strong>Curiosidades</strong><button type="button" data-cur-cerrar aria-label="Cerrar">✕</button></div>' +
+      '<div class="cur-temas">' +
+        '<button type="button" data-cur-tema="" class="' + (!temaElegido ? 'activo' : '') + '">Todas</button>' +
+        temas.map(t => '<button type="button" data-cur-tema="' + esc(t) + '" class="' + (t === temaElegido ? 'activo' : '') + '">' + esc(t) + '</button>').join("") +
+      '</div>' +
+      '<ul class="cur-lista cur-lista-todas">' +
+        (filtradas.length ? filtradas.slice(0, 200).map((c, i) =>
+          '<li data-cur-peli="' + i + '"><span class="cur-tema">' + esc(c.tema || "Dato") + '</span> <strong>' + esc(c.peli.titulo) + '</strong><br>' +
+          esc(c.texto) + (c.fuente ? ' <small>' + esc(c.fuente) + '</small>' : '') + '</li>').join("")
+          : '<li>No hay curiosidades en este tema.</li>') +
+      '</ul>' +
+    '</div>';
+  panel.onclick = e => {
+    if (e.target === panel || e.target.closest("[data-cur-cerrar]")) { panel.remove(); return; }
+    const t = e.target.closest("[data-cur-tema]");
+    if (t) { abrirTodasCuriosidades(t.dataset.curTema || null); return; }
+    const li = e.target.closest("[data-cur-peli]");
+    if (li) { const c = filtradas[Number(li.dataset.curPeli)]; panel.remove(); if (c && c.peli) abrirDetalle(c.peli); }
+  };
+}
+
+function renderCuriosidadDia() {
+  let sec = document.getElementById("curiosidades");
+  if (!sec) {
+    const ref = document.getElementById("destacados");
+    if (!ref) return;
+    sec = document.createElement("section");
+    sec.id = "curiosidades";
+    sec.className = "destacados solo-catalogo";
+    sec.dataset.zona = "estrenos";
+    sec.innerHTML = '<h3>Curiosidades</h3><div id="curiosidadDia" class="curiosidad-dia"></div>';
+    ref.insertAdjacentElement("afterend", sec);
+  }
+  const el = document.getElementById("curiosidadDia");
+  const c = curiosidadDelDia();
+  if (!c) { el.innerHTML = ""; return; }
+  el.innerHTML =
+    '<div class="cur-tema">' + esc(c.tema || "Dato") + ' · ' + esc(c.peli.titulo) + '</div>' +
+    '<p class="cur-texto">' + esc(c.texto) + '</p>' +
+    (c.fuente ? '<small class="cur-fuente">Fuente: ' + esc(c.fuente) + '</small>' : '') +
+    '<div class="cur-pie">' +
+      '<button type="button" class="pildora" data-cur="ver">Ver ficha</button>' +
+      '<button type="button" class="pildora" data-cur="otra">Otra curiosidad</button>' +
+      '<button type="button" class="pildora" data-cur="todas">Todas</button>' +
+    '</div>';
+  el.onclick = e => {
+    const b = e.target.closest("[data-cur]");
+    if (!b) return;
+    if (b.dataset.cur === "otra") { curioOffset++; renderCuriosidadDia(); }
+    else if (b.dataset.cur === "ver") abrirDetalle(c.peli);
+    else abrirTodasCuriosidades();
+  };
+}
+
+async function cargarCuriosidades() {
+  try {
+    if (!accessToken || !HOJA_ID) throw new Error("sin sesión");
+    const r = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${HOJA_ID}/values/curiosidades!A:E`, {
+      headers: { Authorization: "Bearer " + accessToken }
+    });
+    if (!r.ok) throw new Error("sin pestaña");
+    const j = await r.json();
+    curiosidadesTabla = (j.values || []).slice(1)
+      .map(f => ({ tmdb: String(f[0] || "").trim(), titulo: String(f[1] || "").trim(), tema: String(f[2] || "").trim() || "Dato", texto: String(f[3] || "").trim(), fuente: String(f[4] || "").trim() }))
+      .filter(c => c.texto && (c.tmdb || c.titulo));
+    escribirLS(CURIOS_CACHE, JSON.stringify(curiosidadesTabla));
+  } catch (e) {
+    // Sin internet o sin la pestaña: usa la copia guardada (o solo los datos del catálogo)
+    try { curiosidadesTabla = JSON.parse(leerLS(CURIOS_CACHE) || "[]") || []; } catch (x) { curiosidadesTabla = []; }
+  }
+  renderCuriosidadDia();
+}
+
+if (!document.getElementById("estiloCuriosidades")) {
+  const st = document.createElement("style");
+  st.id = "estiloCuriosidades";
+  st.textContent = `
+#curiosidades .curiosidad-dia{background:var(--tarjeta,rgba(255,255,255,.7));border-radius:18px;padding:18px 20px;box-shadow:0 6px 24px rgba(0,0,0,.08)}
+#curiosidades .cur-tema{font-size:.78rem;letter-spacing:.04em;text-transform:uppercase;opacity:.7;margin-bottom:6px}
+#curiosidades .cur-texto{font-size:1.08rem;line-height:1.5;margin:0 0 8px}
+#curiosidades .cur-fuente{opacity:.6}
+#curiosidades .cur-pie{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.cur-lista{list-style:none;padding:0;margin:8px 0}
+.cur-lista li{padding:8px 0;border-bottom:1px solid rgba(127,127,127,.2);line-height:1.45}
+.cur-lista small{opacity:.6}
+.cur-tema{font-weight:600;color:var(--azul,#0a84ff);margin-right:4px}
+#curiosidadesTodas{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9000;display:flex;align-items:center;justify-content:center;padding:16px}
+.cur-panel-caja{background:var(--fondo,#fff);color:inherit;max-width:560px;width:100%;max-height:86vh;overflow:auto;border-radius:18px;padding:18px}
+.cur-panel-cab{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.cur-panel-cab button{border:0;background:none;font-size:1.2rem;cursor:pointer;color:inherit}
+.cur-temas{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.cur-temas button{border:1px solid rgba(127,127,127,.4);background:none;border-radius:999px;padding:4px 12px;cursor:pointer;color:inherit}
+.cur-temas button.activo{background:var(--azul,#0a84ff);color:#fff;border-color:transparent}
+.cur-lista-todas li{cursor:pointer}
+`;
+  document.head.appendChild(st);
+}
+
 async function iniciarApp() {
   await cargarMarcas();
   await cargarHoja();
   cargarProximosCines();
+  cargarCuriosidades();
 }
 
 window.addEventListener("load", () => {
@@ -3874,7 +4052,13 @@ window.addEventListener("load", () => {
     actualizarAhorro();
   });
 
-  [buscar, sel.tipo, sel.genero, sel.tema, sel.anio, sel.pais, sel.duracion, sel.estado, $("orden")]
+  // La búsqueda espera 120 ms a que dejes de escribir: un solo render en vez de uno por letra
+  let pintarBusquedaTimer = null;
+  buscar.addEventListener("input", () => {
+    clearTimeout(pintarBusquedaTimer);
+    pintarBusquedaTimer = setTimeout(pintar, 120);
+  });
+  [sel.tipo, sel.genero, sel.tema, sel.anio, sel.pais, sel.duracion, sel.estado, $("orden")]
     .forEach(el => el.addEventListener("input", pintar));
   buscar.addEventListener("input", () => {
     if (pestana === "catalogo" && zonaPeli === "inicio" && buscar.value.trim()) { zonaPeli = "lista"; aplicarEstadoTabs(); }
@@ -6204,15 +6388,15 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
   // Escribe el texto poco a poco, como si lo estuviera diciendo
   function escribirPoco(el, texto) {
     el.textContent = "";
+    const paso = Math.max(2, Math.ceil(texto.length / 90));
     let i = 0;
-    const paso = () => {
-      i += 2;
+    const tick = () => {
+      i += paso;
       el.textContent = texto.slice(0, i);
       lista.scrollTop = lista.scrollHeight;
-      if (i < texto.length) setTimeout(paso, 24);
-      else el.textContent = texto;
+      if (i < texto.length) setTimeout(tick, 16); else el.textContent = texto;
     };
-    paso();
+    tick();
   }
 
   function burbuja(texto, tipo) {
@@ -6417,6 +6601,11 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
     general: ["¿Qué tal si elegimos algo de tus pendientes?", "¿Te cuento qué tienes por ver esta semana?"]
   };
 
+  function franjaDelDia() {
+    const h = new Date().getHours();
+    return h < 12 ? "manana" : h < 19 ? "tarde" : "noche";
+  }
+
   function saludoBreve() {
     const h = new Date().getHours();
     const franja = h < 12 ? "manana" : h < 19 ? "tarde" : "noche";
@@ -6443,8 +6632,8 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
     }
     burbuja(saludoBreve(), "ia");
   }
-  function catalogoParaIA() {
-    const base = peliculas.map(p => {
+  function catalogoParaIA(textoPregunta = "") {
+    const base = seleccionParaIA(textoPregunta).map(p => {
       const e = estadoDe(p);
       return {
         titulo: p.titulo, año: p["año"], tipo: p.tipo,
@@ -6710,11 +6899,11 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
   // Cambio automático a modo sin IA, avisando una sola vez en el chat
   function caeASinIA(motivo, pregunta) {
     if (pregunta) {
-      burbuja(motivo + "\n\nTe contesto sin IA:", "ia");
+      burbuja(motivo + "\n\nTe ayudo igual, sin IA:", "ia");
       responderLocal(pregunta);
       return;
     }
-    burbuja(motivo + "\n\nCambié automáticamente al modo sin IA. Pregúntame lo que quieras.", "ia");
+    burbuja(motivo + "\n\nSeguimos en modo sin IA. Pregúntame lo que quieras.", "ia");
   }
 
   // Identidad del compañero: cámbialo aquí y en SISTEMA_CHAT del Apps Script
@@ -6747,6 +6936,119 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
 
   // ----- Recomendador local con memoria de la sesión -----
   const sesionSugeridas = new Set();
+  // ----- Estela: calidez, empatía y memoria de la charla -----
+  let ultimaEmocion = null;
+  const CRISIS_RE = /suicid|quitarme la vida|quitarme la existencia|matarme|no quiero (seguir )?vivir|ya no quiero vivir|hacerme dano|lastimarme|autolesi|acabar con mi vida|terminar con mi vida/;
+  const ANIMO_PIDE = /quiero algo|algo que|dame algo|recomiend|sugier|propon|necesito algo|algo para|que veo|pon algo/;
+  const ANIMO_SIENTE = /\b(estoy|me siento|siento|ando|me encuentro|me pone|me pongo|me acuerdo|me recuerdo|extrano|me da)\b/;
+  const EMOCIONES = [
+    { tipo: "triste", razon: "para acompañarte con algo amable", re: /triste|tristeza|bajon|melancol|deprim|llorar|mala racha|dia gris/, gen: ["comedia", "animacion", "familia", "drama"],
+      intros: ["Ay, lo siento. Cuando el ánimo anda bajito, conviene algo que abrace un poco.", "Lamento que estés así. Vamos a buscarte algo amable, sin prisa."],
+      charla: "Lamento que estés así. ¿Quieres que te proponga algo para acompañarte un rato, o prefieres contarme qué pasó?" },
+    { tipo: "cansado", razon: "para desconectarte sin pensar mucho", re: /cansad|agotad|estresad|estres|rendid|dia pesado|muy pesado/, gen: ["comedia", "animacion", "familia"],
+      intros: ["Qué día tan pesado. Lo mejor es algo que te deje descansar la cabeza.", "Te entiendo: a veces solo toca desconectarse un rato."],
+      charla: "Qué cansancio. ¿Te propongo algo ligero para desconectarte, o prefieres platicar un poco?" },
+    { tipo: "aburrido", razon: "para sacudirte el aburrimiento", re: /aburrid|aburrir|sin ganas|nada que hacer/, gen: ["accion", "aventura", "suspenso", "ciencia"],
+      intros: ["Ese aburrimiento se quita rápido. Mira qué te propongo:", "Vamos a sacudir ese aburrimiento:"],
+      charla: "Ese aburrimiento tiene cura. ¿Quieres algo intenso o algo divertido?" },
+    { tipo: "solo", razon: "para hacerte compañía", re: /me siento solo|me siento sola|estoy solo|estoy sola|soledad/, gen: ["comedia", "romance", "familia", "animacion"],
+      intros: ["Una buena película también puede hacer compañía. Te propongo algo para sentirte acompañado:"],
+      charla: "Me alegra que me lo cuentes. ¿Quieres que te proponga algo para acompañarte un rato?" },
+    { tipo: "feliz", razon: "para mantener esa buena vibra", re: /estoy feliz|me siento feliz|contento|contenta|emocionad|de buen humor|de buen animo/, gen: ["comedia", "aventura", "musical", "animacion"],
+      intros: ["¡Qué buena vibra! Vamos a mantenerla:"],
+      charla: "¡Qué gusto leer eso! ¿Quieres que la celebremos con una peli?" },
+    { tipo: "nervioso", razon: "para distraerte sin asustarte", re: /nervios|ansios|ansiedad|preocupad|angustia|alterad/, gen: ["comedia", "animacion", "familia"],
+      intros: ["Respira un poco. Vamos con algo que te distraiga sin asustarte:"],
+      charla: "Respira un poco. ¿Quieres algo tranquilo para distraerte?" },
+    { tipo: "nostalgia", razon: "por su sabor a recuerdos", re: /nostalg|extrano a|extrano mi|recuerdos|de nino|de nina|de chico|de chica|cuando era/, gen: ["drama", "romance", "familia", "comedia"], anioMax: 2005,
+      intros: ["La nostalgia tiene su encanto. Te propongo algo con sabor a recuerdos:"],
+      charla: "La nostalgia puede ser muy bonita. ¿Quieres que te proponga algo de esos recuerdos?" },
+    { tipo: "consuelo", razon: "para arroparte un rato", re: /abrace|abrazo|abrazar|consol|arrop|reconfort|algo tierno|me cuide|cuidarme/, gen: ["comedia", "animacion", "familia", "drama"],
+      intros: ["Claro, algo que abrace un poco:", "Va, algo tierno para arroparte:"],
+      charla: "Claro, te acompaño. ¿Quieres que te proponga algo tierno para arroparte un rato?" },
+    { tipo: "dolor", razon: "porque a veces una historia ayuda a desahogarse", re: /corazon roto|me dejo|termine con|termino conmigo|desamor|ruptura|me engano/, gen: ["drama", "romance", "comedia"],
+      intros: ["Lamento que estés pasando por eso. A veces una historia ayuda a sacar lo que duele:"],
+      charla: "Lamento que te sientas así. ¿Quieres que te proponga algo para desahogarte viendo una historia?" }
+  ];
+  const ESTILO_IA = "cálido y natural, como una amiga cinéfila que platica en español de México; frases cortas y fluidas; sin listas robóticas salvo que pida una lista; si cuenta cómo se siente, responde primero con empatía; máximo cuatro frases salvo que pida más; nunca inventes títulos";
+
+  function textoCrisis() {
+    return "Gracias por contarme esto. Lo que sientes importa, y no tienes que cargarlo solo.\n\n" +
+      "Si estás en peligro o sientes que podrías hacerte daño, llama al 911 ahorita mismo, o a la Línea de la Vida al 800 911 2000, que atiende las 24 horas.\n\n" +
+      "Si puedes, háblale ya a alguien de tu confianza y dile que no quieres estar solo con esto. Yo soy una app de cine: no puedo acompañarte como lo haría una persona, pero quiero que estés bien. ¿Hay alguien cerca de ti ahorita?";
+  }
+
+  function momentoDia() {
+    const h = new Date().getHours();
+    return h < 12 ? "mañana" : h < 19 ? "tarde" : "noche";
+  }
+
+  // Artículo correcto para cada género: «la animación», «el drama»
+  function articuloGenero(g) {
+    const fem = /^(comedia|accion|animacion|aventura|ciencia|familia|fantasia|historia|musica|romantica|guerra|biografia|epica|intriga)/.test(normalizarChat(g));
+    return (fem ? "la " : "el ") + String(g).toLowerCase();
+  }
+
+  // Perfil de gustos como texto legible para la IA (antes se enviaba «[object Object]»)
+  function perfilTexto() {
+    const perfil = perfilGustos();
+    const top = obj => Object.entries(obj).sort((a, b) => b[1] - a[1]).slice(0, 3).map(x => x[0]);
+    const g = top(perfil.genero), d = top(perfil.director);
+    const partes = [];
+    if (g.length) partes.push("géneros que más le gustan: " + g.join(", "));
+    if (d.length) partes.push("directores que más le gustan: " + d.join(", "));
+    return partes.length ? partes.join("; ") : "aún sin gustos claros";
+  }
+
+  function emocionEncaja(p, e) {
+    const gens = generosDe(p).map(g => normalizarChat(g));
+    const genOk = gens.some(g => e.gen.some(x => g.includes(x)));
+    const anioOk = !e.anioMax || (Number(p["año"]) && Number(p["año"]) <= e.anioMax);
+    return genOk && anioOk;
+  }
+
+  function sugerenciaEmocional(e) {
+    const filtro = p => emocionEncaja(p, e);
+    const texto = sugerirLocal(filtro, 2, e.razon) || sugerirLocal(p => emocionEncaja(p, Object.assign({}, e, { anioMax: null })), 2, e.razon) || sugerirLocal(null, 2, e.razon);
+    ultimoFiltro = filtro;
+    if (!texto) return "Ya te propuse todo lo que encaja con tu lista. Marca algunas más como vistas y afino las sugerencias.";
+    return elegir(e.intros) + "\n\n" + texto + "\n\n¿Cuál te late?";
+  }
+
+  // Respuesta cálida a cómo se siente la persona (sin internet)
+  function respuestaEmocional(n) {
+    // Un «sí» corto después de una charla emocional trae la propuesta
+    const afirma = /^(si|sip|sí|claro|dale|va|ok|orale|simon|por favor)\b/.test(n) && n.split(" ").length <= 3;
+    if (ultimaEmocion && afirma) { const e = ultimaEmocion; ultimaEmocion = null; return sugerenciaEmocional(e); }
+    if (ultimaEmocion && !ANIMO_SIENTE.test(n)) ultimaEmocion = null; // cambió de tema
+    if (n.length > 160 || /pelicula|peli|filme|cinta|serie|director|actor|dirigi|reparto/.test(n)) return null;
+    // Si pide un género concreto de su catálogo, manda la búsqueda normal
+    if (generosCatalogo().some(g => n.includes(normalizarChat(g)))) return null;
+    const e = EMOCIONES.find(x => x.re.test(n));
+    if (!e || !(ANIMO_SIENTE.test(n) || ANIMO_PIDE.test(n))) return null;
+    if (ANIMO_PIDE.test(n)) { ultimaEmocion = null; return sugerenciaEmocional(e); }
+    ultimaEmocion = e;
+    return e.charla;
+  }
+
+  function seleccionParaIA(texto) {
+    // Solo se envían las películas que sirven para responder: el catálogo completo pesa mucho y vuelve lenta la respuesta
+    const LIMITE = 320;
+    if (peliculas.length <= LIMITE) return peliculas;
+    const e = p => estadoDe(p);
+    const pend = peliculas.filter(p => e(p).pendiente && !e(p).vista);
+    const vistas = peliculas.filter(p => e(p).vista).slice(-40);
+    const sinMarcar = peliculas.filter(p => !e(p).vista && !e(p).pendiente);
+    const palabras = normalizarChat(texto).split(/\s+/).filter(w => w.length > 3);
+    const coincide = p => { const txt = normalizarChat([p.titulo, p.genero, p.director, p.reparto].join(" ")); return palabras.some(w => txt.includes(w)); };
+    const perfil = perfilGustos();
+    const porGusto = sinMarcar.map(p => ({ p, s: puntuar(p, perfil) })).sort((a, b) => b.s - a.s).slice(0, 100).map(x => x.p);
+    const porPregunta = palabras.length ? sinMarcar.filter(coincide).slice(0, 80) : [];
+    const mezcla = [...pend.slice(0, 140), ...vistas, ...porPregunta, ...porGusto];
+    const vistos = new Set();
+    return mezcla.filter(p => { if (vistos.has(p.titulo)) return false; vistos.add(p.titulo); return true; }).slice(0, LIMITE);
+  }
+
   let ultimoFiltro = null;
   let ultimasSugeridas = [];
 
@@ -6783,7 +7085,7 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
     const a = pool[Math.floor(Math.random() * pool.length)];
     let b = a;
     while (b === a) b = pool[Math.floor(Math.random() * pool.length)];
-    burbuja("Votemos. ¿Cuál te late más?", "ia");
+    burbuja("Te doy dos al azar. ¿Cuál te late más?", "ia");
     const fila = document.createElement("div");
     fila.className = "chat-acciones chat-votos";
     const elegirA = crearBoton("A · " + a.titulo, true, () => { fila.remove(); guardarVoto(a.titulo); burbuja("Anotado: " + a.titulo + ". Ya cuenta para tus gustos.", "ia"); });
@@ -6849,13 +7151,29 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
 
   function razonDe(p, perfil) {
     const dir = directoresDe(p).find(d => perfil.director[d]);
-    if (dir) return elegir(["dirigida por " + dir + ", que ya te gustó", "de " + dir + ", a quien ya le has dado buenas calificaciones"]);
+    if (dir) return elegir(["porque ya te gustó algo de " + dir, "porque " + dir + " te ha gustado antes"]);
     const gen = generosDe(p).find(g => perfil.genero[g]);
-    if (gen) return elegir(["de " + gen.toLowerCase() + ", un género que te llena", "te va el " + gen.toLowerCase() + ", así que encaja"]);
-    return elegir(["está en tu lista y no la has visto", "es de las que quedan pendientes y puede sorprenderte"]);
+    if (gen) return elegir(["porque te gusta " + articuloGenero(gen), "porque " + articuloGenero(gen) + " está entre tus géneros favoritos"]);
+    return elegir(["porque está en tu lista y todavía no la has visto", "porque quedó pendiente y tiene buena pinta para ti"]);
   }
 
-  function sugerirLocal(filtro, n = 2) {
+  // Razón para una recomendación de género: concreta, y no la misma frase en toda la lista
+  function razonGenero(p, g, perfil) {
+    const dir = directoresDe(p).find(d => perfil.director[d]);
+    if (dir) return elegir(["porque es de " + g + " y ya te gustó algo de " + dir, "porque es de " + g + " y va por la línea de " + dir]);
+    return elegir(["porque es justo de " + g + ", como pediste", "porque es de " + g + " y todavía no la has visto"]);
+  }
+
+  // Reparte razones distintas dentro de una misma lista (si sale repetida, vuelve a intentar)
+  function razonUnica(p, perfil, razonFija, usadas) {
+    const dar = () => typeof razonFija === "function" ? razonFija(p, perfil) : (razonFija || razonDe(p, perfil));
+    let r = dar();
+    for (let k = 0; k < 6 && usadas.has(r); k++) r = dar();
+    usadas.add(r);
+    return r;
+  }
+
+  function sugerirLocal(filtro, n = 2, razonFija = null) {
     const perfil = perfilGustos();
     const candidatos = peliculas
       .filter(p => !estadoDe(p).vista && !(marcas[p.titulo] || {}).descartada && !sesionSugeridas.has(p.titulo) && (!filtro || filtro(p)))
@@ -6865,7 +7183,8 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
     const elegidos = candidatos.slice(0, n).map(c => c.p);
     elegidos.forEach(p => sesionSugeridas.add(p.titulo));
     ultimasSugeridas = elegidos;
-    return elegidos.map(p => "• " + p.titulo + (p["año"] ? " (" + p["año"] + ")" : "") + ": " + razonDe(p, perfil)).join("\n");
+    const usadas = new Set();
+    return elegidos.map(p => "• " + p.titulo + (p["año"] ? " (" + p["año"] + ")" : "") + ": " + razonUnica(p, perfil, razonFija, usadas)).join("\n");
   }
 
   const animosLocal = [
@@ -6877,34 +7196,38 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
     { re: /feliz|contento|emocionad|alegr/, gen: ["comedia", "aventura", "musical"], intro: "Para mantener esa energía:" }
   ];
 
-  function respuestaSugerencia(intro, filtro) {
+  function respuestaSugerencia(intro, filtro, razon = null) {
     ultimoFiltro = filtro;
     ultimasSeriesSugeridas = [];
-    const texto = sugerirLocal(filtro);
-    if (!texto) return "Ya te propuse todo lo que encaja con tu lista. Marca algunas películas más como vistas y afino las sugerencias.";
+    const texto = sugerirLocal(filtro, 2, razon);
+    if (!texto) {
+      const hayAlgo = peliculas.some(p => !estadoDe(p).vista && !(marcas[p.titulo] || {}).descartada && (!filtro || filtro(p)));
+      return hayAlgo
+        ? "Ya te propuse todo lo que encaja con tu lista. Marca algunas películas más como vistas y afino las sugerencias."
+        : "Con ese criterio no me sale nada en tu lista ahorita. ¿Probamos con más tiempo, quitando el año o con otro género?";
+    }
     return intro + "\n\n" + texto;
   }
 
   function compararLocal(a, b) {
     const estadoTxt = p => {
       const e = estadoDe(p);
-      return e.vista ? "vista" + (e.estrellas ? " (" + e.estrellas + "★)" : "") : (e.pendiente ? "pendiente" : "sin marcar");
+      return e.vista ? "ya la viste" + (e.estrellas ? " y le diste " + e.estrellas + " estrellas" : "") : (e.pendiente ? "está en tus pendientes" : "todavía no la has marcado");
     };
     const comunes = (x, y) => x.filter(v => y.includes(v));
     const genComun = comunes(generosDe(a), generosDe(b));
     const repComun = comunes(listaCampo(a, "reparto"), listaCampo(b, "reparto"));
     const perfil = perfilGustos();
     const sA = puntuar(a, perfil), sB = puntuar(b, perfil);
-    let t = "«" + a.titulo + "» vs «" + b.titulo + "»\n\n";
-    t += "• Año: " + (a["año"] || "?") + " y " + (b["año"] || "?") + "\n";
-    t += "• Duración: " + (a.duracion || "?") + " y " + (b.duracion || "?") + "\n";
-    t += "• Género en común: " + (genComun.length ? genComun.join(", ") : "ninguno") + "\n";
-    t += "• Director: " + (directoresDe(a).join(", ") || "?") + " / " + (directoresDe(b).join(", ") || "?") + "\n";
-    t += "• Reparto en común: " + (repComun.length ? repComun.slice(0, 3).join(", ") : "ninguno") + "\n";
-    t += "• En tu lista: «" + a.titulo + "» está " + estadoTxt(a) + "; «" + b.titulo + "» está " + estadoTxt(b) + ".\n\n";
+    const dirA = directoresDe(a).join(" y ") || "un director sin dato", dirB = directoresDe(b).join(" y ") || "un director sin dato";
+    let t = "Te cuento las dos. «" + a.titulo + "» es de " + (a["año"] || "año sin dato") + " y dura " + (a.duracion ? String(a.duracion).replace(/\bmin\b\.?/i, "minutos") : "tiempo sin dato") + "; la dirigió " + dirA + ". ";
+    t += "«" + b.titulo + "» es de " + (b["año"] || "año sin dato") + " y dura " + (b.duracion ? String(b.duracion).replace(/\bmin\b\.?/i, "minutos") : "tiempo sin dato") + "; la dirigió " + dirB + ".\n\n";
+    t += genComun.length ? "En común tienen el género " + genComun.join(" y ").toLowerCase() + ". " : "No comparten género. ";
+    t += repComun.length ? "Y en el reparto coinciden " + repComun.slice(0, 3).join(", ") + ".\n\n" : "Tampoco comparten reparto.\n\n";
+    t += "En tu caso, «" + a.titulo + "» " + estadoTxt(a) + " y «" + b.titulo + "» " + estadoTxt(b) + ".\n\n";
     t += sA === sB
-      ? "Según lo que ya te gusta, empatan."
-      : "Según lo que ya te gusta, la que más te va a encajar es «" + (sA > sB ? a.titulo : b.titulo) + "».";
+      ? "Según lo que ya te gusta, las dos te pueden encajar igual."
+      : "Según lo que ya te gusta, yo me iría con «" + (sA > sB ? a.titulo : b.titulo) + "».";
     return t;
   }
 
@@ -6942,31 +7265,32 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
     }
     // Recomendaciones por ocasión
     if (/para ver con (mi|mis|un|una|la|el)|en familia|con ninos|con mis ninos|con mi mama|con mi papa/.test(n)) {
-      return respuestaSugerencia("Para ver en familia, te propongo:", p => generosDe(p).some(g => /familia|animacion|comedia|aventura/.test(normalizarChat(g))));
+      return respuestaSugerencia("Para ver en familia, te propongo:", p => generosDe(p).some(g => /familia|animacion|comedia|aventura/.test(normalizarChat(g))), "para verla en familia");
     }
     if (/noche de (terror|miedo|sustos)|peli de miedo|algo de miedo/.test(n)) {
-      return respuestaSugerencia("Noche de sustos, va:", p => generosDe(p).some(g => /terror|suspenso/.test(normalizarChat(g))));
+      return respuestaSugerencia("Noche de sustos, va:", p => generosDe(p).some(g => /terror|suspenso/.test(normalizarChat(g))), "para pasar miedo");
     }
     if (/noche de (risas|reir|reirme)|para reirme|para reir|algo gracioso/.test(n)) {
-      return respuestaSugerencia("Para reírte un rato:", p => generosDe(p).some(g => /comedia/.test(normalizarChat(g))));
+      return respuestaSugerencia("Para reírte un rato:", p => generosDe(p).some(g => /comedia/.test(normalizarChat(g))), "para reírte un rato");
     }
 
     // Estadísticas: género favorito, general o de este año
     if (/genero favorito|mi genero|que genero veo mas|genero que mas/.test(n)) {
       const year = String(new Date().getFullYear());
       const conteo = {};
-      const base = /este ano|este año|de este ano|del ano/.test(n)
+      const esteAno = /este ano|este año|de este ano|del ano/.test(n);
+      const base = esteAno
         ? vistasDe().filter(p => ((marcas[p.titulo] || {}).historial || []).some(h => h.a === "vista" && String(h.f).startsWith(year)))
         : vistasDe();
       base.forEach(p => generosDe(p).forEach(g => { conteo[g] = (conteo[g] || 0) + 1; }));
       const top = Object.entries(conteo).sort((a, b) => b[1] - a[1]).slice(0, 2);
-      if (!top.length) return "Todavía no tengo suficientes películas vistas para decir cuál es tu género favorito.";
-      return "Tu género favorito es " + top[0][0].toLowerCase() + (top[1] ? ", seguido de " + top[1][0].toLowerCase() : "") + ", con " + top[0][1] + (top[0][1] === 1 ? " película" : " películas") + (base === vistasDe() ? " en total." : " este año.");
+      if (!top.length) return esteAno ? "Este año todavía no marcas películas como vistas, así que no tengo base para decirte tu género de este año." : "Todavía no tengo suficientes películas vistas para decir cuál es tu género favorito.";
+      return "Tu género favorito es " + top[0][0].toLowerCase() + (top[1] ? ", seguido de " + top[1][0].toLowerCase() : "") + ", con " + top[0][1] + (top[0][1] === 1 ? " película" : " películas") + (esteAno ? " este año." : " en total.");
     }
 
     // Seguimiento: por qué, decide por mí
     if (/por que|porque|y eso|razon/.test(n) && ultimasSugeridas.length) {
-      return "Te la sugerí porque " + razonDe(ultimasSugeridas[0], perfilGustos()) + ". ¿Te late esa línea o prefieres otra?";
+      return "Te la sugerí " + razonDe(ultimasSugeridas[0], perfilGustos()) + ". ¿Te late esa línea o prefieres otra?";
     }
     if (/decide tu|decides tu|no se|sorprendeme|elige tu|tu eliges/.test(n)) {
       const texto = sugerirLocal(null, 1);
@@ -7039,13 +7363,14 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
         : (est.pendiente ? "la tienes en pendientes" : "todavía no la has marcado");
       ultimoTitulo = titulo;
       if (/opinas|te gusta|vale la pena|buena|recomiendas|me conviene/.test(n)) return opinionLocal(titulo);
-      if (/dime mas|cuentame|de que trata|como es|de que va|que tal/.test(n)) {
+      if (/dime mas|cuentame|hablame|platicame|dime de|de que trata|como es|de que va|que tal/.test(n)) {
         const datos = [];
         if (titulo["año"]) datos.push("salió en " + titulo["año"]);
-        if (gens.length) datos.push("es de " + gens.slice(0, 2).join(" y ").toLowerCase());
+        const gensUnicos = [...new Set(gens)];
+        if (gensUnicos.length) datos.push("es de " + gensUnicos.slice(0, 2).join(" y ").toLowerCase());
         if (directoresDe(titulo).length) datos.push("la dirigió " + directoresDe(titulo).join(" y "));
         if (titulo.duracion) datos.push("dura " + titulo.duracion);
-        const rep = listaCampo(titulo, "reparto").slice(0, 2);
+        const rep = [...new Set(listaCampo(titulo, "reparto"))].slice(0, 2);
         if (rep.length) datos.push("actúan " + rep.join(" y "));
         return "«" + titulo.titulo + "» " + (datos.length ? datos.join(", ") : "no tengo más datos de ella") + ". Y " + estado + ". ¿La quieres ver o ya la viste?";
       }
@@ -7085,11 +7410,11 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
     }
     const animo = animosLocal.find(a => a.re.test(n));
     if (animo) {
-      return respuestaSugerencia(animo.intro, p => generosDe(p).some(g => animo.gen.some(x => normalizarChat(g).includes(x))));
+      return respuestaSugerencia(animo.intro, p => generosDe(p).some(g => animo.gen.some(x => normalizarChat(g).includes(x))), "para este momento");
     }
     const generoTexto = [...new Set(peliculas.flatMap(p => generosDe(p)))].find(g => n.includes(normalizarChat(g)));
     if (generoTexto) {
-      return respuestaSugerencia(elegir(["Buena elección. De " + generoTexto.toLowerCase() + " te propongo:", "¡Me gusta tu gusto! Va de " + generoTexto.toLowerCase() + ":"]), p => generosDe(p).includes(generoTexto));
+      return respuestaSugerencia(elegir(["Buena elección. De " + generoTexto.toLowerCase() + " te propongo:", "¡Me gusta tu gusto! Va de " + generoTexto.toLowerCase() + ":"]), p => generosDe(p).includes(generoTexto), (p, perfil) => razonGenero(p, generoTexto.toLowerCase(), perfil));
     }
     if (/que veo|sugier|recomie|algo para ver|que pongo|sorprend|algo bueno/.test(n)) {
       const hora = new Date().getHours();
@@ -7098,31 +7423,43 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
       return respuestaSugerencia(elegir(["Te propongo esta:", "Esta me late para ti:", "Va una, según tus gustos:"]), null);
     }
 
-    if (/^(hola|hey|hi|hello|buenas|buenos dias|buenas tardes|buenas noches|que onda|que tal)\b/.test(n)) {
+    if (/^buenas noches\b/.test(n)) {
+      return elegir(["¡Buenas noches! ¿Buscamos algo para esta noche?", "Buenas noches. ¿Qué te apetece ver antes de dormir?"]);
+    }
+    if (/^buenas tardes\b/.test(n)) {
+      return elegir(["¡Buenas tardes! ¿Qué vemos hoy?", "Buenas tardes. ¿Buscamos algo para esta tarde?"]);
+    }
+    if (/^buenos dias\b/.test(n)) {
+      return elegir(["¡Buenos días! ¿Qué tal si empezamos el día con una peli?", "¡Buenos días! ¿Te propongo algo para esta mañana?"]);
+    }
+    if (/^(hola|hey|hi|hello|buenas|que onda|que tal)\b/.test(n)) {
       const nom = nombreUsuario();
       const saludo = nom ? "¡Hola, " + nom + "!" : "¡Hola!";
       return elegir([
         saludo + " ¿Qué vemos hoy? Puedo sugerirte algo o revisar tus pendientes.",
-        saludo + " Qué gusto verte. ¿Buscamos algo para esta noche?",
+        saludo + " Qué gusto verte. " + elegir(PREGUNTAS_SALUDO[franjaDelDia()]),
         saludo + " Aquí estoy. ¿Qué te apetece ver?",
         saludo + " Dime si quieres algo nuevo, algo de tu lista o una sorpresa.",
         saludo + " ¿Ya tienes en mente algo o te ayudo a elegir?"
       ]);
     }
+    if (/estoy bien|todo bien|bien gracias|muy bien gracias/.test(n)) {
+      return elegir(["¡Qué gusto leer eso! ¿Buscamos algo para acompañar ese buen ánimo?", "Me alegra mucho. ¿Qué te apetece ver para seguir así?"]);
+    }
     if (/gracias|thank/.test(n)) {
-      return elegir(["¡Con gusto! Aquí ando cuando quieras.", "De nada. Que disfrutes la peli.", "Para eso estoy. ¿Otra recomendación?"]);
+      return elegir(["¡Con gusto! Me alegra que te sirva.", "¡De nada! Para eso estamos.", "Qué bueno que te sirvió. ¿Seguimos con otra?"]);
     }
     if (/como estas|como vas|que tal tu dia/.test(n)) {
-      return elegir(["Muy bien, gracias por preguntar. Me pongo contento cuando hay películas de por medio. ¿Y tú qué tal?", "Bien por aquí. ¿Tú cómo vas? ¿Buscas algo para esta noche?"]);
+      return elegir(["Muy bien, gracias por preguntar. Me pongo contento cuando hay películas de por medio. ¿Y tú qué tal?", "Bien por aquí. ¿Tú cómo vas? Si quieres, te propongo algo para lo que te quede del día."]);
     }
     if (/eres (humano|una persona|real|de carne)|eres (un )?robot/.test(n)) {
-      return "No soy humano: soy un asistente de IA. Pero el gusto por el cine sí es real, y eso lo comparto contigo.";
+      return "Jaja, algo así: soy una IA, no una persona. Pero lo del cine me encanta, y eso sí lo comparto contigo.";
     }
     if (/como te llamas|cual es tu nombre|tu nombre/.test(n)) {
       return "Me llamo " + NOMBRE_COMPA + ". ¿Y tú? Si me dices tu nombre, lo guardo: escribe «recuerda que me llamo…».";
     }
     if (/quien eres|que eres|de donde eres|que haces|sobre ti/.test(n)) {
-      return "Soy " + NOMBRE_COMPA + ", tu compa peliculero. Soy un asistente de IA: no vivo fuera del chat, pero me encanta platicar de cine y conozco tu catálogo. En modo sin IA sigo aquí con tus marcas, tus gustos y tus pendientes.";
+      return "Soy " + NOMBRE_COMPA + ", tu compa peliculero. Soy una IA y me encanta platicar de cine. Conozco tu catálogo, tus marcas y tus gustos, y aunque no haya internet, sigo aquí contigo.";
     }
     if (/ayuda|que puedes hacer|que haces|como funciona/.test(n)) {
       return "Puedo hacer varias cosas: sugerirte algo («sugiéreme algo»), mostrarte tus pendientes («qué tengo pendiente»), lo que ya viste («qué he visto»), tus favoritas («mis favoritas»), buscar por género o director («algo de terror», «películas de Nolan») darte números («cuántas tengo»), recomendarte para una ocasión («para ver con mi mamá», «noche de terror») o contarte tu semana («resumen de mi semana»).";
@@ -7147,7 +7484,7 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
       return "Has visto " + vistas.length + " películas. Las más recientes:\n\n" + listaTitulos(vistas.slice(-5).reverse());
     }
     if (/cuantas|cuantos|total|tengo en total/.test(n)) {
-      return "Tienes " + peliculas.length + " películas en tu catálogo: " + vistas.length + " vistas y " + pend.length + " pendientes.";
+      return "¡Tienes " + peliculas.length + " películas en tu colección! " + vistas.length + " ya vistas y " + pend.length + " esperando por ti.";
     }
 
     // Género o director mencionados en la pregunta
@@ -7166,8 +7503,8 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
     }
 
     return elegir([
-      "Eso no lo puedo resolver sin IA, pero sí con tus marcas. Prueba con «sugiéreme algo», «qué tengo pendiente» o «algo de comedia».",
-      "Esa no la entendí del todo sin IA. Intenta con «qué he visto», «cuántas tengo» o «algo de terror»."
+      "Eso se me escapa en modo sin IA, pero con tus marcas sí te ayudo. Prueba con «sugiéreme algo», «qué tengo pendiente» o «algo de comedia».",
+      "Esa no la capté del todo en modo sin IA. Intenta con «qué he visto», «cuántas tengo» o «algo de terror»."
     ]);
   }
 
@@ -7279,7 +7616,7 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
     const partes = [];
     const filtros = [];
     if (genero) {
-      partes.push(genero.toLowerCase());
+      partes.push("de " + genero.toLowerCase());
       filtros.push(p => generosDe(p).includes(genero));
     }
     if (anio) {
@@ -7294,8 +7631,8 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
       partes.push("con " + persona);
       filtros.push(p => personasDe(p).includes(persona));
     }
-    const intro = "Lo que encaja (" + partes.join(", ") + "):";
-    const texto = respuestaSugerencia(intro, p => filtros.every(fn => fn(p)));
+    const intro = elegir(["Va, algo " + partes.join(" ") + ":", "Mira lo que encontré " + partes.join(" ") + ":", "Esto encaja con lo que buscas, " + partes.join(" ") + ":"]);
+    const texto = respuestaSugerencia(intro, p => filtros.every(fn => fn(p)), genero ? (p, perfil) => razonGenero(p, genero.toLowerCase(), perfil) : null);
     if (texto.startsWith("Ya te propuse")) {
       return "No encuentro nada " + partes.join(", ") + " que te falte ver. ¿Probamos con algo más amplio? Por ejemplo, quita el año o sube los minutos.";
     }
@@ -7327,7 +7664,8 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
     lista.scrollTop = lista.scrollHeight;
     await new Promise(r => setTimeout(r, 450 + Math.random() * 500));
     escribiendo.remove();
-    const texto = respuestaFlexible(t) || (await respuestaConModelo(t)) || respuestaLocal(t);
+    const nEst = expandirChat(normalizarChat(t));
+    const texto = refinarUltimo(nEst) || respuestaEmocional(nEst) || respuestaFlexible(t) || (await respuestaConModelo(t, historial)) || respuestaLocal(t);
     burbuja(texto, "ia");
     if (/•/.test(texto)) ponerChips(["Otra", "¿Por qué?", "Decide tú"]);
     else if (/Prueba con «sugiéreme algo»|Intenta con «qué he visto»/.test(texto)) ponerChips(["Sugiéreme algo", "Qué tengo pendiente", "Algo de comedia"]);
@@ -7376,19 +7714,19 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
 
   function mensajeCuota() {
     const n = consultasPersonalesHoy();
-    let t = "Se agotó la cuota diaria gratuita del chat (compartida por todas las cuentas).\n\n";
+    let t = "Por hoy ya se agotaron las consultas gratuitas de la IA (las comparten todas las cuentas).\n\n";
     if (n !== null) t += "Tus consultas de hoy: " + n + ".\n";
-    t += "Se reinicia en " + tiempoParaReinicio() + " (medianoche, hora del Pacífico).\nMientras tanto, el catálogo sigue funcionando normalmente.";
+    t += "Se reinicia en " + tiempoParaReinicio() + " (medianoche, hora del Pacífico).\nMientras tanto sigo aquí en modo sin IA: te puedo sugerir, comparar y contarte tus números.";
     return t;
   }
 
-  async function preguntar(texto, oculta = false) {
+  async function preguntar(texto, oculta = false, yaMostrada = false) {
     if (!accessToken || !peliculas.length) {
       burbuja("Primero necesito que tu catálogo cargue. Intenta en unos segundos.", "error");
       return;
     }
-    if (!oculta) burbuja(texto, "yo");
-    if (!oculta && intentoAbrirSugerida(texto)) return;
+    if (!oculta && !yaMostrada) burbuja(texto, "yo");
+    if (!oculta && !yaMostrada && intentoAbrirSugerida(texto)) return;
     if (!oculta && consultasPersonalesHoy() >= LIMITE_IA_PERSONAL_DIA) {
       burbuja("Hoy ya usaste tus " + LIMITE_IA_PERSONAL_DIA + " consultas con IA. Sigo contigo en modo sin IA; la IA vuelve a medianoche (hora del Pacífico).", "ia");
       responderLocal(texto);
@@ -7402,7 +7740,7 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
     enviar.disabled = true;
 
     try {
-      const catalogo = catalogoParaIA();
+      const catalogo = catalogoParaIA(texto);
       const clave = hashTexto(JSON.stringify({ p: texto, h: historial, c: catalogo }));
       if (respuestasCache.has(clave)) {
         pensando.remove();
@@ -7424,7 +7762,7 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
           method: "POST",
           signal: control.signal,
           headers: { "Content-Type": "text/plain;charset=utf-8" },
-          body: JSON.stringify({ token: accessToken, pregunta: texto + "\n\n[Perfil de gustos del usuario: " + perfilGustos() + ".]", historial: historial, catalogo: catalogo, gustos: perfilGustos() })
+          body: JSON.stringify({ token: accessToken, pregunta: texto + "\n\n[Perfil de gustos del usuario: " + perfilTexto() + ".]\n[Estilo: " + ESTILO_IA + ". Momento del día: " + momentoDia() + ".]", historial: historial, catalogo: catalogo, gustos: perfilGustos() })
         });
       } finally { clearTimeout(tiempo); }
       const j = await r.json();
@@ -7433,12 +7771,15 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
       if (j.error) {
         const cuota = String(j.error).includes("429") || j.codigo === "limite_grupo";
         if (cuota) { try { localStorage.setItem("cuota_agotada_" + fechaPacifico(), "1"); } catch (e) {} }
-        const motivo = cuota ? mensajeCuota() : "La IA no está disponible ahora (" + j.error + ").";
+        const motivo = cuota ? mensajeCuota() : "Ahorita la IA no está disponible.";
         if (oculta) burbuja(motivo, "error");
         else caeASinIA(motivo, texto);
       } else {
         contarConsultaPersonal();
-        if (!j.accion) respuestasCache.set(clave, j.respuesta);
+        if (!j.accion) {
+          respuestasCache.set(clave, j.respuesta);
+          if (respuestasCache.size > 60) respuestasCache.delete(respuestasCache.keys().next().value);
+        }
         if (!oculta) {
           burbuja(j.respuesta, "ia");
           const nombradas = titulosEnTexto(j.respuesta);
@@ -7502,6 +7843,8 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
   }
 
   /* ---------- Acciones con confirmación ---------- */
+  // Pregunta de sí o no que espera respuesta: escribir «sí» o «no» equivale a tocar el botón
+  let confirmacionPendiente = null;
   function preguntarConfirmacion(texto, textoSi, alSi) {
     burbuja(texto, "ia");
     const fila = document.createElement("div");
@@ -7513,8 +7856,10 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
     no.type = "button";
     no.className = "secundario";
     no.textContent = "Cancelar";
-    si.addEventListener("click", () => { fila.remove(); alSi(); });
-    no.addEventListener("click", () => { fila.remove(); burbuja("Cancelado. No cambié nada.", "ia"); });
+    const pendiente = { fila, alSi };
+    confirmacionPendiente = pendiente;
+    si.addEventListener("click", () => { if (confirmacionPendiente === pendiente) confirmacionPendiente = null; fila.remove(); alSi(); });
+    no.addEventListener("click", () => { if (confirmacionPendiente === pendiente) confirmacionPendiente = null; fila.remove(); burbuja("Cancelado. No cambié nada.", "ia"); });
     fila.append(si, no);
     lista.appendChild(fila);
     lista.scrollTop = lista.scrollHeight;
@@ -7525,11 +7870,11 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
       burbuja("Escríbelo en menos de 200 caracteres, por favor.", "error");
       return;
     }
-    preguntarConfirmacion("¿Guardo esta preferencia para tus próximas recomendaciones?\n\n«" + texto + "»", "Guardar", async () => {
+    preguntarConfirmacion("¿Lo guardo para tenerlo presente en tus próximas recomendaciones?\n\n«" + texto + "»", "Guardar", async () => {
       notas.push(texto);
       try {
         await notasGuardar();
-        burbuja("Guardado. Lo tendré en cuenta.", "ia");
+        burbuja("Listo, quedó guardado. Lo tendré presente en tus recomendaciones.", "ia");
       } catch (e) {
         notas.pop();
         burbuja("No pude guardarlo en tu Drive. Intenta de nuevo más tarde.", "error");
@@ -7553,11 +7898,15 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
 
   function mostrarMemoria() {
     const nombre = nombreUsuario();
-    let t = "Esto es lo que recuerdo de ti:\n\n";
-    t += "Nombre: " + (nombre || "todavía no me lo has dicho") + "\n";
-    t += "Preferencias guardadas: " + notas.length;
-    if (notas.length) t += "\n\n" + notas.map((n, i) => (i + 1) + ". " + n).join("\n");
-    t += "\n\nLas notas que escribes en las películas no están aquí: viven en tu catálogo y se borran desde su ficha.";
+    if (!nombre && !notas.length) {
+      burbuja("Por ahora no tengo nada guardado de ti. Si me dices tu nombre con «recuerda que me llamo…», lo tengo presente.", "ia");
+      return;
+    }
+    let t = nombre ? "Claro, " + nombre + ". Esto es lo que recuerdo de ti." : "Esto es lo que recuerdo de ti. Todavía no me has dicho tu nombre.";
+    t += notas.length
+      ? (notas.length === 1 ? " Tengo una preferencia guardada:" : " Tengo " + notas.length + " preferencias guardadas:") + "\n\n" + notas.map((n, i) => (i + 1) + ". " + n).join("\n")
+      : " Todavía no tienes preferencias guardadas.";
+    t += "\n\nTus notas viven en cada ficha de tu catálogo, no aquí.";
     burbuja(t, "ia");
 
     const fila = document.createElement("div");
@@ -7734,6 +8083,7 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
       burbuja("Todavía no tienes películas vistas. Cuando marques algunas, te armo tu resumen del año.", "ia");
       return;
     }
+    burbuja("Aquí tienes tu resumen de cine de " + e.year + ". Puedes copiarlo o guardarlo como imagen para compartirlo.", "ia");
     const tarjeta = document.createElement("div");
     tarjeta.className = "chat-stats";
     const titulo = document.createElement("h4");
@@ -7784,36 +8134,36 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
     const vistasSem = peliculas.filter(p => ((marcas[p.titulo] || {}).historial || []).some(h => h.a === "vista" && String(h.f) >= hace7));
     const pend = pendientesDe();
     const calificadas = vistasSem.filter(p => estadoDe(p).estrellas);
-    let t = "Tu semana en cine.\n\n";
+    let t = "Así va tu semana en cine.\n\n";
     if (vistasSem.length) {
-      t += "Viste " + vistasSem.length + (vistasSem.length === 1 ? " película" : " películas") + ": " + vistasSem.slice(0, 4).map(p => p.titulo).join(", ") + (vistasSem.length > 4 ? " y algunas más" : "") + ".\n";
+      t += "Esta semana viste " + vistasSem.length + (vistasSem.length === 1 ? " película" : " películas") + ": " + vistasSem.slice(0, 4).map(p => p.titulo).join(", ") + (vistasSem.length > 4 ? " y algunas más" : "") + ". ¡Buen ritmo!\n";
     } else {
-      t += "Esta semana no marcaste películas como vistas.\n";
+      t += "Esta semana todavía no marcas ninguna como vista. Sin presión.\n";
     }
     if (calificadas.length) {
       const mejor = calificadas.slice().sort((a, b) => estadoDe(b).estrellas - estadoDe(a).estrellas)[0];
       t += "La que más te gustó fue «" + mejor.titulo + "», con " + estadoDe(mejor).estrellas + " estrellas.\n";
     }
-    t += "Tienes " + pend.length + (pend.length === 1 ? " pendiente" : " pendientes") + ". " + (pend.length ? "Si quieres, te propongo una para el fin de semana." : "");
+    t += pend.length ? "Tienes " + pend.length + (pend.length === 1 ? " por ver" : " por ver") + ". ¿Te propongo una para el fin de semana?" : "No tienes pendientes. ¿Agregamos alguna a tu lista?";
     return t.trim();
   }
 
   // Explica en qué se basan las recomendaciones, con los datos que usa
   function explicarPerfil() {
     const vistas = vistasDe();
-    if (!vistas.length) return "Todavía no tengo nada en que basarme. Marca algunas películas como vistas y califícalas, y te explico cómo te recomiendo.";
+    if (!vistas.length) return "Todavía no tengo nada en que basarme. Marca algunas películas como vistas y califícalas, y te cuento cómo te recomiendo.";
     const perfil = perfilGustos();
     const top = obj => Object.entries(obj).sort((a, b) => b[1] - a[1]).slice(0, 3).map(x => x[0]);
-    const generos = top(perfil.genero), directores = top(perfil.director);
+    const generos = top(perfil.genero).map(g => g.toLowerCase()), directores = top(perfil.director);
     const calificadas = vistas.filter(p => estadoDe(p).estrellas);
-    let t = "Así te conozco, y en qué me baso.\n\n";
-    t += "• Géneros que más te llenan: " + (generos.length ? generos.join(", ") : "todavía no hay suficientes datos") + ".\n";
-    t += "• Directores que más te gustan: " + (directores.length ? directores.join(", ") : "todavía no hay suficientes datos") + ".\n";
+    const enLista = arr => arr.length <= 1 ? arr.join("") : arr.slice(0, -1).join(", ") + " y " + arr[arr.length - 1];
+    let t = generos.length ? "Lo que más disfrutas es " + enLista(generos) + "." : "Todavía no tengo suficientes datos de géneros.";
+    if (directores.length) t += " Los directores que más te llenan son " + enLista(directores) + ".";
     if (calificadas.length) {
       const prom = Math.round(calificadas.reduce((a, p) => a + estadoDe(p).estrellas, 0) / calificadas.length * 10) / 10;
-      t += "• Tu calificación promedio: " + prom + " estrellas, sobre " + calificadas.length + (calificadas.length === 1 ? " película" : " películas") + ".\n";
+      t += " Tus calificaciones promedian " + prom + " estrellas, en " + calificadas.length + (calificadas.length === 1 ? " película" : " películas") + ".";
     }
-    t += "\nCada película que viste suma a sus géneros y a su director según sus estrellas (sin calificar cuenta como 1). Un director pesa el doble que un género, y las pendientes reciben un pequeño empujón. Con eso elijo lo que te sugiero.";
+    t += "\n\nCada película que viste suma según sus estrellas: un director pesa el doble que un género, y las pendientes reciben un pequeño empujón. Con eso elijo lo que te propongo.";
     return t;
   }
 
@@ -7908,6 +8258,7 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
 
   function intentoAbrirSugerida(t) {
     const n = normalizarChat(t);
+    if (ultimaEmocion) return false; // un «sí» aquí responde a la charla, no abre una película
     if (!n || n.length > 60) return false;
     const confirma = /^(si|sip|ok|okey|va|dale|claro|veamos|vamos|ver|esa|esa mera|esa misma|la de|abrela|abre la|abrir|muestrame|muestra|quiero verla|quiero ver esa|quiero ver la|vamos con esa|veamos esa|esa peli|esa pelicula)\b/;
     const ordinal = /(primera|primer|segunda|segundo|tercera|tercero)/;
@@ -7963,7 +8314,7 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
     const tieneTrailer = [p.trailer_es, p.trailer_en].some(x => x && String(x).trim() && String(x).trim() !== "sin tráiler");
     const abrirFicha = () => { try { abrirDetalle(p); } catch (e) { burbuja("No pude abrir la ficha. Intenta tocar el póster.", "error"); } };
     if (quiereFicha || (!urlReproducible(p.link) && !tieneTrailer)) {
-      burbuja(quiereFicha ? "Va, abriendo la ficha de «" + p.titulo + "»." : "No tengo tráiler ni enlace para «" + p.titulo + "», así que te abro la ficha.", "ia");
+      burbuja(quiereFicha ? "Va, abriendo la ficha de «" + p.titulo + "»." : "Esta no tiene tráiler guardado, así que te abro su ficha para que la veas con calma.", "ia");
       abrirFicha();
       return true;
     }
@@ -7974,9 +8325,43 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
   }
 
   function procesarEntrada(t) {
+    // Se muestra tu mensaje siempre (también sin IA); preguntar() no lo repite
+    burbuja(t, "yo");
+    if (CRISIS_RE.test(normalizarChat(t))) { burbuja(textoCrisis(), "ia"); return; }
+    // Si hay una pregunta de sí o no en pausa, «sí» la confirma y «no» la cancela (igual que los botones)
+    if (confirmacionPendiente) {
+      const pend = confirmacionPendiente;
+      const cn = normalizarChat(t).replace(/[^a-z0-9 ]/g, " ").replace(/\s+/g, " ").trim();
+      if (/^(si|si porfa|si por favor|dale|va|claro|ok|okey|de acuerdo|adelante|hazlo|guardalo|guardala|olvidalo|olvidala|borralo|borrala)$/.test(cn)) {
+        confirmacionPendiente = null;
+        pend.fila.remove();
+        pend.alSi();
+        return;
+      }
+      if (/^(no|no gracias|cancela|cancelar|mejor no|nel)$/.test(cn)) {
+        confirmacionPendiente = null;
+        pend.fila.remove();
+        burbuja("Cancelado. No cambié nada.", "ia");
+        return;
+      }
+      confirmacionPendiente = null;
+    }
+    // Saludos, gracias y despedidas se responden al instante, sin gastar una consulta de IA
+    if (/^(hola|hola estela|hey|hi|hello|buenas|buenos dias|buenas tardes|buenas noches|que onda|que tal|gracias|muchas gracias|gracias estela|adios|chao|hasta luego|nos vemos|bye)$/.test(normalizarChat(t).replace(/[^a-z0-9 ]/g, " ").replace(/\s+/g, " ").trim())) {
+      responderLocal(t);
+      return;
+    }
     if (intentoAbrirSugerida(t)) return;
     if (respuestaSeriesChat(t)) return;
     const nt = normalizarChat(t);
+    if (/curiosidad|dato curioso|algo curioso|sabias que|dato interesante|dime un dato/.test(nt)) {
+      if (/otra|mas/.test(nt)) curioOffset++;
+      const lista = todasLasCuriosidades();
+      const c = lista.length ? lista[(Math.floor(Math.random() * lista.length))] : null;
+      burbuja(c ? "¿Sabías esto de «" + c.peli.titulo + "»? " + c.texto : "Todavía no tengo curiosidades cargadas. Puedes agregarlas en la pestaña «curiosidades» de tu hoja.", "ia");
+      if (c) { ultimasSugeridas = [c.peli]; ponerChips(["Otra curiosidad", "Ábrela"]); }
+      return;
+    }
     if (/^(vota|votemos|dos opciones|a o b|cual prefieres|cual te late)/.test(nt)) { votacionAB(); return; }
     if (/^(mi racha|racha|cuantas semanas)/.test(nt)) {
       const r = rachaSemanas();
@@ -8007,6 +8392,11 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
         "\n\nPara verla con pantalla completa, abre Maratón y toca Empezar.", "ia");
       return;
     }
+    if (/como me llamo|cual es mi nombre|sabes mi nombre|sabes como me llamo/.test(nt)) {
+      const nom = nombreUsuario();
+      burbuja(nom ? "Te llamas " + nom + ", ¿verdad? Lo tengo presente." : "Todavía no me has dicho tu nombre. Si quieres, escribe «recuerda que me llamo…» y lo guardo.", "ia");
+      return;
+    }
     if (/registro de errores|mis errores|ver errores/.test(nt)) {
       const reg = window.obtenerRegistro ? window.obtenerRegistro() : [];
       burbuja(reg.length
@@ -8029,7 +8419,7 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
       responderLocal(t);
       return;
     }
-    return preguntar(t);
+    return preguntar(t, false, true);
   }
 
   document.getElementById("chatAbrir").addEventListener("click", () => {
@@ -8356,7 +8746,7 @@ function planearNoche(minutosPedidos, tema, dir) {
     if (tema === "director") return !!dir && String(p.director || "").toLowerCase().includes(dir.toLowerCase());
     return true;
   });
-  if (!base.length) return { error: tema === "libre" ? "No tienes películas sin ver en tu catálogo. Agrega algunas o marca pendientes." : "No tienes películas sin ver de ese tema. Prueba con otro." };
+  if (!base.length) return { error: tema === "libre" ? "No tienes películas sin ver en tu catálogo. Agrega algunas o marca pendientes." : "Ya no te quedan películas sin ver de ese tema. ¿Probamos con otro género?" };
   const pool = base.map(p => ({ p, m: minutos(p) })).filter(x => x.m > 0);
   if (!pool.length) return { error: "Ninguna de estas películas tiene duración escrita. Revisa la columna «duracion» de la hoja, por ejemplo «1 h 45 min»." };
 
@@ -8369,7 +8759,7 @@ function planearNoche(minutosPedidos, tema, dir) {
     const extra = elegidas.length ? GAP : 0;
     if (usados + extra + x.m <= minutosPedidos) { elegidas.push(x); usados += extra + x.m; }
   }
-  if (!elegidas.length) return { error: "Ninguna película cabe en " + minutosPedidos + " minutos. Prueba con más tiempo." };
+  if (!elegidas.length) return { error: "Ninguna película cabe en " + minutosPedidos + " minutos. ¿Le subimos un poco al tiempo?" };
   const grupo = n => elegidas.filter(x => intensidadMaraton(x.p) === n);
   const secuencia = [...grupo(1), ...grupo(3), ...grupo(2)];
   return { aviso, elegidas, secuencia, usados, sobra: minutosPedidos - usados, GAP };
@@ -8835,16 +9225,16 @@ async function cargarModeloLocal(onProgreso) {
   return motorLocalCargando;
 }
 
-async function respuestaConModelo(t) {
+async function respuestaConModelo(t, hist = []) {
   if (leerLS("modelo_local_modo") !== "si" || !motorLocal) return null;
+  const PROMPT = "Eres Estela, una amiga cinéfila que platica en español de México. Eres cálida, cercana y natural, como en una charla, no como un robot. Tutea a la persona. Responde con frases cortas y fluidas, sin listas, asteriscos ni encabezados. Si la persona cuenta cómo se siente, responde primero con empatía. Recomienda solo películas de la lista que te doy y no inventes títulos. Si la pregunta no es de cine ni de su lista, responde con amabilidad y vuelve al cine. Máximo cuatro frases.";
   try {
+    const previos = (hist || []).slice(-6).map(m => ({ role: m.role === "assistant" ? "assistant" : "user", content: String(m.content || "").slice(0, 400) }));
     const r = await motorLocal.chat.completions.create({
-      messages: [
-        { role: "system", content: "Eres Estela, una compañera de cine que platica en español, cálida y breve. Tutea a la persona. Recomienda solo películas de la lista que te doy y no inventes títulos. Si la pregunta no tiene que ver con cine o con su lista, dilo con amabilidad. Responde en máximo cuatro frases.\n\n" + resumenCatalogoParaModelo() },
-        { role: "user", content: String(t).slice(0, 500) }
-      ],
-      max_tokens: 220,
-      temperature: 0.6
+      messages: [{ role: "system", content: PROMPT + "\n\n" + resumenCatalogoParaModelo() }, ...previos, { role: "user", content: String(t).slice(0, 500) }],
+      max_tokens: 200,
+      temperature: 0.75,
+      top_p: 0.9
     });
     const txt = r && r.choices && r.choices[0] && r.choices[0].message && r.choices[0].message.content;
     return txt ? txt.trim() : null;
@@ -9267,7 +9657,8 @@ setTimeout(renderTarjetaAuto, 15000);
     const barra = document.getElementById("fichaCompacta");
     if (!caja || !h2 || !barra) return;
     const compacta = h2.getBoundingClientRect().bottom < caja.getBoundingClientRect().top + 56;
-    modal.classList.toggle("ficha-es-compacta", compacta);
+    // Solo escribir si cambia: escribir la misma clase dispara el observador otra vez (bucle infinito)
+    if (modal.classList.contains("ficha-es-compacta") !== compacta) modal.classList.toggle("ficha-es-compacta", compacta);
     barra.textContent = h2.textContent;
   }
 
@@ -9278,16 +9669,21 @@ setTimeout(renderTarjetaAuto, 15000);
     caja.style.setProperty("--acento", c ? "rgb(" + c.join(",") + ")" : "var(--azul)");
   }
 
-  // Al abrir la ficha: prepara la hoja, el color y el encabezado
+  // Al abrir la ficha: prepara la hoja, el color y el encabezado.
+  // Reacciona solo al CAMBIO de estado abierto/cerrado, y nunca escribe una clase que ya está como debe.
+  let abiertoAntes = null;
   new MutationObserver(() => {
-    if (modal.classList.contains("abierto")) {
+    const abierto = modal.classList.contains("abierto");
+    if (abierto === abiertoAntes) return;
+    abiertoAntes = abierto;
+    if (abierto) {
       prepararFicha();
       colorDelPoster();
-      modal.classList.remove("ficha-es-compacta");
+      if (modal.classList.contains("ficha-es-compacta")) modal.classList.remove("ficha-es-compacta");
       const caja = modal.querySelector(".ventana");
       if (caja) caja.scrollTop = 0;
       setTimeout(actualizarCompacta, 50);
-    } else {
+    } else if (modal.classList.contains("ficha-es-compacta")) {
       modal.classList.remove("ficha-es-compacta");
     }
   }).observe(modal, { attributes: true, attributeFilter: ["class"] });
@@ -9317,8 +9713,12 @@ setTimeout(renderTarjetaAuto, 15000);
   }
 
   // Al abrir: recordar quién abrió y llevar el foco dentro de la hoja
+  let abiertoFoco = null;
   new MutationObserver(() => {
-    if (modal.classList.contains("abierto")) {
+    const abierto = modal.classList.contains("abierto");
+    if (abierto === abiertoFoco) return;
+    abiertoFoco = abierto;
+    if (abierto) {
       quienAbrio = document.activeElement;
       setTimeout(() => {
         const primero = document.getElementById("cerrarModal") || enfocables()[0];
