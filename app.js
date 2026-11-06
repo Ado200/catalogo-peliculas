@@ -4,7 +4,8 @@
 const CLIENT_ID = "45846987194-cm8mnhijljms8k8u8j44n8aeq674vuis.apps.googleusercontent.com";
 // Dominio de la cuenta institucional (por ejemplo "universidad.edu.mx"). Solo estas cuentas pueden entrar. Déjalo vacío para no restringir.
 const DOMINIO_INSTITUCIONAL = "ucaribe.edu.mx";
-const HOJA_ID = "1W5oSA5yy4TpbVYxjya6S9T6NkeE6irwSHABXFAijO2k";
+// Modo prueba: si existe "hoja_id_prueba" en el navegador, la app usa esa hoja en lugar de la real.
+const HOJA_ID = localStorage.getItem("hoja_id_prueba") || "1W5oSA5yy4TpbVYxjya6S9T6NkeE6irwSHABXFAijO2k";
 const SCOPES = "https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.appdata openid email";
 const NOMBRE_PALETA = "paleta_poster";
 
@@ -8146,7 +8147,9 @@ document.querySelectorAll("input[type=range]").forEach(r => {
     orbe.style.top = (r.top + (r.height - t) / 2) + "px"; orbe.style.setProperty("top", (r.top + (r.height - t) / 2) + "px", "important");
   };
   colocar();
-  setInterval(colocar, 400);
+  window.addEventListener("resize", colocar);
+  if (window.ResizeObserver) new ResizeObserver(colocar).observe(slot);
+  new MutationObserver(colocar).observe(document.body, { subtree: true, attributes: true, attributeFilter: ["class"] });
   window.addEventListener("resize", colocar);
 })();
 
@@ -8298,8 +8301,10 @@ function planearNoche(minutosPedidos, tema, dir) {
     document.querySelectorAll(".segmentado, #tabbar").forEach(mover);
   }
   todos();
-  setInterval(todos, 300);
   window.addEventListener("resize", todos);
+  // Solo se recalcula cuando cambia algo: clases (cambio de pestaña) o tamaño
+  new MutationObserver(todos).observe(document.body, { subtree: true, attributes: true, attributeFilter: ["class"] });
+  if (window.ResizeObserver) new ResizeObserver(todos).observe(document.body);
 })();
 
 /* --- bloque 22 --- */
@@ -9330,9 +9335,8 @@ setTimeout(renderTarjetaAuto, 15000);
   });
 
   // Carga inicial y actualización cada 10 minutos, con sesión iniciada
-  setTimeout(() => { if (document.body.classList.contains("con-sesion")) cargarSeriesApp(); }, 6000);
-  setInterval(() => { if (document.body.classList.contains("con-sesion")) cargarSeriesApp(); }, 10 * 60 * 1000);
-  window.seriesApi = {
+  setTimeout(usarCache, 6000);
+    window.seriesApi = {
     lista: () => seriesCat,
     progreso: progresoSerie,
     abrir: titulo => {
