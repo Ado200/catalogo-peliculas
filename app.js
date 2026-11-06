@@ -4006,6 +4006,7 @@ function abrirCuriosidadSheet() {
 async function generarCuriosidadNueva() {
   const cuerpo = document.getElementById("curioSheetCuerpo");
   const peli = elegirPeliculaCurio();
+  curioPeliActual = peli || null;
   if (!peli) { cuerpo.innerHTML = '<p class="cur-texto">Agrega películas para ver curiosidades.</p>'; return; }
   cuerpo.innerHTML = '<div class="cur-tema">' + esc(peli.titulo) + '</div><p class="cur-texto cur-cargando">Buscando una curiosidad verificada…</p>';
 
@@ -4040,11 +4041,59 @@ async function generarCuriosidadNueva() {
 
 function pieCurio(peli, texto) {
   return '<div class="cur-pie">' +
+    '<button type="button" class="pildora" data-cur="historia">Historia</button>' +
     '<button type="button" class="pildora" data-cur="otra">Otra</button>' +
     '<button type="button" class="pildora" data-cur="ver">Ver ficha</button>' +
     (texto ? '<button type="button" class="pildora" data-cur="copiar">Copiar</button>' : '') +
     '<button type="button" class="pildora" data-cur="cerrar">Cerrar</button>' +
     '</div>';
+}
+
+let curioPeliActual = null;
+
+const FORMATOS_HISTORIA = ["una escena breve", "una carta", "una página de diario", "un diálogo", "una noticia de periódico ficticia", "un monólogo"];
+
+function contextoHistoria(peli) {
+  const h = new Date().getHours();
+  const momento = h < 6 ? "madrugada" : h < 12 ? "mañana" : h < 19 ? "tarde" : "noche";
+  const estado = (typeof estadoDe === "function") ? estadoDe(peli) : {};
+  return { momento, estrellas: estado.estrellas || 0, conAlguien: !!estado.conAlguien, vista: !!estado.vista };
+}
+
+async function generarHistoria(peli) {
+  const cuerpo = document.getElementById("curioSheetCuerpo");
+  const formato = FORMATOS_HISTORIA[Math.floor(Math.random() * FORMATOS_HISTORIA.length)];
+  const usarPersonajesOriginales = Math.random() < 0.5;
+  cuerpo.innerHTML = '<div class="cur-tema">' + esc(peli.titulo) + '</div><p class="cur-texto cur-cargando">Escribiendo una historia…</p>';
+  try {
+    const r = await fetch(CURIO_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({
+        token: accessToken,
+        accion: "historia",
+        pelicula: { titulo: peli.titulo, año: peli.año, director: peli.director, reparto: peli.reparto, genero: peli.genero, tema: peli.temas },
+        contexto: Object.assign(contextoHistoria(peli), { formato: formato, personajes: usarPersonajesOriginales ? "de la película" : "nuevos, inspirados en la trama" })
+      })
+    });
+    const j = await r.json();
+    if (j.error) {
+      cuerpo.innerHTML = '<p class="cur-texto">' + esc(j.error) + '</p>' + pieCurio(peli, null);
+      return;
+    }
+    cuerpo.innerHTML =
+      '<div class="cur-tema">Ficción inspirada en ' + esc(peli.titulo) + '</div>' +
+      '<h4 class="cur-historia-titulo">' + esc(j.titulo) + '</h4>' +
+      '<p class="cur-texto cur-historia">' + esc(j.texto) + '</p>' +
+      '<small class="cur-fuente">Historia inventada. No es un hecho real.</small>' +
+      '<div class="cur-pie">' +
+        '<button type="button" class="pildora" data-cur="historia-otra">Otra historia</button>' +
+        '<button type="button" class="pildora" data-cur="ver">Ver ficha</button>' +
+        '<button type="button" class="pildora" data-cur="cerrar">Cerrar</button>' +
+      '</div>';
+  } catch (e) {
+    cuerpo.innerHTML = '<p class="cur-texto">No pude conectar. Revisa tu conexión e inténtalo de nuevo.</p>' + pieCurio(peli, null);
+  }
 }
 
 document.addEventListener("click", e => {
@@ -4053,6 +4102,8 @@ document.addEventListener("click", e => {
   const hoja = document.getElementById("curioSheet");
   const accion = b.dataset.cur;
   if (accion === "otra") generarCuriosidadNueva();
+  else if (accion === "historia") { if (curioPeliActual) generarHistoria(curioPeliActual); }
+  else if (accion === "historia-otra") { if (curioPeliActual) generarHistoria(curioPeliActual); }
   else if (accion === "cerrar") hoja.classList.remove("abierta");
   else if (accion === "ver") {
     hoja.classList.remove("abierta");

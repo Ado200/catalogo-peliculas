@@ -1801,3 +1801,6 @@ small, .meta, .saludo-meta, .hoy-sub { font-size: max(11px, 0.8rem); }
 .cur-sheet .cur-texto { font-size: 16px; line-height: 1.5; margin: 10px 0; }
 .cur-sheet .cur-fuente { color: var(--gris); }
 .cur-sheet .cur-pie { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+
+.cur-historia-titulo { margin: 4px 0 6px; font-size: 17px; font-weight: 600; }
+.cur-historia { font-style: italic; }
