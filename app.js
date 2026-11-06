@@ -2346,7 +2346,7 @@ function tarjetaAmplia(p, i, extra) {
   if (s.estrellas) insignias.push("★ " + s.estrellas);
   if (s.conAlguien) insignias.push("👥");
   const portada = (p.portada && !datosLimitados())
-    ? '<img class="portada" src="' + esc(p.portada) + '" alt="">'
+    ? '<img class="portada" loading="lazy" decoding="async" src="' + esc(p.portada) + '" alt="">'
     : '<div class="sinportada">🎬</div>';
   return '<article class="tarjeta amplia animar" style="' + retraso(i) + '" data-i="' + i + '">' + portada +
     '<h2>' + esc(p.titulo) + '</h2>' +
@@ -3226,12 +3226,12 @@ function abrirDetalle(p) {
   ponerIdEnUrl(slugDe(p));
   const notaActual = (marcas[p.titulo] || {}).nota || "";
   $("detalle").innerHTML =
-    (p.portada && !datosLimitados() ? '<img class="portada" src="' + esc(p.portada) + '" alt="">' : '') +
+    (p.portada && !datosLimitados() ? '<img class="portada" loading="lazy" decoding="async" src="' + esc(p.portada) + '" alt="">' : '') +
     '<h2>' + esc(p.titulo) + '</h2>' +
     '<div class="meta">' + esc(p.tipo) + ' · ' + esc(p["año"]) + ' · ' + esc(p.duracion) + ' · ' + esc(p.pais) + '</div>' +
     '<div class="meta">Género: ' + esc(p.genero) + '</div>' +
     '<div class="meta">Dirección: ' + esc(p.director) + '</div>' +
-    '<div class="meta">Reparto: ' + nombresReparto(p).map(n => '<button class="etiqueta" data-actor="' + esc(n) + '">' + ((fotosActores[n] && !datosLimitados()) ? '<img class="actor-chip-foto" src="' + esc(fotosActores[n]) + '" alt="">' : '') + esc(n) + '</button>').join(" ") + '</div>' +
+    '<div class="meta">Reparto: ' + nombresReparto(p).map(n => '<button class="etiqueta" data-actor="' + esc(n) + '">' + ((fotosActores[n] && !datosLimitados()) ? '<img class="actor-chip-foto" loading="lazy" decoding="async" src="' + esc(fotosActores[n]) + '" alt="">' : '') + esc(n) + '</button>').join(" ") + '</div>' +
     '<div class="pastillas">' + pastillasHtml(p) + '</div>' +
     '<h4 class="ficha-h">Mi estado</h4>' + controlesHtml(p) +
     siguienteHtml(p) +
