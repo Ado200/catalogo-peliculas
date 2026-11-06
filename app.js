@@ -6267,7 +6267,7 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
   const NOMBRES_HOMBRE = /jorge|diego|juan|carlos|pablo|raul|raúl|enrique|alonso|andres|andrés|male|hombre/i;
   const CALIDAD_VOZ = /natural|neural|premium|enhanced|google|mejorad|plus/i;
 
-  const VELOCIDADES = { lento: 0.88, normal: 1.06, rapido: 1.22 };
+  const VELOCIDADES = { lento: 0.94, normal: 1.0, rapido: 1.12 };
   const velocidadVoz = () => {
     try { return VELOCIDADES[localStorage.getItem("chat_velocidad")] || VELOCIDADES.normal; } catch (e) { return VELOCIDADES.normal; }
   };
@@ -6288,33 +6288,65 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
     const vs = speechSynthesis.getVoices().filter(v => /^es/i.test(v.lang));
     if (!vs.length) return null;
     const g = generoVoz();
-    return vs.slice().sort((a, b) => puntuarVoz(b, g) - puntuarVoz(a, g))[0];
+    const puntos = v => puntuarVoz(v, g) + (v.localService ? 0 : 2);
+    return vs.slice().sort((a, b) => puntos(b) - puntos(a))[0];
   }
 
-  function hablar(texto) {
+  // Las voces llegan con retraso: si aún no están, espera (máximo ~2 s) para no leer con la voz genérica
+  function esperarVoces(ms = 2000) {
+    return new Promise(resolver => {
+      if (speechSynthesis.getVoices().length) return resolver();
+      const t = setTimeout(resolver, ms);
+      speechSynthesis.addEventListener("voiceschanged", () => { clearTimeout(t); resolver(); }, { once: true });
+    });
+  }
+
+  // Agrupa frases en trozos de tamaño natural: sin pausas cortadas ni frases sueltas
+  function trocearParaVoz(texto, max = 200) {
+    const frases = (texto.match(/[^.!?;:]+[.!?;:]*/g) || [texto]).map(f => f.trim()).filter(Boolean);
+    const trozos = [];
+    let cur = "";
+    frases.forEach(f => {
+      if (cur && (cur + " " + f).length > max) { trozos.push(cur); cur = f; }
+      else cur = cur ? cur + " " + f : f;
+    });
+    if (cur) trozos.push(cur);
+    return trozos;
+  }
+
+  // Chrome deja de hablar después de ~15 s; un «resume» periódico lo evita
+  let vozVigilante = null;
+  function mantenerVoz() {
+    clearInterval(vozVigilante);
+    vozVigilante = setInterval(() => {
+      if (!speechSynthesis.speaking) { clearInterval(vozVigilante); return; }
+      speechSynthesis.resume();
+    }, 10000);
+  }
+
+  // Expuestos para el saludo (que está fuera de este bloque)
+  window.mantenerVoz = mantenerVoz;
+  window.trocearParaVoz = trocearParaVoz;
+  window.esperarVoces = esperarVoces;
+
+  function hablar(texto, intento = 0) {
     if (!vozSoportada || !vozActiva()) return;
     const limpio = limpiarParaVoz(texto);
     if (!limpio) return;
+    if (!speechSynthesis.getVoices().length && intento === 0) {
+      esperarVoces().then(() => hablar(texto, 1));
+      return;
+    }
     if (escuchandoConv && recConv) { try { recConv.abort(); } catch (e) {} escuchandoConv = false; }
     speechSynthesis.cancel();
-    const voz = elegirVoz();
-    const genero = generoVoz();
-    // Frase por frase: las pausas entre frases se oyen más naturales
-    const frases = limpio.match(/[^.!?]+[.!?]*/g) || [limpio];
-    frases.forEach(f => {
-      const frase = f.trim();
-      if (!frase) return;
-      const u = new SpeechSynthesisUtterance(frase);
-      u.lang = voz ? voz.lang : "es-MX";
-      if (voz) u.voice = voz;
-      u.rate = velocidadVoz();
-      u.pitch = genero === "hombre" ? 0.92 : 1.06;
-      u.onend = () => {
-        if (typeof conversacionActiva !== "undefined" && conversacionActiva && frase === frases[frases.length - 1].trim()) {
-          setTimeout(() => { if (typeof escucharConv === "function") escucharConv(); }, 350);
+    hablarTrozos(trocearParaVoz(limpio), {
+      velocidad: velocidadVoz(),
+      alInicio: mantenerVoz,
+      alFinal: () => {
+        if (typeof conversacionActiva !== "undefined" && conversacionActiva && typeof escucharConv === "function") {
+          setTimeout(() => escucharConv(), 350);
         }
-      };
-      speechSynthesis.speak(u);
+      }
     });
   }
 
@@ -8507,12 +8539,50 @@ function vozSaludoActiva() {
   return true;
 }
 
-function vozEspanola() {
-  const vs = speechSynthesis.getVoices().filter(v => /^es/i.test(v.lang));
+// ── Voz: una sola selección para el chat y el saludo, con y sin internet ──
+// Sin internet (o si la voz de red falla) usa solo voces del propio dispositivo.
+function elegirVozEsp(localSolo = false) {
+  const todas = speechSynthesis.getVoices();
+  const vs = todas.filter(v => /^es/i.test(v.lang));
   if (!vs.length) return null;
+  const sinRed = localSolo || navigator.onLine === false;
+  let cand = sinRed ? vs.filter(v => v.localService) : vs;
+  if (!cand.length && sinRed) cand = todas.filter(v => v.localService);
+  if (!cand.length) cand = vs;
   const calidad = /natural|neural|online|premium|enhanced|google|mejorad|plus/i;
-  const puntos = v => (/^es[-_]MX/i.test(v.lang) ? 4 : 0) + (calidad.test(v.name) ? 3 : 0) + (v.localService ? 0 : 1);
-  return vs.slice().sort((a, b) => puntos(b) - puntos(a))[0];
+  const puntos = v => (/^es[-_]MX/i.test(v.lang) ? 4 : 0) + (calidad.test(v.name) ? 3 : 0) + (!sinRed && !v.localService ? 2 : 0);
+  return cand.slice().sort((a, b) => puntos(b) - puntos(a))[0];
+}
+
+function hablarTrozos(trozos, opc = {}) {
+  const { desde = 0, localSolo = false, velocidad = 1, alInicio = null, alFinal = null, alError = null } = opc;
+  const voz = elegirVozEsp(localSolo);
+  let reiniciado = false;
+  trozos.slice(desde).forEach((trozo, i) => {
+    const k = desde + i;
+    const u = new SpeechSynthesisUtterance(trozo);
+    u.lang = voz ? voz.lang : "es-MX";
+    if (voz) u.voice = voz;
+    u.rate = velocidad;
+    u.pitch = 1.0;
+    if (k === 0 && alInicio) u.onstart = alInicio;
+    if (k === trozos.length - 1 && alFinal) u.onend = alFinal;
+    u.onerror = e => {
+      const red = /network|synthesis|unavailable|unsupported/i.test((e && e.error) || "");
+      if (!red) return;
+      if (!localSolo && !reiniciado) {
+        // La voz de red falló (p. ej. sin internet): repite desde este trozo con voz local
+        reiniciado = true;
+        speechSynthesis.cancel();
+        hablarTrozos(trozos, { ...opc, desde: k, localSolo: true });
+      } else if (alError) alError();
+    };
+    speechSynthesis.speak(u);
+  });
+}
+
+function vozEspanola() {
+  return elegirVozEsp();
 }
 
 function textoParaVoz() {
@@ -8537,33 +8607,29 @@ function detenerSaludo() {
   marcarHablando(false);
 }
 
-function hablarSaludo() {
+function hablarSaludo(intento = 0) {
   if (!vozSaludoActiva() || !$("saludoPersonal")) return;
   const texto = textoParaVoz();
   if (!texto) return;
+  if (!speechSynthesis.getVoices().length && intento === 0) {
+    esperarVoces().then(() => hablarSaludo(1));
+    return;
+  }
   detenerSaludo();
-  const voz = vozEspanola();
-  // Frases separadas: la voz respira entre una y otra, como al hablar
-  const frases = texto.split(/(?<=[.!?])\s+/).filter(Boolean);
-  frases.forEach((frase, k) => {
-    const u = new SpeechSynthesisUtterance(frase);
-    u.lang = voz ? voz.lang : "es-MX";
-    if (voz) u.voice = voz;
-    u.rate = 0.92;
-    u.pitch = 1.0;
-    u.onstart = () => { if (saludoVozTimer) { clearTimeout(saludoVozTimer); saludoVozTimer = null; } marcarHablando(true); };
-    if (k === frases.length - 1) u.onend = () => marcarHablando(false);
-    u.onerror = () => marcarHablando(false);
-    speechSynthesis.speak(u);
+  hablarTrozos(trocearParaVoz(texto), {
+    velocidad: 1.0,
+    alInicio: () => { if (saludoVozTimer) { clearTimeout(saludoVozTimer); saludoVozTimer = null; } marcarHablando(true); mantenerVoz(); },
+    alFinal: () => marcarHablando(false),
+    alError: () => marcarHablando(false)
   });
-  // Algunos navegadores bloquean la voz sin un toque previo: si no empieza, lo intenta en el primer toque
+  // Si el navegador bloquea la voz sin un toque previo, se intenta una sola vez en el primer toque
   saludoVozTimer = setTimeout(() => {
     saludoVozTimer = null;
     if (!speechSynthesis.speaking) {
       marcarHablando(false);
-      document.addEventListener("pointerdown", () => { if (!speechSynthesis.speaking) hablarSaludo(); }, { once: true });
+      document.addEventListener("pointerdown", () => { if (!speechSynthesis.speaking) hablarSaludo(1); }, { once: true });
     }
-  }, 1200);
+  }, 1500);
 }
 
 $("cambiarNombreBtn").addEventListener("click", () => abrirNombre(true));
