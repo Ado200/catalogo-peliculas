@@ -1669,3 +1669,73 @@ body, button, input, select, textarea {
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; }
 }
+
+/* ===== FASE 4: ficha como hoja (versión final) ===== */
+#modal .ventana { overscroll-behavior: contain; }
+/* Color del póster: la hoja toma el tono de la portada (el JavaScript lo fija como --acento) */
+#detalle .boton, #detalle .destacado, #btnVerPelicula {
+  background: var(--acento, var(--azul)) !important;
+  color: #fff !important;
+  min-height: 44px;
+}
+/* Estado en selector segmentado: Marcar vista · Pendiente · Con alguien */
+#detalle .controles {
+  display: flex;
+  gap: 0;
+  padding: 4px;
+  border-radius: 999px;
+  background: var(--boton-suave);
+  margin: 10px 0;
+}
+#detalle .controles .chipc {
+  flex: 1 1 auto;
+  min-height: 40px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--texto);
+  font-weight: 600;
+  font-size: 14px;
+}
+#detalle .controles .chipc.activo {
+  background: var(--tarjeta);
+  box-shadow: 0 1px 3px rgba(0,0,0,.12);
+}
+/* Área táctil mínima en botones de la ficha */
+#detalle .pildora, #detalle .chipc, #detalle .etiqueta { min-height: 44px; }
+/* Encabezado compacto al bajar */
+.ficha-compacta {
+  display: none;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  margin: -24px -24px 12px;
+  padding: 12px 24px;
+  background: var(--tarjeta);
+  border-bottom: 1px solid var(--borde);
+  font-size: 15px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+#modal.ficha-es-compacta .ficha-compacta { display: block; }
+/* Botón de cerrar abajo: solo celular */
+.ficha-cerrar-abajo { display: none; }
+@media (max-width: 640px) {
+  .ficha-cerrar-abajo {
+    display: block;
+    width: 100%;
+    min-height: 48px;
+    margin-top: 12px;
+    border: 0;
+    border-radius: 999px;
+    background: var(--boton-suave);
+    color: var(--texto);
+    font-weight: 600;
+    font-size: 16px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  #modal.ficha-es-compacta .ficha-compacta { transition: none; }
+}

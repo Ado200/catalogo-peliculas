@@ -8884,3 +8884,72 @@ $("tarjetaAuto").addEventListener("click", e => {
   }
 });
 setTimeout(renderTarjetaAuto, 15000);
+
+
+/* ===== FASE 4: ficha como hoja (comportamiento) ===== */
+(function fichaHoja() {
+  const modal = document.getElementById("modal");
+  if (!modal) return;
+
+  function prepararFicha() {
+    const caja = modal.querySelector(".ventana");
+    if (!caja) return;
+    if (!caja.querySelector(".ficha-compacta")) {
+      const barra = document.createElement("div");
+      barra.className = "ficha-compacta";
+      barra.id = "fichaCompacta";
+      caja.insertBefore(barra, caja.firstChild);
+    }
+    if (!caja.querySelector(".ficha-cerrar-abajo")) {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "ficha-cerrar-abajo";
+      b.id = "fichaCerrarAbajo";
+      b.textContent = "Cerrar";
+      b.addEventListener("click", () => { const x = document.getElementById("cerrarModal"); if (x) x.click(); });
+      caja.appendChild(b);
+    }
+    if (!caja.dataset.fichaListo) {
+      caja.dataset.fichaListo = "1";
+      caja.addEventListener("scroll", actualizarCompacta, { passive: true });
+      // El color del póster debe ganar a las reglas del tema: se fija como !important
+      new MutationObserver(() => {
+        const bg = caja.style.getPropertyValue("background");
+        if (bg && caja.style.getPropertyPriority("background") !== "important") {
+          caja.style.setProperty("background", bg, "important");
+        }
+      }).observe(caja, { attributes: true, attributeFilter: ["style"] });
+    }
+  }
+
+  function actualizarCompacta() {
+    const caja = modal.querySelector(".ventana");
+    const h2 = document.querySelector("#detalle h2");
+    const barra = document.getElementById("fichaCompacta");
+    if (!caja || !h2 || !barra) return;
+    const compacta = h2.getBoundingClientRect().bottom < caja.getBoundingClientRect().top + 56;
+    modal.classList.toggle("ficha-es-compacta", compacta);
+    barra.textContent = h2.textContent;
+  }
+
+  function colorDelPoster() {
+    const caja = modal.querySelector(".ventana");
+    if (!caja || typeof detalleActual === "undefined" || !detalleActual) return;
+    const c = paletaDeTexto(detalleActual[NOMBRE_PALETA])[0];
+    caja.style.setProperty("--acento", c ? "rgb(" + c.join(",") + ")" : "var(--azul)");
+  }
+
+  // Al abrir la ficha: prepara la hoja, el color y el encabezado
+  new MutationObserver(() => {
+    if (modal.classList.contains("abierto")) {
+      prepararFicha();
+      colorDelPoster();
+      modal.classList.remove("ficha-es-compacta");
+      const caja = modal.querySelector(".ventana");
+      if (caja) caja.scrollTop = 0;
+      setTimeout(actualizarCompacta, 50);
+    } else {
+      modal.classList.remove("ficha-es-compacta");
+    }
+  }).observe(modal, { attributes: true, attributeFilter: ["class"] });
+})();
