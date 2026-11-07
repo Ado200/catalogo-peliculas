@@ -10255,9 +10255,68 @@ function curioTipo(c) {
   return "pelicula";
 }
 
+// ---------- Fase 3: orden adaptativo ----------
+// Relevancia (tus gustos) · novedad (no vista) · calidad (con fuente) · aprendizaje (tus reacciones)
+// Diversidad: no pone dos del mismo tipo seguidas.
+function perfilCurio() {
+  const m = a => marcas[a.titulo] || {};
+  const favoritas = peliculas.filter(p => m(p).vista && (m(p).estrellas || 0) >= 4);
+  const perfil = { genero: {}, director: {}, actor: {} };
+  const sumar = (obj, clave) => { if (clave) obj[clave] = (obj[clave] || 0) + 1; };
+  favoritas.forEach(p => {
+    generosDe(p).forEach(g => sumar(perfil.genero, g.toLowerCase()));
+    sumar(perfil.director, String(p.director || "").split(",")[0].trim().toLowerCase());
+    nombresReparto(p).slice(0, 4).forEach(a => sumar(perfil.actor, a.toLowerCase()));
+  });
+  return perfil;
+}
+
+function pesosCurio() {
+  // Cuánto te gusta cada tipo de curiosidad, según tus reacciones
+  const pesos = { pelicula: 0, actores: 0, saga: 0 };
+  const reac = curioReacciones();
+  Object.keys(reac).forEach(k => {
+    const tipo = curioTipo({ tema: String(k.split("|")[1] || "") });
+    const v = reac[k];
+    if (v === "gusta") pesos[tipo] += 1;
+    else if (v === "sabia") pesos[tipo] -= 0.5;
+    else if (v === "no") pesos[tipo] -= 1;
+  });
+  return pesos;
+}
+
+function puntuarCurio(c, perfil, pesos, vistas, reac) {
+  const p = c.peli || {};
+  const genero = generosDe(p).some(g => perfil.genero[g.toLowerCase()]) ? 1 : 0;
+  const dir = perfil.director[String(p.director || "").split(",")[0].trim().toLowerCase()] ? 1 : 0;
+  const act = nombresReparto(p).some(a => perfil.actor[a.toLowerCase()]) ? 1 : 0;
+  const relevancia = Math.min(1, (genero * 0.4) + (dir * 0.3) + (act * 0.3));
+  const novedad = vistas.has(claveCurio(c)) ? 0.3 : 1;
+  const calidad = c.fuente ? 1 : 0.6;
+  const aprendizaje = Math.max(-1, Math.min(1, (pesos[curioTipo(c)] || 0) / 5));
+  let score = relevancia * 0.4 + novedad * 0.3 + calidad * 0.2 + aprendizaje * 0.1;
+  if (reac[claveCurio(c)] === "no") score -= 1;
+  return score;
+}
+
 function curioFiltrada() {
   const base = todasLasCuriosidades();
-  return curioFiltro === "todas" ? base : base.filter(c => curioTipo(c) === curioFiltro);
+  const filtrada = curioFiltro === "todas" ? base : base.filter(c => curioTipo(c) === curioFiltro);
+  const perfil = perfilCurio(), pesos = pesosCurio(), vistas = new Set(curioVistas()), reac = curioReacciones();
+  const ordenada = filtrada
+    .map(c => ({ c: c, s: puntuarCurio(c, perfil, pesos, vistas, reac) }))
+    .sort((a, b) => b.s - a.s)
+    .map(x => x.c);
+  // Diversidad: si la siguiente es del mismo tipo que la anterior, busca otra de distinto tipo cerca
+  const salida = [];
+  const quedan = ordenada.slice();
+  while (quedan.length) {
+    const ultimo = salida.length ? curioTipo(salida[salida.length - 1]) : null;
+    let i = quedan.findIndex((c, k) => k < 4 && curioTipo(c) !== ultimo);
+    if (i < 0) i = 0;
+    salida.push(quedan.splice(i, 1)[0]);
+  }
+  return salida;
 }
 
 function curioReacciones() {
