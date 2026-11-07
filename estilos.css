@@ -83,9 +83,6 @@
   .resumen-sug { border-top:1px solid var(--borde); padding-top:12px; display:flex; flex-direction:column; align-items:flex-start; gap:4px; }
   .resumen-titulo { font-size:17px; font-weight:600; letter-spacing:-.2px; }
   .resumen-sug .pildora { margin-top:6px; }
-  .actor-fila { display:flex; justify-content:space-between; align-items:center; gap:10px; padding:10px 0; border-top:1px solid var(--borde); cursor:pointer; }
-  .actor-fila:first-of-type { border-top:none; }
-  .actor-chips { display:flex; flex-wrap:wrap; gap:8px; }
   .nota-recuerdo { margin-top:6px; font-size:14px; }
   .siguiente { margin:12px 0; }
   .historial { margin:10px 0; font-size:14px; }
@@ -97,18 +94,10 @@
   .cena-sinportada { font-size:48px; margin:8px 0; }
   .actor-foto-grande { width:96px; height:144px; object-fit:cover; border-radius:var(--radio); display:block; margin:0 auto 10px; box-shadow:var(--sombra); }
   .actor-chip-foto { width:22px; height:22px; border-radius:50%; object-fit:cover; vertical-align:middle; margin-right:4px; }
-  .actor-thumb { width:46px; height:69px; object-fit:cover; border-radius:10px; flex-shrink:0; }
   .saga-fila { padding:10px 0; border-top:1px solid var(--borde); }
   .saga-fila:first-of-type { border-top:none; }
   .saga-barra { height:8px; border-radius:999px; background:var(--boton-suave); overflow:hidden; margin:6px 0; }
   .saga-barra > div { height:100%; background:var(--azul); border-radius:999px; }
-  .saga-lista { list-style:none; margin:10px 0; padding:0; display:flex; flex-direction:column; gap:4px; }
-  .saga-lista li { display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:12px; cursor:pointer; font-size:14px; transition:background .2s; }
-  .saga-lista li:hover { background:var(--boton-suave); }
-  .saga-num { flex:0 0 26px; height:26px; border-radius:50%; background:var(--tema-bg); color:var(--tema-texto); display:grid; place-items:center; font-size:12px; font-weight:600; }
-  .saga-titulo { flex:1; min-width:0; }
-  .saga-titulo small { color:var(--gris); }
-  .saga-estado { font-size:12px; color:var(--gris); white-space:nowrap; }
   .cal-card { max-width:900px; margin:0 auto 14px; background:var(--tarjeta); border-radius:var(--radio-grande); box-shadow:var(--sombra); padding:14px; }
   .cal-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
   .cal-semana, .cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:4px; }
@@ -328,7 +317,6 @@
   .mini-insignias { display:flex; flex-wrap:wrap; gap:4px; margin-top:6px; }
   .badge { font-size:12px; padding:3px 8px; border-radius:999px; background:var(--boton-suave); color:var(--texto); }
   .ficha-h { margin:16px 0 6px; font-size:12px; color:var(--gris); font-weight:600; text-transform:uppercase; letter-spacing:.4px; }
-  .barra-acciones { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-top:14px; }
   .panel-mas { display:none; max-width:900px; margin:12px auto 0; padding:14px; background:var(--tarjeta); border-radius:var(--radio-grande); box-shadow:var(--sombra); flex-wrap:wrap; gap:8px; justify-content:center; }
   .panel-mas.abierto { display:flex; animation:aparecer .3s var(--ease) both; }
   .acciones-panel { grid-column:1/-1; display:flex; flex-wrap:wrap; gap:8px; justify-content:flex-end; align-items:flex-end; }
@@ -346,7 +334,6 @@
     h1 { font-size:22px; margin-bottom:12px; }
     header { padding:20px 14px 8px; }
     .pildora, .chipc { min-height:40px; }
-    .barra-acciones { gap:6px; }
     .tarjeta.compacta { padding:8px 10px; gap:10px; }
     .destacados h3, .grupo h3, .bloque-pend h3 { font-size:20px; }
   }
@@ -378,7 +365,6 @@
   body.barra-compacta #app > header #panelAvanzados,
   body.barra-compacta #app > header #panelMas,
   body.barra-compacta #app > header #chips { display:none !important; }
-  .control-vidrio { display:flex; flex-direction:column; gap:4px; font-size:13px; color:var(--gris); align-items:flex-start; width:100%; }
   #vidrioAlfa { width:100%; max-width:260px; accent-color:var(--azul); }
 
   /* FASE 4: ficha como hoja flotante */
@@ -1441,8 +1427,6 @@ body.con-reproductor #chatAbrir, body.con-reproductor #chatPanel { display:none 
 /* Encabezado de Películas: barra limpia, pestañas tipo chip y filtros con píldoras */
 #app > header { padding:16px 16px 14px !important; border-radius:28px !important; }
 #app > header h1 { font-size:28px !important; font-weight:800 !important; letter-spacing:-.03em !important; margin:0 6px 0 2px !important; white-space:nowrap; }
-/* Modo Premiere: sala oscura con acentos dorados, tipografía con serif y brillo de estreno */
-.marca-sub { font-weight:400; color:var(--gris); font-size:.6em; letter-spacing:.02em; }
 body.premiere {
   --fondo:#0a0908; --tarjeta:#141210; --texto:#f3ead2; --gris:#a69a80;
   --azul:#d8b25c; --borde:rgba(216,178,92,.22); --boton-suave:#1c1915;
@@ -1789,11 +1773,6 @@ small, .meta, .saludo-meta, .hoy-sub { font-size: max(11px, 0.8rem); }
 .cap.visto .cap-check { background:var(--azul); border-color:var(--azul); color:#fff; }
 .cap .meta { font-size:12px; white-space:nowrap; }
 @media (prefers-reduced-motion: no-preference) { .serie-card, .cap { transition:background .2s ease; } }
-
-
-/* ---------- Curiosidad: botón y hoja (fase 1) ---------- */
-.cur-boton-wrap { padding: 4px 0 10px; }
-.cur-btn { width: 100%; padding: 12px 16px; border: none; border-radius: 16px; background: var(--boton-suave); color: var(--texto); font-size: 14px; font-weight: 600; cursor: pointer; }
 .cur-sheet { position: fixed; inset: 0; z-index: 60; display: none; align-items: flex-end; justify-content: center; padding: 12px; background: rgba(0,0,0,.35); }
 .cur-sheet.abierta { display: flex; }
 .cur-sheet-caja { width: min(520px, 100%); background: var(--tarjeta); color: var(--texto); border-radius: 22px; box-shadow: 0 10px 40px rgba(0,0,0,.2); padding: 18px 18px 14px; max-height: 80vh; overflow-y: auto; }
@@ -2037,3 +2016,56 @@ body.oscuro { --barra-pulgar: rgba(235,235,245,.34); --barra-pulgar-hover: rgba(
 .hoy { border-radius: var(--caja-radio); padding: var(--caja-pad); }
 #panelMas { border-radius: var(--caja-radio); }
 #chatPanel { border-radius: var(--caja-radio) !important; }
+
+/* ===== Movimiento: respuesta inmediata al toque y curvas suaves tipo resorte ===== */
+:root {
+  --resorte: cubic-bezier(.22, 1, .36, 1);          /* entrada suave, sin rebote */
+  --resorte-suave: cubic-bezier(.34, 1.2, .64, 1);  /* asentamiento con leve inercia */
+  --mov-rapido: 180ms;
+  --mov-medio: 320ms;
+}
+
+/* Todo lo interactivo reacciona al tocar, con la misma curva */
+button, .pildora, .chipc, .tarjeta, .etiqueta, .segmentado button, #tabbar button, .explorar-item {
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    transform var(--mov-rapido) var(--resorte),
+    background-color var(--mov-medio) var(--resorte),
+    color var(--mov-medio) var(--resorte),
+    box-shadow var(--mov-medio) var(--resorte),
+    opacity var(--mov-medio) var(--resorte);
+}
+button:active, .pildora:active, .chipc:active, .etiqueta:active,
+.segmentado button:active, #tabbar button:active, .explorar-item:active {
+  transform: scale(.965);
+  transition-duration: 90ms;
+}
+
+/* Las tarjetas se hunden un poco al tocarlas, como en iOS */
+.tarjeta:active { transform: scale(.985); transition-duration: 120ms; }
+
+/* Preferencia de movimiento reducido: sin escala ni transiciones largas */
+@media (prefers-reduced-motion: reduce) {
+  button, .pildora, .chipc, .tarjeta, .etiqueta, .segmentado button, #tabbar button, .explorar-item {
+    transition-duration: 1ms !important;
+  }
+  button:active, .pildora:active, .chipc:active, .tarjeta:active, #tabbar button:active { transform: none !important; }
+}
+
+/* ===== Inicio adaptativo: contenedor en columna (el orden lo decide app.js) ===== */
+.inicio-bloques { display: flex; flex-direction: column; }
+
+/* ===== Continuidad: la portada se transforma en la ficha con un resorte suave ===== */
+::view-transition-group(poster-activo) {
+  animation-duration: .5s;
+  animation-timing-function: var(--resorte);
+}
+
+/* ===== Diagnóstico de datos ===== */
+.dg-lista { list-style: none; margin: 0 0 16px; padding: 0; }
+.dg-lista li { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--borde); font-size: 14px; }
+.dg-lista li > span { flex: 1; min-width: 0; }
+.dg-lista li > b { white-space: nowrap; font-weight: 600; }
+.dg-nota { display: block; margin-top: 3px; font-size: 12px; color: var(--gris); line-height: 1.35; }
+.dg-ok { color: #1f9d55; }
+.dg-warn { color: #c77700; }

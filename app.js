@@ -1719,6 +1719,8 @@ function borrarNota() {
 }
 
 /* ---------- Respaldo y restauración de marcas ---------- */
+let ultimaSyncOk = null;   // momento de la última sincronización correcta con Drive
+
 function respaldarMarcas() {
   const datos = {
     formato: "catalogo-marcas",
@@ -3228,7 +3230,25 @@ async function compartirPelicula(p) {
   }
 }
 
+
+/* ---------- Continuidad: la portada viaja desde la lista hasta la ficha ---------- */
+let origenPoster = null;   // portada que se tocó para abrir la ficha
 function abrirDetalle(p) {
+  const reducir = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (!document.startViewTransition || reducir) return abrirDetalleBase(p);
+  if (origenPoster) origenPoster.style.viewTransitionName = "poster-activo";
+  const t = document.startViewTransition(() => {
+    abrirDetalleBase(p);
+    const nuevo = document.querySelector("#modal .ventana > #detalle img.portada");
+    if (nuevo) nuevo.style.viewTransitionName = "poster-activo";
+  });
+  t.finished.finally(() => {
+    if (origenPoster) origenPoster.style.viewTransitionName = "";
+    origenPoster = null;
+  });
+}
+
+function abrirDetalleBase(p) {
   detalleActual = p;
   ponerIdEnUrl(slugDe(p));
   const notaActual = (marcas[p.titulo] || {}).nota || "";
@@ -4312,6 +4332,7 @@ window.addEventListener("load", () => {
     const card = e.target.closest("[data-i]");
     if (card) {
       desdeAleatorio = false;
+      origenPoster = card.querySelector("img.portada");
       abrirDetalle(visibles[Number(card.dataset.i)]);
     }
   });
@@ -4340,7 +4361,7 @@ window.addEventListener("load", () => {
     const d = e.target.closest("[data-idx]");
     if (d && peliculas[Number(d.dataset.idx)]) {
       desdeAleatorio = false;
-      abrirDetalle(peliculas[Number(d.dataset.idx)]);
+      origenPoster = d.querySelector("img"); abrirDetalle(peliculas[Number(d.dataset.idx)]);
     }
   });
 
@@ -4348,7 +4369,7 @@ window.addEventListener("load", () => {
     const d = e.target.closest("[data-idx]");
     if (d) {
       desdeAleatorio = false;
-      abrirDetalle(peliculas[Number(d.dataset.idx)]);
+      origenPoster = d.querySelector("img"); abrirDetalle(peliculas[Number(d.dataset.idx)]);
     }
   });
 
@@ -4365,7 +4386,7 @@ window.addEventListener("load", () => {
     const d = e.target.closest("[data-idx]");
     if (d) {
       desdeAleatorio = false;
-      abrirDetalle(peliculas[Number(d.dataset.idx)]);
+      origenPoster = d.querySelector("img"); abrirDetalle(peliculas[Number(d.dataset.idx)]);
     }
   });
 
@@ -5470,6 +5491,7 @@ async function syncTodo() {
     syncGuardarLocal();
     if (cambio && peliculas.length) refrescarTodo();
     const hora = new Date().toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" });
+    ultimaSyncOk = Date.now();
     setEstado((syncPendiente ? "Hay cambios nuevos por subir…" : "Guardado en tu Drive · " + hora) + avisoIds());
   } catch (e) {
     syncPendiente = !syncIguales(marcas, syncBase);
@@ -6495,7 +6517,10 @@ document.addEventListener("visibilitychange", syncAlVolver);
 window.addEventListener("focus", syncAlVolver);
 window.addEventListener("online", () => { setEstado("Conexión recuperada. Sincronizando…"); syncTodo(); });
 window.addEventListener("offline", () => setEstado(mensajeSinConexion()));
-setInterval(() => { if (peliculas.length) syncTodo(); }, 300000);
+// Sincronización periódica: solo con la app visible y con señal (no gasta datos en segundo plano)
+setInterval(() => {
+  if (peliculas.length && !document.hidden && navigator.onLine !== false) syncTodo();
+}, 300000);
 
 // Cuando la hoja ya cargó: reconcilia las marcas por id y sincroniza una vez
 const esperaSync = setInterval(() => {
@@ -10621,3 +10646,79 @@ function curioDiagnostico() {
     if (sinSpoiler) console.info("Curiosidades: " + sinSpoiler + " con posible spoiler, ocultas hasta «Revelar».");
   }, 12000);
 })();
+
+/* ---------- Inicio adaptativo: el orden de los bloques depende de tu uso real ---------- */
+(function () {
+  const bloque = document.getElementById("inicioBloques");
+  if (!bloque) return;
+  const base = {
+    avisoFecha: 0, avisoEstancados: 0,
+    saludoPersonal: 1,
+    hoy: 2, queVer: 3,
+    recomendaciones: 4, estaSemana: 5, pregunta: 6, bienvenida: 7,
+    tarjetaAuto: 8, tarjetaDia: 9
+  };
+  function ordenarInicio() {
+    const c = contarEstados();
+    const pref = Object.assign({}, base);
+    if (c.pendientes > 0) { pref.hoy = 1; pref.queVer = 2; }          // con pendientes: primero qué ver
+    if (c.vistas >= 5) pref.recomendaciones = 3;                       // con historial: recomendaciones arriba
+    if (c.vistas === 0 && c.pendientes === 0) {                        // cuenta nueva: bienvenida primero
+      pref.saludoPersonal = 0; pref.bienvenida = 1;
+    }
+    Array.from(bloque.children).forEach(el => {
+      const v = String(pref[el.id] !== undefined ? pref[el.id] : 20);
+      if (el.style.order !== v) el.style.order = v;                   // solo escribe si cambia: sin bucles
+    });
+  }
+  let turno = 0;
+  const programar = () => { cancelAnimationFrame(turno); turno = requestAnimationFrame(ordenarInicio); };
+  new MutationObserver(programar).observe(bloque, {
+    childList: true, subtree: true, attributes: true, attributeFilter: ["style", "class"]
+  });
+  ordenarInicio();
+})();
+
+/* ---------- Diagnóstico de datos: revisa tu cuenta y su estado, con respaldo de un toque ---------- */
+function abrirDiagnostico() {
+  cerrarPaneles();
+  const claves = new Set(peliculas.map(p => claveDe(p)));
+  const enMarcas = Object.keys(marcas).filter(k => !k.startsWith("__"));
+  const huerfanas = enMarcas.filter(k => !claves.has(k));
+  const conMarcas = enMarcas.filter(k => claves.has(k)).length;
+  const porTitulo = {};
+  peliculas.forEach(p => { porTitulo[p.titulo] = (porTitulo[p.titulo] || 0) + 1; });
+  const repetidos = Object.keys(porTitulo).filter(t => porTitulo[t] > 1);
+  const sinId = peliculas.filter(p => !/^\d+$/.test(String(p.tmdb_id || "").trim())).length;
+  const kb = (new Blob([JSON.stringify(marcas)]).size / 1024).toFixed(1) + " KB";
+  const fmt = iso => { if (!iso) return "todavía no"; const d = new Date(iso); return isNaN(d) ? "desconocida" : d.toLocaleString("es-MX", { dateStyle: "short", timeStyle: "short" }); };
+  let copiaSemanal = null;
+  try { copiaSemanal = localStorage.getItem("respaldo_drive_fecha"); } catch (e) {}
+  const enLinea = navigator.onLine !== false;
+
+  const filas = [
+    { t: "Películas en tu hoja", v: String(peliculas.length), ok: true },
+    { t: "Películas con marcas", v: String(conMarcas), ok: true },
+    { t: "Tamaño de tus marcas", v: kb, ok: true },
+    { t: "Último guardado en Drive", v: fmt(ultimaSyncOk), ok: !!ultimaSyncOk && !syncPendiente },
+    { t: "Cambios sin subir", v: syncPendiente ? "sí" : "no", ok: !syncPendiente },
+    { t: "Último respaldo semanal", v: copiaSemanal ? fmt(copiaSemanal) : "todavía no", ok: !!copiaSemanal },
+    { t: "Conexión", v: enLinea ? "en línea" : "sin señal", ok: enLinea },
+    { t: "Marcas sin película en la hoja", v: String(huerfanas.length), ok: huerfanas.length === 0,
+      nota: "Son marcas de películas que ya no están en tu hoja. No afectan lo que ves." },
+    { t: "Títulos repetidos en la hoja", v: String(repetidos.length), ok: repetidos.length === 0,
+      nota: "Dos películas con el mismo título comparten marcas. Dales un tmdb_id distinto en la hoja." },
+    { t: "Películas sin tmdb_id", v: String(sinId), ok: sinId === 0,
+      nota: "Se identifican por el título. Si lo cambias en la hoja, sus marcas no lo siguen." }
+  ];
+  const lista = filas.map(f =>
+    '<li><span>' + (f.ok ? '<b class="dg-ok">✓</b> ' : '<b class="dg-warn">⚠</b> ') + esc(f.t) +
+    (f.nota ? '<small class="dg-nota">' + esc(f.nota) + '</small>' : '') + '</span><b>' + esc(f.v) + '</b></li>'
+  ).join("");
+  const cuerpo = '<ul class="dg-lista">' + lista + '</ul>' +
+    '<button type="button" class="pildora destacado" data-respaldo>⬇ Respaldar ahora</button>';
+  abrirVentanaSimple("diagnostico", "Diagnóstico de datos", cuerpo);
+  const btn = document.querySelector("#diagnostico [data-respaldo]");
+  if (btn) btn.addEventListener("click", () => respaldarMarcas());
+}
+document.getElementById("diagnosticoDatos").addEventListener("click", abrirDiagnostico);
