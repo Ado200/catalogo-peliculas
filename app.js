@@ -10250,6 +10250,7 @@ let curioLista = [];
 
 function curioTipo(c) {
   const t = String(c.tema || "").toLowerCase();
+  if (/internet/.test(t)) return "internet";
   if (/actor|reparto/.test(t)) return "actores";
   if (/saga/.test(t)) return "saga";
   return "pelicula";
@@ -10300,7 +10301,7 @@ function puntuarCurio(c, perfil, pesos, vistas, reac) {
 }
 
 function curioFiltrada() {
-  const base = todasLasCuriosidades();
+  const base = todasLasCuriosidades().concat(curiosidadesInternet);
   const filtrada = curioFiltro === "todas" ? base : base.filter(c => curioTipo(c) === curioFiltro);
   const perfil = perfilCurio(), pesos = pesosCurio(), vistas = new Set(curioVistas()), reac = curioReacciones();
   const ordenada = filtrada
@@ -10348,7 +10349,7 @@ function renderCuriosidadModal() {
   curioLista = curioFiltrada();
   if (curioIdx >= curioLista.length) curioIdx = 0;
   const c = curioLista[curioIdx];
-  const filtros = [["todas","Todas"],["pelicula","Película"],["actores","Actores"],["saga","Saga"]];
+  const filtros = [["todas","Todas"],["pelicula","Película"],["actores","Actores"],["saga","Saga"],["internet","Internet"]];
   const barra = '<div class="cur-filtros" role="tablist">' + filtros.map(f =>
     '<button type="button" role="tab" aria-selected="' + (curioFiltro === f[0]) + '" class="cur-filtro' + (curioFiltro === f[0] ? ' activo' : '') + '" data-cur="filtro" data-valor="' + f[0] + '">' + f[1] + '</button>').join('') + '</div>';
   const cabecera = '<div class="cur-cab"><h2 class="series-h2">Curiosidades</h2>' +
@@ -10476,3 +10477,111 @@ function cerrarCuriosidad() {
     }
   });
 })();
+
+/* ===== Fase 4: práctica ===== */
+
+// 1) Dato para decidir: se muestra dentro de la ficha, con datos reales de la película
+function datoParaDecidir(p) {
+  const out = [];
+  const min = minutos(p);
+  if (min) {
+    if (min >= 150) out.push("Dura " + min + " minutos: buena para una noche larga.");
+    else if (min <= 100) out.push("Dura " + min + " minutos: cabe en una noche entre semana.");
+    else out.push("Dura " + min + " minutos: cabe en una noche normal.");
+  }
+  const tono = intensidadDe_(p);
+  if (tono === 1) out.push("Tono ligero, para relajarte.");
+  if (tono === 3) out.push("Tono intenso: mejor con tiempo para asimilarla.");
+  const m = marcas[p.titulo] || {};
+  if (m.vista && m.estrellas) out.push("Ya la calificaste con " + m.estrellas + " estrella" + (m.estrellas === 1 ? "" : "s") + ".");
+  return out;
+}
+
+(function datoEnFicha() {
+  const detalle = document.getElementById("detalle");
+  if (!detalle) return;
+  new MutationObserver(() => {
+    const h2 = detalle.querySelector("h2");
+    if (!h2 || detalle.querySelector(".dato-decidir")) return;
+    const titulo = h2.textContent.trim();
+    const p = peliculas.find(x => x.titulo === titulo);
+    if (!p) return;
+    const lineas = datoParaDecidir(p);
+    if (!lineas.length) return;
+    const div = document.createElement("div");
+    div.className = "dato-decidir";
+    div.innerHTML = '<strong>Para decidir</strong>' + lineas.map(l => '<span>' + esc(l) + '</span>').join('');
+    h2.insertAdjacentElement("afterend", div);
+  }).observe(detalle, { childList: true });
+})();
+
+// 2) Tarjeta del día en Inicio: una curiosidad distinta cada día, elegida por el orden adaptativo
+function renderTarjetaDia() {
+  const sec = document.getElementById("tarjetaDia");
+  if (!sec || !document.body.classList.contains("con-sesion") || !peliculas.length) return;
+  const lista = curioFiltrada();
+  if (!lista.length) { sec.style.display = "none"; return; }
+  const dia = Math.floor(Date.now() / 86400000);
+  const c = lista[dia % lista.length];
+  sec.innerHTML =
+    '<p class="tarjeta-dia-etiqueta">Curiosidad de hoy</p>' +
+    '<p class="tarjeta-dia-texto">' + esc(c.texto) + '</p>' +
+    '<p class="meta">' + esc(c.peli ? c.peli.titulo : "") + (c.fuente ? ' · Fuente: ' + esc(c.fuente) : '') + '</p>' +
+    '<div class="saludo-acciones"><button type="button" class="pildora" data-accion="ver-curio">Ver curiosidades</button></div>';
+  sec.style.display = "block";
+}
+
+(function tarjetaDiaEventos() {
+  const sec = document.getElementById("tarjetaDia");
+  if (!sec) return;
+  sec.addEventListener("click", e => {
+    if (e.target.closest("[data-accion='ver-curio']")) abrirCuriosidad();
+  });
+  setTimeout(renderTarjetaDia, 2500);
+  setInterval(renderTarjetaDia, 10 * 60 * 1000);
+})();
+
+/* ===== Fase 5: datos de internet (solo los verificados) ===== */
+let curiosidadesInternet = [];
+const DATOS_CACHE_KEY = "datos_internet_cache";
+
+function construirCuriosidadesInternet(copia) {
+  const filas = (copia.values || []);
+  if (filas.length < 2) return [];
+  const enc = filas[0];
+  const c = n => enc.indexOf(n);
+  return filas.slice(1)
+    .map(r => ({ tmdb: r[c("tmdb_id")], titulo: r[c("titulo")], dato: r[c("dato")], fuente: r[c("fuente")], url: r[c("url")], fecha: r[c("fecha_consulta")], estado: r[c("estado")], tipo: r[c("tipo")] }))
+    .filter(x => x.estado === "verificado" && x.dato)
+    .map(x => {
+      const peli = peliculas.find(p => String(p.tmdb_id || "").trim() === String(x.tmdb).trim());
+      return peli ? {
+        peli: peli,
+        tema: "Internet · " + (x.tipo || "Dato"),
+        texto: x.dato,
+        fuente: x.fuente + " · consultado " + x.fecha + " · " + x.url
+      } : null;
+    })
+    .filter(Boolean);
+}
+
+async function cargarDatosInternet() {
+  if (!accessToken || !navigator.onLine || !HOJA_ID) { usarCacheInternet(); return; }
+  try {
+    const r = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${HOJA_ID}/values/datos_internet!A:H`,
+      { headers: { Authorization: "Bearer " + accessToken } });
+    if (!r.ok) { usarCacheInternet(); return; }
+    const copia = await r.json();
+    localStorage.setItem(DATOS_CACHE_KEY, JSON.stringify(copia));
+    curiosidadesInternet = construirCuriosidadesInternet(copia);
+  } catch (e) { usarCacheInternet(); }
+}
+
+function usarCacheInternet() {
+  try {
+    const c = JSON.parse(localStorage.getItem(DATOS_CACHE_KEY) || "null");
+    if (c) curiosidadesInternet = construirCuriosidadesInternet(c);
+  } catch (e) {}
+}
+
+setTimeout(() => { if (document.body.classList.contains("con-sesion")) cargarDatosInternet(); else usarCacheInternet(); }, 9000);
