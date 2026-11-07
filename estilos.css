@@ -1804,3 +1804,12 @@ small, .meta, .saludo-meta, .hoy-sub { font-size: max(11px, 0.8rem); }
 
 .cur-historia-titulo { margin: 4px 0 6px; font-size: 17px; font-weight: 600; }
 .cur-historia { font-style: italic; }
+
+/* ===== Curiosidad con botón ===== */
+.cur-tema { margin:6px 0 2px; font-size:13px; color:var(--gris); }
+.cur-texto { margin:6px 0; font-size:16px; line-height:1.45; color:var(--texto); }
+.cur-fuente { display:block; font-size:12px; color:var(--gris); }
+.cur-h3 { margin:16px 0 4px; font-size:15px; font-weight:700; }
+.cur-historia { margin:0; font-size:15px; line-height:1.5; color:var(--texto); }
+.cur-pie { display:flex; gap:8px; flex-wrap:wrap; margin-top:14px; }
+.cur-pie .pildora { min-height:44px; }

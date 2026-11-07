@@ -73,6 +73,7 @@
     <div class="buscar buscar-titulo"><span aria-hidden="true">⌕</span><input id="buscar" type="search" list="sugerencias" placeholder="Busca por título, director o actor"><datalist id="sugerencias"></datalist><button id="voz" class="boton-voz" title="Buscar por voz" aria-label="Buscar por voz" hidden>🎤</button></div>
     <div class="botones-barra">
     <button type="button" class="boton-circular" id="aleatorio" aria-label="Sugerir una película al azar" title="Aleatorio">🎲</button>
+    <button type="button" class="boton-circular" id="btnCuriosidad" aria-label="Curiosidad" title="Curiosidad">✨</button>
     <button type="button" class="boton-circular" id="queVerNoche" aria-label="Qué ver esta noche" title="Qué ver esta noche">🍿</button>
     <button type="button" class="boton-circular" id="verSeries" aria-label="Series" title="Series">📺</button>
      <button type="button" class="boton-circular" id="toggleAvanzados" aria-label="Filtros avanzados">⚙</button>
@@ -364,6 +365,12 @@
     <button class="cerrar" id="cerrarSeries" aria-label="Cerrar">×</button>
     <h2 class="series-h2">Series</h2>
     <div id="seriesLista"></div>
+  </div>
+</div>
+<div id="curioModal" class="series-modal" role="dialog" aria-modal="true" aria-label="Curiosidad">
+  <div class="series-caja">
+    <button class="cerrar" id="cerrarCurio" aria-label="Cerrar">×</button>
+    <div id="curioBody"></div>
   </div>
 </div>
 <div id="modal">
