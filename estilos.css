@@ -1881,3 +1881,33 @@ body.oscuro { --barra-pulgar: rgba(235,235,245,.34); --barra-pulgar-hover: rgba(
 #guia .cuerpo::-webkit-scrollbar-track,
 #chatPanel::-webkit-scrollbar-track,
 #chatMensajes::-webkit-scrollbar-track { margin: 22px 0; }
+
+/* ===== Ficha: cabecera al bajar, integrada en la tarjeta redondeada ===== */
+/* La tarjeta controla el espacio y recorta sus esquinas; el contenido lleva su propio margen.
+   Así la cabecera queda pegada al borde superior, sin márgenes negativos, y sigue la curva. */
+#modal .ventana { padding: 0 !important; overflow-y: auto !important; overflow-x: hidden !important; }
+#modal .ventana > #detalle { padding: 24px 24px 0; }
+#modal .ventana > #otra { padding: 0 24px; }
+#modal .ventana > #otra:empty { display: none; }
+#modal .ventana > .ficha-cerrar-abajo { margin: 8px 24px 24px; }
+#modal .cerrar { z-index: 4; top: 12px; right: 12px; }
+
+#modal .ficha-compacta {
+  display: none !important;
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 3;
+  margin: 0 !important;
+  padding: 14px 56px 14px 24px !important;
+  background: var(--tarjeta) !important;
+  border-bottom: 1px solid var(--borde);
+  box-shadow: 0 8px 14px -12px rgba(0, 0, 0, .35);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -.2px;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+#modal.ficha-es-compacta .ficha-compacta { display: block !important; }
