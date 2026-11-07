@@ -3956,19 +3956,8 @@ function abrirTodasCuriosidades(temaElegido) {
   };
 }
 
-function renderCuriosidadDia() {
-  // Fase 1: en la pestaña aparece solo un botón; la curiosidad se abre en una hoja.
-  if (document.getElementById("curiosidades")) return;
-  const ref = document.getElementById("destacados");
-  if (!ref) return;
-  const sec = document.createElement("section");
-  sec.id = "curiosidades";
-  sec.className = "cur-boton-wrap solo-catalogo";
-  sec.dataset.zona = "estrenos";
-  sec.innerHTML = '<button type="button" id="curiosidadBtn" class="cur-btn">✨ Curiosidad</button>';
-  ref.insertAdjacentElement("afterend", sec);
-  document.getElementById("curiosidadBtn").onclick = abrirCuriosidadSheet;
-}
+// La curiosidad ya no es una barra: se abre con el botón ✨ (ver abrirCuriosidad).
+function renderCuriosidadDia() {}
 
 // URL del servidor (la misma Aplicación web de Apps Script que usa el asistente)
 const CURIO_URL = "PEGA_AQUI_LA_URL_DE_TU_APPS_SCRIPT";
@@ -10130,4 +10119,155 @@ setTimeout(renderTarjetaAuto, 15000);
       abrirSerieDetalle(titulo);
     }
   };
+})();
+
+/* ---------- Curiosidad con botón: datos reales de tu colección, distinta cada vez ---------- */
+const CURIO_VISTAS_KEY = "curio_vistas";
+let curioActual = null;
+
+function claveCurio(c) {
+  return (c.peli ? c.peli.titulo : "") + "|" + (c.tema || "") + "|" + String(c.texto || "").slice(0, 40);
+}
+
+function curioVistas() {
+  try { return JSON.parse(leerLS(CURIO_VISTAS_KEY) || "[]"); } catch (e) { return []; }
+}
+
+function marcarCurioVista(c) {
+  const v = curioVistas().filter(x => x !== claveCurio(c));
+  v.push(claveCurio(c));
+  escribirLS(CURIO_VISTAS_KEY, JSON.stringify(v.slice(-60)));
+}
+
+// Prefiere lo que todavía no has visto; cuando ya viste todo, vuelve a empezar
+function elegirCuriosidad() {
+  const lista = todasLasCuriosidades();
+  if (!lista.length) return null;
+  const vistas = new Set(curioVistas());
+  const nuevas = lista.filter(c => !vistas.has(claveCurio(c)));
+  const pool = nuevas.length ? nuevas : lista;
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
+// Historia breve armada solo con datos reales de la ficha (año, director, género, duración, sinopsis, reparto)
+function historiaDe(p) {
+  const partes = [];
+  const anio = p["año"] ? String(p["año"]) : "";
+  const dir = String(p.director || "").split(",")[0].trim();
+  const gen = String(p.genero || "").split(",")[0].trim();
+  const dur = String(p.duracion || "").trim();
+  const frase = String(p.sinopsis || "").split(/(?<=[.!?])\s+/)[0] || "";
+  const rep = String(p.reparto || "").split(",").map(x => x.trim()).filter(Boolean).slice(0, 2);
+  const variantes = [
+    () => [anio && dir ? "En " + anio + ", " + dir + " llevó a la pantalla «" + p.titulo + "»." : null, frase],
+    () => ["«" + p.titulo + "»" + (anio ? " (" + anio + ")" : "") + (gen ? " es un " + gen.toLowerCase() : "") + (dur ? " de " + dur : "") + ".", frase, rep.length ? "En el reparto están " + rep.join(" y ") + "." : null],
+    () => [dir ? "Detrás de la película está " + dir + "." : null, frase, rep.length ? "Protagonizan " + rep.join(" y ") + "." : null]
+  ];
+  const elegida = variantes[Math.floor(Math.random() * variantes.length)]();
+  return elegida.filter(Boolean).join(" ").replace(/\s+/g, " ").trim();
+}
+
+const MESES_CURIO = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+
+// Datos reales de la película: saga, país, estreno, duración, director, género, década
+function hechosDePelicula(p) {
+  const out = [];
+  const saga = String(p.saga || "").trim();
+  if (saga && saga !== "-") {
+    const n = peliculas.filter(x => String(x.saga || "").trim() === saga).length;
+    out.push("Es parte de la saga «" + saga + "». En tu colección hay " + n + " película" + (n === 1 ? "" : "s") + " de ella.");
+  }
+  const pais = String(p.pais || "").trim();
+  if (pais) out.push("Se produjo en " + pais + ".");
+  const est = String(p.estreno || "").trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(est)) {
+    const [y, m, d] = est.split("-").map(Number);
+    out.push("Llegó a los cines el " + d + " de " + MESES_CURIO[m - 1] + " de " + y + ".");
+  }
+  const min = minutos(p);
+  if (min) out.push("Dura " + min + " minutos.");
+  const dir = String(p.director || "").split(",")[0].trim();
+  if (dir) {
+    const n = peliculas.filter(x => String(x.director || "").split(",")[0].trim() === dir).length;
+    if (n > 1) out.push(dir + " tiene " + n + " películas en tu colección.");
+  }
+  const anio = Number(p["año"]);
+  if (anio) out.push("Es de los años " + (Math.floor(anio / 10) * 10) + ".");
+  return out;
+}
+
+// Datos reales de los actores de la película (fuente: TMDB, guardados en tu hoja)
+function hechosDeActores(p) {
+  const out = [];
+  const info = infoActores();
+  nombresReparto(p).forEach(nombre => {
+    const i = info[nombre] || {};
+    if (i.lugar) out.push(nombre + " nació en " + i.lugar + ".");
+    else if (/^\d{4}/.test(i.nacimiento || "")) out.push(nombre + " nació en " + String(i.nacimiento).slice(0, 4) + ".");
+    const bio = String(i.bio || "").split(/(?<=[.!?])\s+/)[0] || "";
+    if (bio.length > 20 && bio.length < 260) out.push(nombre + ": " + bio);
+    const n = peliculas.filter(x => nombresReparto(x).indexOf(nombre) !== -1).length;
+    if (n > 1) out.push(nombre + " aparece en " + n + " películas de tu colección.");
+  });
+  return out;
+}
+
+function unDato(lista) {
+  return lista.length ? lista[Math.floor(Math.random() * lista.length)] : "";
+}
+
+function renderCuriosidadModal(c) {
+  const body = $("curioBody");
+  if (!body) return;
+  if (!c) {
+    body.innerHTML = '<h2 class="series-h2">Curiosidad</h2><p class="meta">Todavía no hay curiosidades. Agrega datos a la pestaña curiosidades o llena más películas.</p>';
+    return;
+  }
+  const deLaPeli = unDato(hechosDePelicula(c.peli));
+  const deActores = unDato(hechosDeActores(c.peli));
+  body.innerHTML =
+    '<h2 class="series-h2">Curiosidad</h2>' +
+    '<p class="cur-tema">' + esc(c.tema || "Dato") + ' · ' + esc(c.peli.titulo) + '</p>' +
+    '<p class="cur-texto">' + esc(c.texto) + '</p>' +
+    (c.fuente ? '<small class="cur-fuente">Fuente: ' + esc(c.fuente) + '</small>' : '') +
+    (deLaPeli ? '<h3 class="cur-h3">Sobre la película</h3><p class="cur-historia">' + esc(deLaPeli) + '</p>' : '') +
+    (deActores ? '<h3 class="cur-h3">Sobre sus actores</h3><p class="cur-historia">' + esc(deActores) + '</p>' : '') +
+    '<div class="cur-pie">' +
+      '<button type="button" class="pildora" data-cur="otra">Otra curiosidad</button>' +
+      '<button type="button" class="pildora" data-cur="ver">Ver ficha</button>' +
+    '</div>';
+}
+
+function abrirCuriosidad() {
+  curioActual = elegirCuriosidad();
+  if (curioActual) marcarCurioVista(curioActual);
+  renderCuriosidadModal(curioActual);
+  const v = $("curioModal");
+  if (v) v.classList.add("abierto");
+}
+
+function cerrarCuriosidad() {
+  const v = $("curioModal");
+  if (v) v.classList.remove("abierto");
+}
+
+(function curiosidadBoton() {
+  const boton = $("btnCuriosidad"), ventana = $("curioModal");
+  if (!boton || !ventana) return;
+  boton.addEventListener("click", abrirCuriosidad);
+  $("cerrarCurio").addEventListener("click", cerrarCuriosidad);
+  ventana.addEventListener("click", e => { if (e.target === ventana) cerrarCuriosidad(); });
+  document.addEventListener("keydown", e => { if (e.key === "Escape") cerrarCuriosidad(); });
+  $("curioBody").addEventListener("click", e => {
+    const b = e.target.closest("[data-cur]");
+    if (!b) return;
+    if (b.dataset.cur === "otra") {
+      curioActual = elegirCuriosidad();
+      if (curioActual) marcarCurioVista(curioActual);
+      renderCuriosidadModal(curioActual);
+    } else if (b.dataset.cur === "ver" && curioActual) {
+      cerrarCuriosidad();
+      abrirDetalle(curioActual.peli);
+    }
+  });
 })();
