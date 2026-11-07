@@ -5561,8 +5561,8 @@ function abrirVentanaSimple(id, titulo, cuerpo) {
   div.id = id;
   div.className = "ayuda-atajos";
   div.innerHTML = '<div class="ayuda-caja ventana-larga" role="dialog" aria-label="' + esc(titulo) + '">' +
-    '<h3>' + esc(titulo) + '</h3>' + cuerpo +
-    '<button type="button" class="pildora" data-cerrar>Cerrar</button></div>';
+    '<button type="button" class="dlg-x" data-cerrar aria-label="Cerrar">×</button>' +
+    '<h3>' + esc(titulo) + '</h3>' + cuerpo + '</div>';
   div.addEventListener("click", e => { if (e.target === div || e.target.hasAttribute("data-cerrar")) div.remove(); });
   document.body.appendChild(div);
 }
