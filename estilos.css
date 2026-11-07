@@ -1838,3 +1838,7 @@ small, .meta, .saludo-meta, .hoy-sub { font-size: max(11px, 0.8rem); }
 .cur-hist span { font-size:14px; color:var(--gris); }
 .cur-tarjeta .cur-pie .pildora { min-height:44px; }
 @media (prefers-reduced-motion: reduce) { .cur-fondo { transform:none; } }
+
+/* ===== Fase 2: conexiones y spoilers ===== */
+.cur-oculto { filter:blur(7px); user-select:none; }
+.cur-revelar { margin-top:10px; min-height:44px; }

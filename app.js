@@ -10212,6 +10212,31 @@ function hechosDeActores(p) {
   return out;
 }
 
+// Conexiones: "te suena porque…" (actor en otra película que ya viste) y "puente" (actor en otra pendiente)
+function conexionesDe(p) {
+  const out = [];
+  const m = a => marcas[a.titulo] || {};
+  const reparto = nombresReparto(p);
+  reparto.forEach(nombre => {
+    const otras = peliculas.filter(x => x.titulo !== p.titulo && nombresReparto(x).indexOf(nombre) !== -1);
+    const vistas = otras.filter(x => m(x).vista);
+    if (vistas.length) out.push("Te suena porque " + nombre + " también salió en «" + vistas[0].titulo + "», que ya marcaste como vista.");
+    const pend = otras.filter(x => !m(x).vista && !m(x).descartada);
+    if (pend.length) out.push("Si te gusta " + nombre + ", «" + pend[0].titulo + "» también está en tu lista por ver.");
+  });
+  const saga = String(p.saga || "").trim();
+  if (saga && saga !== "-") {
+    const vistasSaga = peliculas.filter(x => x.titulo !== p.titulo && String(x.saga || "").trim() === saga && m(x).vista).length;
+    if (vistasSaga) out.push("De la saga «" + saga + "» ya viste " + vistasSaga + " más.");
+  }
+  return out;
+}
+
+// Spoilers: el texto que pueda revelar el final se oculta hasta que la persona lo pide
+const PALABRAS_SPOILER = /(final|desenlace|muere|murió|muerte|termina|resulta que|el asesino|revela|traición|se descubre|al terminar)/i;
+function esSpoiler(texto) { return PALABRAS_SPOILER.test(String(texto || "")); }
+const CURIO_REVELADOS = new Set();
+
 function unDato(lista) {
   return lista.length ? lista[Math.floor(Math.random() * lista.length)] : "";
 }
@@ -10279,6 +10304,12 @@ function renderCuriosidadModal() {
   const fondo = c.peli && c.peli.portada ? ' style="background-image:url(\'' + esc(c.peli.portada) + '\')"' : '';
   const deLaPeli = unDato(hechosDePelicula(c.peli));
   const deActores = unDato(hechosDeActores(c.peli));
+  const conexion = unDato(conexionesDe(c.peli));
+  const clave = claveCurio(c);
+  const oculto = esSpoiler(c.texto) && !CURIO_REVELADOS.has(clave);
+  const textoHtml = oculto
+    ? '<p class="cur-texto cur-oculto" aria-hidden="true">' + esc(c.texto) + '</p><button type="button" class="pildora cur-revelar" data-cur="revelar">Revelar (contiene spoiler)</button>'
+    : '<p class="cur-texto">' + esc(c.texto) + '</p>';
   const pos = (curioIdx + 1) + " de " + curioLista.length + " · " + curioProgreso() + " vistas";
   const reacBtn = (v, t) => '<button type="button" class="cur-reac' + (reac === v ? ' activo' : '') + '" data-cur="reac" data-valor="' + v + '" aria-pressed="' + (reac === v) + '">' + t + '</button>';
 
@@ -10287,10 +10318,11 @@ function renderCuriosidadModal() {
       '<div class="cur-fondo"' + fondo + ' aria-hidden="true"></div>' +
       '<div class="cur-cuerpo">' +
         '<p class="cur-tema">' + esc(c.tema || "Dato") + ' · ' + esc(c.peli.titulo) + '</p>' +
-        '<p class="cur-texto">' + esc(c.texto) + '</p>' +
+        textoHtml +
         (c.fuente ? '<small class="cur-fuente">Fuente: ' + esc(c.fuente) + '</small>' : '') +
         (deLaPeli ? '<h3 class="cur-h3">Sobre la película</h3><p class="cur-historia">' + esc(deLaPeli) + '</p>' : '') +
         (deActores ? '<h3 class="cur-h3">Sobre sus actores</h3><p class="cur-historia">' + esc(deActores) + '</p>' : '') +
+        (conexion ? '<h3 class="cur-h3">En tu colección</h3><p class="cur-historia">' + esc(conexion) + '</p>' : '') +
       '</div>' +
     '</article>' +
     '<div class="cur-nav">' +
@@ -10374,6 +10406,7 @@ function cerrarCuriosidad() {
     else if (acc === "ant" && curioLista.length) { curioIdx = (curioIdx - 1 + curioLista.length) % curioLista.length; renderCuriosidadModal(); }
     else if (acc === "sig" && curioLista.length) { curioIdx = (curioIdx + 1) % curioLista.length; renderCuriosidadModal(); }
     else if (acc === "reac" && c) { curioRegistrar(c, b.dataset.valor); if (c) marcarCurioVista(c); renderCuriosidadModal(); }
+    else if (acc === "revelar" && c) { CURIO_REVELADOS.add(claveCurio(c)); renderCuriosidadModal(); }
     else if (acc === "historial") renderCurioHistorial();
     else if (acc === "volver") renderCuriosidadModal();
     else if (acc === "ver" && c) { cerrarCuriosidad(); abrirDetalle(c.peli); }

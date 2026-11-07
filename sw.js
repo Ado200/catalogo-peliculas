@@ -1,6 +1,6 @@
 // Versión de la caché: súbela (catalogo-v3, v4…) cuando cambies index.html, iconos o estilos.
 // app.js y estilos.css ya se piden primero a la red, así que sus cambios llegan sin subir la versión.
-const VERSION = "catalogo-20261107044557";
+const VERSION = "catalogo-v2";
 const SHELL = [
   "./",
   "./index.html",
@@ -14,7 +14,7 @@ const SHELL = [
 ];
 
 // Estas direcciones SIEMPRE van a la red y nunca se guardan: datos, APIs, IA e imágenes externas.
-const SOLO_RED = /googleapis\.com|gstatic\.com|themoviedb\.org|image\.tmdb\.org|youtube\.com|ytimg\.com|generativelanguage|script\.google|accounts\.google|esm\.sh|cdnjs\.cloudflare\.com|google\.com/;
+const SOLO_RED = /googleapis\.com|gstatic\.com|themoviedb\.org|youtube\.com|ytimg\.com|generativelanguage|script\.google|accounts\.google|esm\.sh|cdnjs\.cloudflare\.com|google\.com/;
 
 self.addEventListener("install", e => {
   e.waitUntil(caches.open(VERSION).then(c => c.addAll(SHELL)));
@@ -28,15 +28,40 @@ self.addEventListener("message", e => {
 self.addEventListener("activate", e => {
   e.waitUntil((async () => {
     const claves = await caches.keys();
-    await Promise.all(claves.filter(k => k !== VERSION).map(k => caches.delete(k)));
+    await Promise.all(claves.filter(k => k !== VERSION && k !== IMAGENES).map(k => caches.delete(k)));
     await self.clients.claim();
   })());
 });
+
+// Portadas y fotos de TMDB: se guardan para verse sin conexión, con un máximo de entradas
+const IMAGENES = "imagenes-v1";
+const MAX_IMAGENES = 300;
+
+async function recortarImagenes(cache) {
+  const llaves = await cache.keys();
+  if (llaves.length > MAX_IMAGENES) {
+    await Promise.all(llaves.slice(0, llaves.length - MAX_IMAGENES).map(k => cache.delete(k)));
+  }
+}
 
 self.addEventListener("fetch", e => {
   const req = e.request;
   if (req.method !== "GET") return;
   const url = new URL(req.url);
+  if (url.hostname === "image.tmdb.org") {
+    // Lo primero que se muestra es la copia guardada; la red la actualiza en segundo plano
+    e.respondWith((async () => {
+      const cache = await caches.open(IMAGENES);
+      const hit = await cache.match(req);
+      const red = fetch(req).then(r => {
+        if (r.ok) { cache.put(req, r.clone()); recortarImagenes(cache); }
+        return r;
+      }).catch(() => null);
+      if (hit) { e.waitUntil(red); return hit; }
+      return (await red) || Response.error();
+    })());
+    return;
+  }
   if (url.origin !== self.location.origin) return;        // otros sitios: red normal
   if (SOLO_RED.test(req.url)) return;                      // datos y APIs: siempre red
 
