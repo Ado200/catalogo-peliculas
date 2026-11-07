@@ -10302,7 +10302,7 @@ function puntuarCurio(c, perfil, pesos, vistas, reac) {
 
 function curioFiltrada() {
   const base = todasLasCuriosidades().concat(curiosidadesInternet);
-  const filtrada = curioFiltro === "todas" ? base : base.filter(c => curioTipo(c) === curioFiltro);
+  const filtrada = (curioFiltro === "todas" ? base : base.filter(c => curioTipo(c) === curioFiltro)).filter(curioEstaSana);
   const perfil = perfilCurio(), pesos = pesosCurio(), vistas = new Set(curioVistas()), reac = curioReacciones();
   const ordenada = filtrada
     .map(c => ({ c: c, s: puntuarCurio(c, perfil, pesos, vistas, reac) }))
@@ -10352,7 +10352,8 @@ function renderCuriosidadModal() {
   const filtros = [["todas","Todas"],["pelicula","Película"],["actores","Actores"],["saga","Saga"],["internet","Internet"]];
   const barra = '<div class="cur-filtros" role="tablist">' + filtros.map(f =>
     '<button type="button" role="tab" aria-selected="' + (curioFiltro === f[0]) + '" class="cur-filtro' + (curioFiltro === f[0] ? ' activo' : '') + '" data-cur="filtro" data-valor="' + f[0] + '">' + f[1] + '</button>').join('') + '</div>';
-  const cabecera = '<div class="cur-cab"><h2 class="series-h2">Curiosidades</h2>' +
+  const diag = curioDiagnostico();
+  const cabecera = '<p class="meta cur-diag">' + esc(diag) + '</p>' + '<div class="cur-cab"><h2 class="series-h2">Curiosidades</h2>' +
     '<button type="button" class="cur-icono" data-cur="historial" aria-label="Historial">🕘</button></div>' + barra;
 
   if (!curioLista.length) {
@@ -10393,6 +10394,7 @@ function renderCuriosidadModal() {
     '<div class="cur-reacciones">' + reacBtn("gusta","👍 Me gusta") + reacBtn("sabia","✓ Ya lo sabía") + reacBtn("no","✕ No me interesa") + '</div>' +
     '<div class="cur-pie">' +
       '<button type="button" class="pildora" data-cur="compartir">Compartir</button>' +
+      '<button type="button" class="pildora" data-cur="reportar">Reportar</button>' +
       '<button type="button" class="pildora" data-cur="ver">Ver ficha</button>' +
     '</div>';
   marcarCurioVista(c);
@@ -10408,18 +10410,7 @@ function renderCurioHistorial() {
       : '<p class="meta">Aquí aparecen las curiosidades que ya viste.</p>');
 }
 
-function abrirCuriosidad() {
-  curioIdx = 0;
-  curioFiltro = "todas";
-  renderCuriosidadModal();
-  const v = $("curioModal");
-  if (v) v.classList.add("abierto");
-}
 
-function cerrarCuriosidad() {
-  const v = $("curioModal");
-  if (v) v.classList.remove("abierto");
-}
 
 function abrirCuriosidad() {
   curioActual = elegirCuriosidad();
@@ -10466,6 +10457,7 @@ function cerrarCuriosidad() {
     else if (acc === "ant" && curioLista.length) { curioIdx = (curioIdx - 1 + curioLista.length) % curioLista.length; renderCuriosidadModal(); }
     else if (acc === "sig" && curioLista.length) { curioIdx = (curioIdx + 1) % curioLista.length; renderCuriosidadModal(); }
     else if (acc === "reac" && c) { curioRegistrar(c, b.dataset.valor); if (c) marcarCurioVista(c); renderCuriosidadModal(); }
+    else if (acc === "reportar" && c) { curioReportar(c); b.textContent = "Gracias, lo revisamos"; b.disabled = true; }
     else if (acc === "revelar" && c) { CURIO_REVELADOS.add(claveCurio(c)); renderCuriosidadModal(); }
     else if (acc === "historial") renderCurioHistorial();
     else if (acc === "volver") renderCuriosidadModal();
@@ -10585,3 +10577,47 @@ function usarCacheInternet() {
 }
 
 setTimeout(() => { if (document.body.classList.contains("con-sesion")) cargarDatosInternet(); else usarCacheInternet(); }, 9000);
+
+/* ===== Fase 6: madurez y autonomía ===== */
+const CURIO_REPORTES_KEY = "curio_reportes";
+const CURIO_CUARENTENA = 2;   // con 2 reportes, la curiosidad sale de la lista hasta que cambie su dato
+
+function curioReportes() {
+  try { return JSON.parse(leerLS(CURIO_REPORTES_KEY) || "{}"); } catch (e) { return {}; }
+}
+
+function curioReportar(c) {
+  const r = curioReportes();
+  const k = claveCurio(c);
+  r[k] = (r[k] || 0) + 1;
+  escribirLS(CURIO_REPORTES_KEY, JSON.stringify(r));
+}
+
+// Autocorrección: una curiosidad solo se muestra si está completa, tiene fuente cuando la necesita y no está en cuarentena
+function curioEstaSana(c) {
+  if (!c || !c.peli || !c.peli.titulo || !String(c.texto || "").trim()) return false;
+  if (/internet/i.test(String(c.tema || "")) && !/^https?:\/\//.test(String(c.fuente || "").split(" · ").pop() || "")) return false;
+  return (curioReportes()[claveCurio(c)] || 0) < CURIO_CUARENTENA;
+}
+
+// Autodiagnóstico: una línea con el estado real de la función
+function curioDiagnostico() {
+  const todas = todasLasCuriosidades().concat(curiosidadesInternet);
+  const sanas = todas.filter(curioEstaSana).length;
+  const enRevision = todas.filter(c => (curioReportes()[claveCurio(c)] || 0) >= CURIO_CUARENTENA).length;
+  const internet = curiosidadesInternet.filter(curioEstaSana).length;
+  return sanas + " curiosidades listas · " + internet + " de internet verificadas" +
+    (enRevision ? " · " + enRevision + " en revisión" : "");
+}
+
+// Pruebas automáticas al cargar: si algo falla, se registra y no se muestra la parte afectada
+(function pruebasCuriosidad() {
+  setTimeout(() => {
+    if (!document.body.classList.contains("con-sesion")) return;
+    const todas = todasLasCuriosidades().concat(curiosidadesInternet);
+    const fallos = todas.filter(c => !c || !c.peli || !String(c.texto || "").trim());
+    if (fallos.length) console.warn("Curiosidades: " + fallos.length + " entradas incompletas omitidas.");
+    const sinSpoiler = todas.filter(c => esSpoiler(c.texto)).length;
+    if (sinSpoiler) console.info("Curiosidades: " + sinSpoiler + " con posible spoiler, ocultas hasta «Revelar».");
+  }, 12000);
+})();
