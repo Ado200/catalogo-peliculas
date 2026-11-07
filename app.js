@@ -10216,26 +10216,117 @@ function unDato(lista) {
   return lista.length ? lista[Math.floor(Math.random() * lista.length)] : "";
 }
 
-function renderCuriosidadModal(c) {
+// ---------- Pestaña de Curiosidades (fase 1) ----------
+const CURIO_REAC_KEY = "curio_reacciones";
+const CURIO_HIST_KEY = "curio_historial";
+let curioFiltro = "todas";
+let curioIdx = 0;
+let curioLista = [];
+
+function curioTipo(c) {
+  const t = String(c.tema || "").toLowerCase();
+  if (/actor|reparto/.test(t)) return "actores";
+  if (/saga/.test(t)) return "saga";
+  return "pelicula";
+}
+
+function curioFiltrada() {
+  const base = todasLasCuriosidades();
+  return curioFiltro === "todas" ? base : base.filter(c => curioTipo(c) === curioFiltro);
+}
+
+function curioReacciones() {
+  try { return JSON.parse(leerLS(CURIO_REAC_KEY) || "{}"); } catch (e) { return {}; }
+}
+
+function curioHistorial() {
+  try { return JSON.parse(leerLS(CURIO_HIST_KEY) || "[]"); } catch (e) { return []; }
+}
+
+function curioRegistrar(c, reaccion) {
+  const k = claveCurio(c);
+  const r = curioReacciones();
+  if (reaccion) r[k] = reaccion;
+  escribirLS(CURIO_REAC_KEY, JSON.stringify(r));
+  const hist = curioHistorial().filter(x => x.k !== k);
+  hist.unshift({ k: k, titulo: c.peli ? c.peli.titulo : "", texto: c.texto, ts: Date.now() });
+  escribirLS(CURIO_HIST_KEY, JSON.stringify(hist.slice(0, 100)));
+}
+
+function curioProgreso() {
+  const vistas = new Set(curioVistas());
+  return curioLista.filter(c => vistas.has(claveCurio(c))).length;
+}
+
+function renderCuriosidadModal() {
   const body = $("curioBody");
   if (!body) return;
-  if (!c) {
-    body.innerHTML = '<h2 class="series-h2">Curiosidad</h2><p class="meta">Todavía no hay curiosidades. Agrega datos a la pestaña curiosidades o llena más películas.</p>';
+  curioLista = curioFiltrada();
+  if (curioIdx >= curioLista.length) curioIdx = 0;
+  const c = curioLista[curioIdx];
+  const filtros = [["todas","Todas"],["pelicula","Película"],["actores","Actores"],["saga","Saga"]];
+  const barra = '<div class="cur-filtros" role="tablist">' + filtros.map(f =>
+    '<button type="button" role="tab" aria-selected="' + (curioFiltro === f[0]) + '" class="cur-filtro' + (curioFiltro === f[0] ? ' activo' : '') + '" data-cur="filtro" data-valor="' + f[0] + '">' + f[1] + '</button>').join('') + '</div>';
+  const cabecera = '<div class="cur-cab"><h2 class="series-h2">Curiosidades</h2>' +
+    '<button type="button" class="cur-icono" data-cur="historial" aria-label="Historial">🕘</button></div>' + barra;
+
+  if (!curioLista.length) {
+    body.innerHTML = cabecera + '<div class="cur-vacio"><p>Todavía no hay curiosidades para este filtro.</p><p class="meta">Agrega datos a la pestaña curiosidades o llena más películas, y aparecerán aquí.</p></div>';
     return;
   }
+
+  const reac = curioReacciones()[claveCurio(c)] || "";
+  const fondo = c.peli && c.peli.portada ? ' style="background-image:url(\'' + esc(c.peli.portada) + '\')"' : '';
   const deLaPeli = unDato(hechosDePelicula(c.peli));
   const deActores = unDato(hechosDeActores(c.peli));
-  body.innerHTML =
-    '<h2 class="series-h2">Curiosidad</h2>' +
-    '<p class="cur-tema">' + esc(c.tema || "Dato") + ' · ' + esc(c.peli.titulo) + '</p>' +
-    '<p class="cur-texto">' + esc(c.texto) + '</p>' +
-    (c.fuente ? '<small class="cur-fuente">Fuente: ' + esc(c.fuente) + '</small>' : '') +
-    (deLaPeli ? '<h3 class="cur-h3">Sobre la película</h3><p class="cur-historia">' + esc(deLaPeli) + '</p>' : '') +
-    (deActores ? '<h3 class="cur-h3">Sobre sus actores</h3><p class="cur-historia">' + esc(deActores) + '</p>' : '') +
+  const pos = (curioIdx + 1) + " de " + curioLista.length + " · " + curioProgreso() + " vistas";
+  const reacBtn = (v, t) => '<button type="button" class="cur-reac' + (reac === v ? ' activo' : '') + '" data-cur="reac" data-valor="' + v + '" aria-pressed="' + (reac === v) + '">' + t + '</button>';
+
+  body.innerHTML = cabecera +
+    '<article class="cur-tarjeta" id="curioTarjeta">' +
+      '<div class="cur-fondo"' + fondo + ' aria-hidden="true"></div>' +
+      '<div class="cur-cuerpo">' +
+        '<p class="cur-tema">' + esc(c.tema || "Dato") + ' · ' + esc(c.peli.titulo) + '</p>' +
+        '<p class="cur-texto">' + esc(c.texto) + '</p>' +
+        (c.fuente ? '<small class="cur-fuente">Fuente: ' + esc(c.fuente) + '</small>' : '') +
+        (deLaPeli ? '<h3 class="cur-h3">Sobre la película</h3><p class="cur-historia">' + esc(deLaPeli) + '</p>' : '') +
+        (deActores ? '<h3 class="cur-h3">Sobre sus actores</h3><p class="cur-historia">' + esc(deActores) + '</p>' : '') +
+      '</div>' +
+    '</article>' +
+    '<div class="cur-nav">' +
+      '<button type="button" class="cur-flecha" data-cur="ant" aria-label="Anterior">‹</button>' +
+      '<span class="cur-pos" aria-live="polite">' + esc(pos) + '</span>' +
+      '<button type="button" class="cur-flecha" data-cur="sig" aria-label="Siguiente">›</button>' +
+    '</div>' +
+    '<div class="cur-reacciones">' + reacBtn("gusta","👍 Me gusta") + reacBtn("sabia","✓ Ya lo sabía") + reacBtn("no","✕ No me interesa") + '</div>' +
     '<div class="cur-pie">' +
-      '<button type="button" class="pildora" data-cur="otra">Otra curiosidad</button>' +
+      '<button type="button" class="pildora" data-cur="compartir">Compartir</button>' +
       '<button type="button" class="pildora" data-cur="ver">Ver ficha</button>' +
     '</div>';
+  marcarCurioVista(c);
+  curioRegistrar(c, null);
+}
+
+function renderCurioHistorial() {
+  const body = $("curioBody");
+  const hist = curioHistorial();
+  body.innerHTML = '<div class="cur-cab"><button type="button" class="pildora" data-cur="volver">← Volver</button><h2 class="series-h2">Historial</h2></div>' +
+    (hist.length ? '<ul class="cur-hist">' + hist.map(x =>
+      '<li><strong>' + esc(x.titulo) + '</strong><span>' + esc(x.texto) + '</span></li>').join('') + '</ul>'
+      : '<p class="meta">Aquí aparecen las curiosidades que ya viste.</p>');
+}
+
+function abrirCuriosidad() {
+  curioIdx = 0;
+  curioFiltro = "todas";
+  renderCuriosidadModal();
+  const v = $("curioModal");
+  if (v) v.classList.add("abierto");
+}
+
+function cerrarCuriosidad() {
+  const v = $("curioModal");
+  if (v) v.classList.remove("abierto");
 }
 
 function abrirCuriosidad() {
@@ -10257,17 +10348,39 @@ function cerrarCuriosidad() {
   boton.addEventListener("click", abrirCuriosidad);
   $("cerrarCurio").addEventListener("click", cerrarCuriosidad);
   ventana.addEventListener("click", e => { if (e.target === ventana) cerrarCuriosidad(); });
-  document.addEventListener("keydown", e => { if (e.key === "Escape") cerrarCuriosidad(); });
-  $("curioBody").addEventListener("click", e => {
+  document.addEventListener("keydown", e => {
+    if (!ventana.classList.contains("abierto")) return;
+    if (e.key === "Escape") cerrarCuriosidad();
+    if (e.key === "ArrowRight") { curioIdx = (curioIdx + 1) % Math.max(curioLista.length, 1); renderCuriosidadModal(); }
+    if (e.key === "ArrowLeft") { curioIdx = (curioIdx - 1 + Math.max(curioLista.length, 1)) % Math.max(curioLista.length, 1); renderCuriosidadModal(); }
+  });
+  let x0 = null;
+  const body = $("curioBody");
+  body.addEventListener("touchstart", e => { x0 = e.touches[0].clientX; }, { passive: true });
+  body.addEventListener("touchend", e => {
+    if (x0 === null) return;
+    const dx = e.changedTouches[0].clientX - x0;
+    x0 = null;
+    if (Math.abs(dx) < 50 || !curioLista.length) return;
+    curioIdx = dx < 0 ? (curioIdx + 1) % curioLista.length : (curioIdx - 1 + curioLista.length) % curioLista.length;
+    renderCuriosidadModal();
+  });
+  body.addEventListener("click", async e => {
     const b = e.target.closest("[data-cur]");
     if (!b) return;
-    if (b.dataset.cur === "otra") {
-      curioActual = elegirCuriosidad();
-      if (curioActual) marcarCurioVista(curioActual);
-      renderCuriosidadModal(curioActual);
-    } else if (b.dataset.cur === "ver" && curioActual) {
-      cerrarCuriosidad();
-      abrirDetalle(curioActual.peli);
+    const acc = b.dataset.cur;
+    const c = curioLista[curioIdx];
+    if (acc === "filtro") { curioFiltro = b.dataset.valor; curioIdx = 0; renderCuriosidadModal(); }
+    else if (acc === "ant" && curioLista.length) { curioIdx = (curioIdx - 1 + curioLista.length) % curioLista.length; renderCuriosidadModal(); }
+    else if (acc === "sig" && curioLista.length) { curioIdx = (curioIdx + 1) % curioLista.length; renderCuriosidadModal(); }
+    else if (acc === "reac" && c) { curioRegistrar(c, b.dataset.valor); if (c) marcarCurioVista(c); renderCuriosidadModal(); }
+    else if (acc === "historial") renderCurioHistorial();
+    else if (acc === "volver") renderCuriosidadModal();
+    else if (acc === "ver" && c) { cerrarCuriosidad(); abrirDetalle(c.peli); }
+    else if (acc === "compartir" && c) {
+      const texto = c.peli.titulo + ": " + c.texto + (c.fuente ? " (Fuente: " + c.fuente + ")" : "");
+      if (navigator.share) { try { await navigator.share({ text: texto }); } catch (err) {} }
+      else if (navigator.clipboard) { try { await navigator.clipboard.writeText(texto); } catch (err) {} }
     }
   });
 })();
