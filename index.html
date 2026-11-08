@@ -166,6 +166,7 @@
     </div>
     <div class="grupo-menu">
       <span class="grupo-titulo">Ajustes</span>
+      <label class="ajuste-switch"><input type="checkbox" id="juegoOn"> Mostrar racha, insignias, reto del mes y pregunta del día</label>
       <button id="guardarPaletas" class="pildora">🎨 Guardar paletas</button>
       <button id="deshacer" class="pildora">↶ Deshacer</button>
       <button id="atajos" class="pildora">⌨ Atajos de teclado</button>
@@ -273,10 +274,6 @@
 </div>
 
 <div id="queVer" class="que-ver solo-catalogo" data-zona="inicio" style="display:none">
-  <div class="tabs-ver">
-    <button class="pildora" data-ver="ahora">Esta hora</button>
-    <button class="pildora" data-ver="noche">Esta noche</button>
-  </div>
 <section id="ahora" class="destacados solo-catalogo" style="display:none">
   <h3 id="tituloAhora">Para esta hora</h3>
   <p id="ahoraTexto" class="meta"></p>
@@ -476,6 +473,7 @@
     <button id="chatCerrar" aria-label="Cerrar">×</button>
   </div>
   <div id="chatAjustes" class="chat-ajustes">
+    <label class="chat-switch"><input type="checkbox" id="chatPersonalOn"> Enviar a la IA mis preferencias, series y perfil de gustos</label>
     <select id="chatGenero" aria-label="Tipo de voz" title="Tipo de voz">
       <option value="mujer">Voz de mujer</option>
       <option value="hombre">Voz de hombre</option>
@@ -515,6 +513,20 @@
 
 
 
-<script src="app.js" defer></script>
+<script src="app-01-inicio-y-sugerencias.js" defer></script>
+<script src="app-02-filtros-notas-recomendaciones.js" defer></script>
+<script src="app-03-pintado-y-avisos.js" defer></script>
+<script src="app-04-que-ver-y-sin-conexion.js" defer></script>
+<script src="app-05-sincronizacion-y-explorar.js" defer></script>
+<script src="app-06-modulos-varios.js" defer></script>
+<script src="app-07-saludo-y-bloques.js" defer></script>
+<script src="app-08-automatico-y-pwa.js" defer></script>
+<script src="app-09-automatizacion-y-curiosidad.js" defer></script>
+<script src="app-10-fases-y-diagnostico.js" defer></script>
+<script src="app-11-hoy.js" defer></script>
+<script src="app-12-ajustes.js" defer></script>
+<script src="app-13-resumen.js" defer></script>
+<script src="app-14-calendario.js" defer></script>
+<script src="app-15-accesibilidad.js" defer></script>
 </body>
 </html>

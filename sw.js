@@ -1,6 +1,6 @@
 // Versión de la caché: súbela (catalogo-v3, v4…) cuando cambies index.html, iconos o estilos.
 // app.js y estilos.css ya se piden primero a la red, así que sus cambios llegan sin subir la versión.
-const VERSION = "catalogo-20261107060301";
+const VERSION = "catalogo-v28";
 const SHELL = [
   "./",
   "./index.html",
@@ -10,7 +10,21 @@ const SHELL = [
   "./icon-maskable-512.png",
   "./apple-touch-icon.png",
   "./estilos.css",
-  "./app.js"
+  "./app-01-inicio-y-sugerencias.js",
+  "./app-02-filtros-notas-recomendaciones.js",
+  "./app-03-pintado-y-avisos.js",
+  "./app-04-que-ver-y-sin-conexion.js",
+  "./app-05-sincronizacion-y-explorar.js",
+  "./app-06-modulos-varios.js",
+  "./app-07-saludo-y-bloques.js",
+  "./app-08-automatico-y-pwa.js",
+  "./app-09-automatizacion-y-curiosidad.js",
+  "./app-10-fases-y-diagnostico.js",
+  "./app-11-hoy.js",
+  "./app-12-ajustes.js",
+  "./app-13-resumen.js",
+  "./app-14-calendario.js",
+  "./app-15-accesibilidad.js"
 ];
 
 // Estas direcciones SIEMPRE van a la red y nunca se guardan: datos, APIs, IA e imágenes externas.
