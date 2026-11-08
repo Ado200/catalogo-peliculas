@@ -1066,18 +1066,7 @@ async function compartirPelicula(p) {
 /* ---------- Continuidad: la portada viaja desde la lista hasta la ficha ---------- */
 let origenPoster = null;   // portada que se tocó para abrir la ficha
 function abrirDetalle(p) {
-  const reducir = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  if (!document.startViewTransition || reducir) return abrirDetalleBase(p);
-  if (origenPoster) origenPoster.style.viewTransitionName = "poster-activo";
-  const t = document.startViewTransition(() => {
-    abrirDetalleBase(p);
-    const nuevo = document.querySelector("#modal .ventana #detalle img.portada");
-    if (nuevo) nuevo.style.viewTransitionName = "poster-activo";
-  });
-  t.finished.finally(() => {
-    if (origenPoster) origenPoster.style.viewTransitionName = "";
-    origenPoster = null;
-  });
+  abrirDetalleBase(p);
 }
 
 function abrirDetalleBase(p) {
@@ -1115,7 +1104,7 @@ function abrirDetalleBase(p) {
     '<button type="button" class="pildora" id="fichaVotar">🗳 Votar en pareja</button></div>');
   document.getElementById("fichaCarta").addEventListener("click", () => { cerrarDetalle(); abrirBuzon(); });
   document.getElementById("fichaVotar").addEventListener("click", () => { cerrarDetalle(); abrirVotacionPareja(); });
-  montarPestanasFicha(p);
+  try { montarNotasFicha(p); } catch (e) { console.error("Notas de la ficha:", e); }
   $("otra").innerHTML = desdeAleatorio
     ? '<button class="pildora destacado" id="otraSugerencia">🎲 Otra sugerencia</button>'
     : '';
@@ -1123,20 +1112,16 @@ function abrirDetalleBase(p) {
   aplicarPaleta(p);
 }
 
-// Pestañas de la ficha: «Ficha» (todo, con la nota editable) y «Notas» (lectura de la nota completa)
-function montarPestanasFicha(p) {
+// Nota de la ficha: un botón que muestra u oculta la nota completa (sin pestañas)
+function montarNotasFicha(p) {
   const det = $("detalle");
-  const panelFicha = document.createElement("div");
-  panelFicha.className = "fp fp-ficha";
-  while (det.firstChild) panelFicha.appendChild(det.firstChild);   // mueve los elementos: sus eventos siguen vivos
-
-  const panelNotas = document.createElement("div");
-  panelNotas.className = "fp fp-notas";
-  panelNotas.hidden = true;
-  function pintarNotas() {
+  const panel = document.createElement("div");
+  panel.className = "fp-notas";
+  panel.hidden = true;
+  function pintarPanel() {
     const m = marcas[p.titulo] || {};
     const nota = m.nota || "";
-    panelNotas.innerHTML = nota
+    panel.innerHTML = nota
       ? '<p class="nota-leer">' + esc(nota) + '</p>' +
         (m.notaFecha ? '<div class="meta">Última edición: ' + esc(m.notaFecha) + '</div>' : '') +
         '<div class="etiquetas-fila">' + etiquetasFichaHtml(nota) + '</div>' +
@@ -1144,36 +1129,25 @@ function montarPestanasFicha(p) {
       : '<p class="meta">Aún no tienes nota para esta película.</p>' +
         '<button type="button" class="pildora destacado" data-ir-editar>✎ Escribir una nota</button>';
   }
-  pintarNotas();
-
-  const barra = document.createElement("div");
-  barra.className = "fichas-tabs";
-  barra.setAttribute("role", "tablist");
-  barra.innerHTML =
-    '<button type="button" role="tab" aria-selected="true" data-tab="ficha" class="activa">Ficha</button>' +
-    '<button type="button" role="tab" aria-selected="false" data-tab="notas">Notas</button>';
-  det.append(barra, panelFicha, panelNotas);
-
-  function mostrar(cual) {
-    if (cual === "notas") pintarNotas();
-    panelFicha.hidden = cual !== "ficha";
-    panelNotas.hidden = cual !== "notas";
-    barra.querySelectorAll("[data-tab]").forEach(b => {
-      const on = b.dataset.tab === cual;
-      b.classList.toggle("activa", on);
-      b.setAttribute("aria-selected", String(on));
-    });
-  }
-  barra.addEventListener("click", e => {
-    const b = e.target.closest("[data-tab]");
-    if (b) mostrar(b.dataset.tab);
+  pintarPanel();
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "pildora btn-ver-notas";
+  btn.setAttribute("aria-expanded", "false");
+  btn.textContent = "📝 Ver nota completa";
+  btn.addEventListener("click", () => {
+    const abrir = panel.hidden;
+    if (abrir) pintarPanel();
+    panel.hidden = !abrir;
+    btn.setAttribute("aria-expanded", String(abrir));
+    btn.textContent = abrir ? "▴ Ocultar nota" : "📝 Ver nota completa";
   });
-  panelNotas.addEventListener("click", e => {
+  panel.addEventListener("click", e => {
     if (!e.target.closest("[data-ir-editar]")) return;
-    mostrar("ficha");
     const t = document.getElementById("notaTexto");
     if (t) { t.scrollIntoView({ behavior: "smooth", block: "center" }); t.focus(); }
   });
+  det.append(btn, panel);
 }
 
 function cerrarDetalle() {

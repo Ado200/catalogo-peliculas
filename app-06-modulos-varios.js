@@ -73,6 +73,8 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
   avisoIA.className = "chat-aviso";
   avisoIA.textContent = "🌐 Con IA se usa internet: se envían hasta 60 películas de tu catálogo. «Sin IA» responde solo con lo que hay en este teléfono.";
   lista.before(avisoIA);
+  const usoEl = document.getElementById("chatUso");   // el uso del grupo se muestra dentro del mismo aviso
+  if (usoEl) avisoIA.appendChild(usoEl);
   let historial = [];
   let saludado = false;
 

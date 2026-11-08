@@ -2142,3 +2142,8 @@ body.sin-juego #retoMes, body.sin-juego #pregunta, body.sin-juego #actividad { d
 #modal.abierto .ventana, #statsModal.abierto .ventana, #actorModal.abierto .ventana {
   transform: none;
 }
+
+/* ===== Ficha: botón para ver la nota completa (reemplaza las pestañas) ===== */
+.btn-ver-notas { display: block; margin: 12px 0 0; }
+.fp-notas[hidden] { display: none !important; }
+.fp-notas { margin-top: 12px; padding: 14px 16px; border-radius: 18px; background: var(--boton-suave); }
