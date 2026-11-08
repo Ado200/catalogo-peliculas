@@ -10,7 +10,7 @@ function calcularRecomendaciones() {
   const fuentesRestaGenero = {}, fuentesRestaDirector = {};
   const pesoActor = {}, fuentesActor = {};
 
-  peliculas.forEach(p => {
+  Nucleo.datos.peliculas().forEach(p => {
     const s = estadoDe(p);
     if (s.estrellas >= 4) {
       generosDe(p).forEach(g => {
@@ -28,7 +28,7 @@ function calcularRecomendaciones() {
         });
       }
     }
-    if ((marcas[p.titulo] || {}).descartada) {
+    if ((Nucleo.datos.marcas()[p.titulo] || {}).descartada) {
       generosDe(p).forEach(g => {
         restaGenero[g] = (restaGenero[g] || 0) + 1;
         (fuentesRestaGenero[g] = fuentesRestaGenero[g] || []).push({ titulo: p.titulo });
@@ -43,8 +43,8 @@ function calcularRecomendaciones() {
   if (!Object.keys(pesoGenero).length && !Object.keys(pesoDirector).length && !Object.keys(pesoActor).length) return [];
 
   const candidatas = [];
-  peliculas.forEach(p => {
-    const o = marcas[p.titulo] || {};
+  Nucleo.datos.peliculas().forEach(p => {
+    const o = Nucleo.datos.marcas()[p.titulo] || {};
     if (o.vista || o.pendiente || o.descartada || o.estrellas) return;
 
     let puntaje = 0;
@@ -155,7 +155,7 @@ function renderRecomendaciones() {
   }
   sec.style.display = "block";
   $("recomCarrusel").innerHTML = recs.map(r => {
-    const idx = peliculas.indexOf(r.p);
+    const idx = Nucleo.datos.peliculas().indexOf(r.p);
     const img = (r.p.portada && !datosLimitados())
       ? '<img src="' + esc(r.p.portada) + '" alt="">'
       : '<div class="sinportada-mini">🎬</div>';
@@ -164,7 +164,7 @@ function renderRecomendaciones() {
       ? '<p class="porque-lista">' + esc(fraseRecomendacion(r)) + '</p>' +
         '<ul class="porque-lista porque-desglose">' +
         lineasPorQue(r.desglose).map(l => '<li>' + esc(l) + '</li>').join('') + '</ul>' +
-        botonesNoMeInteresa(r.p)
+        '<button type="button" class="pildora" data-compartir-titulo="' + esc(r.p.titulo) + '" data-compartir-anio="' + esc(String(r.p["año"] || "")) + '" data-compartir-razon="' + esc(lineasPorQue(r.desglose).join(" · ")) + '">📤 Compartir</button>' + botonesNoMeInteresa(r.p)
       : '';
     return '<div class="dest" data-idx="' + idx + '">' + img +
       '<div class="dest-titulo">' + esc(r.p.titulo) + '</div>' +

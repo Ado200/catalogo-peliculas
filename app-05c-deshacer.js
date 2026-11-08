@@ -8,7 +8,7 @@ let deshaciendo = false;
 
 function registrarDeshacer() {
   if (deshaciendo) return;
-  const actual = JSON.stringify(marcas);
+  const actual = JSON.stringify(Nucleo.datos.marcas());
   if (ultimaCopiaMarcas !== null && ultimaCopiaMarcas !== actual && ultimaCopiaMarcas !== "{}") {
     pilaDeshacer.push(ultimaCopiaMarcas);
     if (pilaDeshacer.length > 30) pilaDeshacer.shift();

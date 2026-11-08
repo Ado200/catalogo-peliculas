@@ -4,8 +4,8 @@
 let cls = { cola: [], pila: [], x: 0, dx: 0, activo: false };
 
 function candidatasClasificar() {
-  return peliculas.filter(p => {
-    const o = marcas[p.titulo] || {};
+  return Nucleo.datos.peliculas().filter(p => {
+    const o = Nucleo.datos.marcas()[p.titulo] || {};
     if (o.vista || o.pendiente || o.descartada) return false;
     if (sel.genero.value && !generosDe(p).includes(sel.genero.value)) return false;
     return true;
@@ -44,7 +44,7 @@ function pintarClasificador() {
 function clasAccion(dir) {
   const p = clasActual();
   if (!p) return;
-  const prev = marcas[p.titulo] ? Object.assign({}, marcas[p.titulo]) : null;
+  const prev = Nucleo.datos.marcas()[p.titulo] ? Object.assign({}, Nucleo.datos.marcas()[p.titulo]) : null;
   cls.pila.push({ p, prev });
 
   if (dir === "der") cambiarEstado(p.titulo, { pendiente: true, vista: false, descartada: false });
@@ -58,8 +58,8 @@ function clasAccion(dir) {
 function clasDeshacer() {
   const ult = cls.pila.pop();
   if (!ult) return;
-  if (ult.prev) marcas[ult.p.titulo] = ult.prev;
-  else delete marcas[ult.p.titulo];
+  if (ult.prev) Nucleo.datos.marcas()[ult.p.titulo] = ult.prev;
+  else delete Nucleo.datos.marcas()[ult.p.titulo];
   programarGuardado();
   cls.cola.unshift(ult.p);
   pintarClasificador();
@@ -95,7 +95,7 @@ function marcarVistaGesto(p) {
     refrescarTodo();
     return;
   }
-  const previo = marcas[p.titulo] ? Object.assign({}, marcas[p.titulo]) : null;
+  const previo = Nucleo.datos.marcas()[p.titulo] ? Object.assign({}, Nucleo.datos.marcas()[p.titulo]) : null;
   cambiarEstado(p.titulo, { vista: true, pendiente: false, vistaDesde: hoyLocalISO() });
   mostrarDeshacer("«" + p.titulo + "» marcada como vista.", [{ titulo: p.titulo, previo }]);
   refrescarTodo();
@@ -155,7 +155,7 @@ lista.addEventListener("touchend", () => {
   if (s.dx <= -90) { marcarVistaGesto(p); return; }
   if (s.dx >= 90) {
     const pendienteActual = estadoDe(p).pendiente;
-    const previo = marcas[p.titulo] ? Object.assign({}, marcas[p.titulo]) : null;
+    const previo = Nucleo.datos.marcas()[p.titulo] ? Object.assign({}, Nucleo.datos.marcas()[p.titulo]) : null;
     cambiarEstado(p.titulo, { pendiente: !pendienteActual, vista: false });
     mostrarDeshacer(pendienteActual
       ? "«" + p.titulo + "» quitada de pendientes."

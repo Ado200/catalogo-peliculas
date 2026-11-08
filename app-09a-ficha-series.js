@@ -147,7 +147,7 @@
   let serieActual = null;
 
   const claveCap = e => e.temporada + "x" + e.episodio;
-  const capsDe = titulo => ((marcas[titulo] || {}).capitulos) || {};
+  const capsDe = titulo => ((Nucleo.datos.marcas()[titulo] || {}).capitulos) || {};
 
   function aplicarSeries(copia) {
     const filas = f => { const enc = f[0] || []; return f.slice(1).map(r => Object.fromEntries(enc.map((h, i) => [h, r[i] || ""]))); };

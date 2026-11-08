@@ -24,6 +24,11 @@
       '<button type="button" class="pildora" data-yo="verGuia">📖 Guía de la app</button>' +
       '<button type="button" class="pildora" data-yo="reglas">🔔 Reglas automáticas</button>' +
       '<button type="button" class="pildora" data-yo="criterios">🚫 Criterios excluidos</button>' +
+      '<button type="button" class="pildora" data-yo="calendario">📅 Exportar planes al calendario</button>' +
+      '<button type="button" class="pildora" data-yo="calendario-google">🔄 Sincronizar con Google Calendar</button>' +
+      '<button type="button" class="pildora" data-yo="importar">📥 Importar historial (Letterboxd o Trakt)</button>' +
+      '<button type="button" class="pildora" data-yo="novedades">🆕 Novedades</button>' +
+      '<button type="button" class="pildora" data-yo="diagnostico-completo">🩺 Diagnóstico completo</button>' +
       '<button type="button" class="pildora" data-yo="exportar">⬇ Exportar mis datos</button>' +
       '</div>';
     abrirVentanaSimple("yo", "Yo", cuerpo);
@@ -34,6 +39,11 @@
       if (!b) return;
       if (b.dataset.yo === "reglas") { ventana.remove(); if (window.Nucleo && Nucleo.reglas) Nucleo.reglas.abrir(); return; }
       if (b.dataset.yo === "criterios") { ventana.remove(); if (window.Nucleo && Nucleo.criterios) Nucleo.criterios.abrir(); return; }
+      if (b.dataset.yo === "calendario") { ventana.remove(); if (window.Nucleo && Nucleo.calendario) Nucleo.calendario.exportar(); return; }
+      if (b.dataset.yo === "calendario-google") { ventana.remove(); if (window.Nucleo && Nucleo.calendarioGoogle) Nucleo.calendarioGoogle.alternar(); return; }
+      if (b.dataset.yo === "importar") { ventana.remove(); if (window.Nucleo && Nucleo.importar) Nucleo.importar.abrir(); return; }
+      if (b.dataset.yo === "novedades") { ventana.remove(); if (window.Nucleo && Nucleo.novedades) Nucleo.novedades.abrir(); return; }
+      if (b.dataset.yo === "diagnostico-completo") { ventana.remove(); if (window.Nucleo && Nucleo.diagnosticoCompleto) Nucleo.diagnosticoCompleto.abrir(); return; }
       const destino = document.getElementById(b.dataset.yo);
       ventana.remove();
       if (destino) destino.click();

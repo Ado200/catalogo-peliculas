@@ -1,15 +1,15 @@
 /* ===== Fase 0 · Módulo «avisos-descartadas»: aviso de películas estancadas con botón Decidir, y pestaña de descartadas. Migrado de app-03 sin cambios de comportamiento. ===== */
 /* ---------- Aviso de estancadas con botón Decidir ---------- */
 function listaEstancadas() {
-  const pend = peliculas
+  const pend = Nucleo.datos.peliculas()
     .filter(p => {
-      const m = marcas[p.titulo] || {};
+      const m = Nucleo.datos.marcas()[p.titulo] || {};
       if (m.descartada) return false;
       const d = diasPendiente(p);
       return estadoDe(p).pendiente && d !== null && d > 30;
     })
     .map(p => ({ p, tipo: "pendiente", dias: diasPendiente(p) }));
-  const planeadas = peliculas
+  const planeadas = Nucleo.datos.peliculas()
     .filter(p => {
       const d = diasConAlguien(p);
       return estadoDe(p).conAlguien && d !== null && d > 30;
@@ -41,7 +41,7 @@ function renderAvisoEstancados() {
     const k = esc(x.p.titulo);
     const detalle = x.tipo === "pendiente"
       ? "Pendiente hace " + x.dias + " días"
-      : "Planeada con alguien hace " + x.dias + " días" + ((marcas[x.p.titulo] || {}).conFecha ? " · " + esc(marcas[x.p.titulo].conFecha) : "");
+      : "Planeada con alguien hace " + x.dias + " días" + ((Nucleo.datos.marcas()[x.p.titulo] || {}).conFecha ? " · " + esc(Nucleo.datos.marcas()[x.p.titulo].conFecha) : "");
     const abierta = decidiendo === x.p.titulo;
     const opciones = x.tipo === "pendiente"
       ? '<button class="pildora destacado" data-decidir="ver" data-clave="' + k + '">Ver ahora</button>' +
@@ -76,7 +76,7 @@ function mostrarDeshacer(texto, items) {
 function deshacerUltimoDescarte() {
   if (!deshacerDescarte) return;
   deshacerDescarte.items.forEach(({ titulo, previo }) => {
-    if (previo) marcas[titulo] = previo; else delete marcas[titulo];
+    if (previo) Nucleo.datos.marcas()[titulo] = previo; else delete Nucleo.datos.marcas()[titulo];
   });
   clearTimeout(deshacerDescarte.timer);
   deshacerDescarte = null;
@@ -87,7 +87,7 @@ function deshacerUltimoDescarte() {
 }
 
 function accionDecidir(accion, titulo) {
-  const p = peliculas.find(x => x.titulo === titulo);
+  const p = Nucleo.datos.peliculas().find(x => x.titulo === titulo);
   if (!p) return;
   decidiendo = null;
 
@@ -98,7 +98,7 @@ function accionDecidir(accion, titulo) {
   }
   if (accion === "planear") {
     alternarConAlguien(titulo);
-    if (!(marcas[titulo] || {}).conAlguien) { decidiendo = titulo; renderAvisoEstancados(); }
+    if (!(Nucleo.datos.marcas()[titulo] || {}).conAlguien) { decidiendo = titulo; renderAvisoEstancados(); }
     refrescarTodo();
     return;
   }
@@ -113,7 +113,7 @@ function accionDecidir(accion, titulo) {
     return;
   }
   if (accion === "descartar") {
-    const previo = marcas[titulo] ? Object.assign({}, marcas[titulo]) : null;
+    const previo = Nucleo.datos.marcas()[titulo] ? Object.assign({}, Nucleo.datos.marcas()[titulo]) : null;
     cambiarEstado(titulo, { descartada: true, pendiente: false, vista: false });
     mostrarDeshacer("«" + titulo + "» descartada.", [{ titulo, previo }]);
     refrescarTodo();
@@ -122,12 +122,12 @@ function accionDecidir(accion, titulo) {
 
 /* ---------- Pestaña Descartadas ---------- */
 function listaDescartadas() {
-  return peliculas.filter(p => (marcas[p.titulo] || {}).descartada);
+  return Nucleo.datos.peliculas().filter(p => (Nucleo.datos.marcas()[p.titulo] || {}).descartada);
 }
 
 function revisionesPendientes() {
   return listaDescartadas().filter(p => {
-    const m = marcas[p.titulo] || {};
+    const m = Nucleo.datos.marcas()[p.titulo] || {};
     if (m.revisionHecha) return false;
     const d = diasDescartada(p);
     return d !== null && d >= 90;
@@ -139,7 +139,7 @@ function filtrarFilasDescartadas() {
   const texto = ($("buscarDesc") ? $("buscarDesc").value : "").trim().toLowerCase();
   document.querySelectorAll("[data-fila-desc]").forEach(fila => {
     const titulo = fila.dataset.filaDesc.toLowerCase();
-    const nota = (marcas[fila.dataset.filaDesc] || {}).nota || "";
+    const nota = (Nucleo.datos.marcas()[fila.dataset.filaDesc] || {}).nota || "";
     fila.style.display = (titulo + " " + nota.toLowerCase()).includes(texto) ? "" : "none";
   });
 }
@@ -153,7 +153,7 @@ function renderPestanaDescartadas() {
 
   const visiblesDesc = todas
     .filter(p => {
-      const m = marcas[p.titulo] || {};
+      const m = Nucleo.datos.marcas()[p.titulo] || {};
       return [p.titulo, m.nota || ""].join(" ").toLowerCase().includes(texto);
     })
     .sort((a, b) => String(a.titulo).localeCompare(String(b.titulo), "es"));
@@ -211,7 +211,7 @@ function accionRevision(accion, titulo) {
   if (accion === "restaurar") {
     cambiarEstado(titulo, { descartada: false });
   } else {
-    marcas[titulo] = Object.assign({}, marcas[titulo] || {}, { revisionHecha: true });
+    Nucleo.datos.marcas()[titulo] = Object.assign({}, Nucleo.datos.marcas()[titulo] || {}, { revisionHecha: true });
     programarGuardado();
   }
   refrescarTodo();
@@ -229,7 +229,7 @@ function restaurarTitulos(titulos) {
 function descartarSeleccionadas() {
   const titulos = [...seleccionDesc];
   if (!titulos.length) { setEstado("Marca al menos una película para descartarla."); return; }
-  const items = titulos.map(t => ({ titulo: t, previo: marcas[t] ? Object.assign({}, marcas[t]) : null }));
+  const items = titulos.map(t => ({ titulo: t, previo: Nucleo.datos.marcas()[t] ? Object.assign({}, Nucleo.datos.marcas()[t]) : null }));
   titulos.forEach(t => cambiarEstado(t, { descartada: true, pendiente: false, vista: false }));
   seleccionDesc.clear();
   const texto = titulos.length + (titulos.length === 1 ? " película descartada." : " películas descartadas.");

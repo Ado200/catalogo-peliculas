@@ -39,15 +39,15 @@
   function abrirGuia() { llenarGuiaAuto(); guia.classList.add("abierta"); }
   function cerrarGuia() {
     guia.classList.remove("abierta");
-    if (marcas.__guia !== 1) {
-      marcas.__guia = 1;   // se guarda en las marcas de la cuenta, así vale en todos sus dispositivos
+    if (Nucleo.datos.marcas().__guia !== 1) {
+      Nucleo.datos.marcas().__guia = 1;   // se guarda en las marcas de la cuenta, así vale en todos sus dispositivos
       programarGuardado();
     }
   }
 
   // Se llama cuando las marcas de la cuenta ya cargaron
   window.mostrarGuiaSiEsNueva = function () {
-    if (marcas.__guia !== 1) abrirGuia();
+    if (Nucleo.datos.marcas().__guia !== 1) abrirGuia();
   };
 
   document.getElementById("guiaCerrar").addEventListener("click", cerrarGuia);

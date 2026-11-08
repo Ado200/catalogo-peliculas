@@ -162,7 +162,7 @@ $("saludoPersonal").addEventListener("click", e => {
     if ($("saludoPersonal").classList.contains("hablando")) detenerSaludo(); else hablarSaludo();
   }
   if (b.dataset.accion === "sorpresa") {
-    const pend = peliculas.filter(p => (marcas[p.titulo] || {}).pendiente && !(marcas[p.titulo] || {}).vista);
+    const pend = Nucleo.datos.peliculas().filter(p => (Nucleo.datos.marcas()[p.titulo] || {}).pendiente && !(Nucleo.datos.marcas()[p.titulo] || {}).vista);
     if (pend.length) abrirDetalle(pend[Math.floor(Math.random() * pend.length)]);
   }
   if (b.dataset.accion === "platicar") { const c = document.getElementById("chatAbrir"); if (c) c.click(); }

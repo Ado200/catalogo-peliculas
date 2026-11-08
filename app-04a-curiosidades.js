@@ -11,20 +11,20 @@ const CURIOS_CACHE = "curiosidades_cache";
 
 let indiceDirectoresCache = { ref: null, n: -1, mapa: null };
 function indiceDirectores() {
-  if (indiceDirectoresCache.ref === peliculas && indiceDirectoresCache.n === peliculas.length) return indiceDirectoresCache.mapa;
+  if (indiceDirectoresCache.ref === Nucleo.datos.peliculas() && indiceDirectoresCache.n === Nucleo.datos.peliculas().length) return indiceDirectoresCache.mapa;
   const mapa = new Map();
-  peliculas.forEach(x => directoresDe(x).forEach(d => mapa.set(d, (mapa.get(d) || 0) + 1)));
-  indiceDirectoresCache = { ref: peliculas, n: peliculas.length, mapa };
+  Nucleo.datos.peliculas().forEach(x => directoresDe(x).forEach(d => mapa.set(d, (mapa.get(d) || 0) + 1)));
+  indiceDirectoresCache = { ref: Nucleo.datos.peliculas(), n: Nucleo.datos.peliculas().length, mapa };
   return mapa;
 }
 
 // Rankings, sagas, países, actores y calificaciones de TODA la colección; se calculan una sola vez
 let indiceDatosCache = { ref: null, n: -1, d: null };
 function indiceDatos() {
-  if (indiceDatosCache.ref === peliculas && indiceDatosCache.n === peliculas.length) return indiceDatosCache.d;
+  if (indiceDatosCache.ref === Nucleo.datos.peliculas() && indiceDatosCache.n === Nucleo.datos.peliculas().length) return indiceDatosCache.d;
   const anios = [], mins = [], sagas = new Map(), paises = new Map(), actores = new Map();
   let suma = 0, cuantas = 0;
-  peliculas.forEach(x => {
+  Nucleo.datos.peliculas().forEach(x => {
     const serie = /serie/i.test(String(x.tipo || ""));
     const a = Number(x["año"]);
     if (a && !serie) anios.push(a);
@@ -40,7 +40,7 @@ function indiceDatos() {
   anios.sort((a, b) => a - b);
   mins.sort((a, b) => a - b);
   const d = { anios, mins, sagas, paises, actores, promEst: cuantas ? suma / cuantas : null };
-  indiceDatosCache = { ref: peliculas, n: peliculas.length, d };
+  indiceDatosCache = { ref: Nucleo.datos.peliculas(), n: Nucleo.datos.peliculas().length, d };
   return d;
 }
 
@@ -109,18 +109,18 @@ function curiosidadesDe(p) {
 // Cache: con cientos de películas, recalcular todas las curiosidades en cada pintado sería lento
 let todasCache = { peliculas: null, n: -1, tabla: null, lista: null };
 function todasLasCuriosidades() {
-  if (todasCache.lista && todasCache.peliculas === peliculas && todasCache.n === peliculas.length && todasCache.tabla === curiosidadesTabla) return todasCache.lista;
+  if (todasCache.lista && todasCache.peliculas === Nucleo.datos.peliculas() && todasCache.n === Nucleo.datos.peliculas().length && todasCache.tabla === curiosidadesTabla) return todasCache.lista;
   const lista = calcularTodasLasCuriosidades();
-  todasCache = { peliculas, n: peliculas.length, tabla: curiosidadesTabla, lista };
+  todasCache = { peliculas: Nucleo.datos.peliculas(), n: Nucleo.datos.peliculas().length, tabla: curiosidadesTabla, lista };
   return lista;
 }
 
 function calcularTodasLasCuriosidades() {
   const curadas = curiosidadesTabla.map(c => {
-    const peli = peliculas.find(p => (c.tmdb && String(p.tmdb_id || "").trim() === c.tmdb) || (c.titulo && String(p.titulo).toLowerCase() === c.titulo.toLowerCase()));
+    const peli = Nucleo.datos.peliculas().find(p => (c.tmdb && String(p.tmdb_id || "").trim() === c.tmdb) || (c.titulo && String(p.titulo).toLowerCase() === c.titulo.toLowerCase()));
     return Object.assign({}, c, { peli: peli || null });
   }).filter(c => c.peli);
-  const autos = peliculas.flatMap(p => curiosidadesAuto(p).map(c => Object.assign({}, c, { peli: p })));
+  const autos = Nucleo.datos.peliculas().flatMap(p => curiosidadesAuto(p).map(c => Object.assign({}, c, { peli: p })));
   return curadas.concat(autos);
 }
 
@@ -188,7 +188,7 @@ function guardarHistorialCurio(lista) {
 
 function elegirPeliculaCurio() {
   const hist = historialCurio();
-  const pool = peliculas.filter(p => p.titulo && !/serie/i.test(String(p.tipo || "")));
+  const pool = Nucleo.datos.peliculas().filter(p => p.titulo && !/serie/i.test(String(p.tipo || "")));
   const nuevas = pool.filter(p => !hist.some(h => h.titulo === p.titulo));
   const base = nuevas.length ? nuevas : pool;
   return base[Math.floor(Math.random() * base.length)];
@@ -314,7 +314,7 @@ document.addEventListener("click", e => {
     hoja.classList.remove("abierta");
     const h = historialCurio();
     const ult = h[h.length - 1];
-    const p = peliculas.find(x => x.titulo === (ult && ult.titulo));
+    const p = Nucleo.datos.peliculas().find(x => x.titulo === (ult && ult.titulo));
     if (p) abrirDetalle(p);
   }
   else if (accion === "copiar") {

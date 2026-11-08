@@ -1,10 +1,10 @@
 /* ===== Fase 0 · Módulo «listeners-pliegues» (lo que quedaba de app-02): listeners de etiquetas, bloques plegables y configuración que se aplica al arrancar. Se carga en la misma posición que app-02 para conservar el orden original. Migrado sin cambios de comportamiento. ===== */
 /* ---------- Mis filtros guardados ---------- */
-function leerPresets() { return Array.isArray(marcas.__filtros) ? marcas.__filtros : []; }
+function leerPresets() { return Array.isArray(Nucleo.datos.marcas().__filtros) ? Nucleo.datos.marcas().__filtros : []; }
 
 // Los filtros viven dentro de marcas.json (en tu Drive), bajo la clave reservada "__filtros"
 function guardarListaPresets(lista) {
-  marcas.__filtros = lista;
+  Nucleo.datos.marcas().__filtros = lista;
   programarGuardado();
 }
 
@@ -52,16 +52,16 @@ function borrarPreset() {
 /* ---------- ¿Qué sigue? (desde una película vista) ---------- */
 function siguienteHtml(p) {
   if (!estadoDe(p).vista) return "";
-  const libre = x => x !== p && !estadoDe(x).vista && !(marcas[x.titulo] || {}).descartada;
+  const libre = x => x !== p && !estadoDe(x).vista && !(Nucleo.datos.marcas()[x.titulo] || {}).descartada;
   let cands = [], razon = "";
   if (p.saga && p.saga !== "-") {
-    cands = peliculas.filter(x => libre(x) && x.saga === p.saga);
+    cands = Nucleo.datos.peliculas().filter(x => libre(x) && x.saga === p.saga);
     if (cands.length) razon = "De la saga " + p.saga;
   }
   if (!cands.length) {
     const dirs = directoresDe(p);
     if (dirs.length) {
-      cands = peliculas.filter(x => libre(x) && directoresDe(x).some(d => dirs.includes(d)));
+      cands = Nucleo.datos.peliculas().filter(x => libre(x) && directoresDe(x).some(d => dirs.includes(d)));
       if (cands.length) razon = "Del mismo director";
     }
   }
@@ -75,7 +75,7 @@ function siguienteHtml(p) {
 
 /* ---------- Historial de cambios de una película ---------- */
 function historialHtml(p) {
-  const h = (marcas[p.titulo] || {}).historial || [];
+  const h = (Nucleo.datos.marcas()[p.titulo] || {}).historial || [];
   if (!h.length) return "";
   return '<details class="historial"><summary>Historial (' + h.length + ')</summary><ul>' +
     h.slice().reverse().map(e => '<li>' + esc(e.f) + ' · ' + esc(e.a) + '</li>').join("") +
@@ -85,7 +85,7 @@ function historialHtml(p) {
 /* ---------- Orden de notas ---------- */
 function ordenNotasFn() {
   const v = $("ordenNotas") ? $("ordenNotas").value : "fecha";
-  const m = t => marcas[t] || {};
+  const m = t => Nucleo.datos.marcas()[t] || {};
   const porFecha = (a, b) => String(m(b.titulo).notaFecha || "").localeCompare(String(m(a.titulo).notaFecha || ""));
   if (v === "titulo") return (a, b) => String(a.titulo).localeCompare(String(b.titulo), "es");
   if (v === "calif") return (a, b) => ((m(b.titulo).estrellas || 0) - (m(a.titulo).estrellas || 0)) || porFecha(a, b);
@@ -108,14 +108,14 @@ function inicioSemanaISO(iso) {
 }
 
 function vistasConFecha() {
-  return peliculas.filter(p => {
-    const m = marcas[p.titulo] || {};
+  return Nucleo.datos.peliculas().filter(p => {
+    const m = Nucleo.datos.marcas()[p.titulo] || {};
     return m.vista && typeof m.vistaDesde === "string" && /^\d{4}-\d{2}-\d{2}$/.test(m.vistaDesde);
   });
 }
 
 function rachaSemanas() {
-  const semanas = new Set(vistasConFecha().map(p => inicioSemanaISO((marcas[p.titulo] || {}).vistaDesde)));
+  const semanas = new Set(vistasConFecha().map(p => inicioSemanaISO((Nucleo.datos.marcas()[p.titulo] || {}).vistaDesde)));
   let cursor = inicioSemanaISO(hoyLocalISO());
   if (!semanas.has(cursor)) cursor = sumarDiasISO(cursor, -7);
   let racha = 0;
@@ -129,7 +129,7 @@ function rachaSemanas() {
 function maxVistasEnUnMes() {
   const porMes = {};
   vistasConFecha().forEach(p => {
-    const k = (marcas[p.titulo] || {}).vistaDesde.slice(0, 7);
+    const k = (Nucleo.datos.marcas()[p.titulo] || {}).vistaDesde.slice(0, 7);
     porMes[k] = (porMes[k] || 0) + 1;
   });
   return Math.max(0, ...Object.values(porMes));
@@ -137,7 +137,7 @@ function maxVistasEnUnMes() {
 
 function insigniasDeActividad() {
   const vistas = vistasConFecha().length;
-  const totalVistas = peliculas.filter(p => estadoDe(p).vista).length;
+  const totalVistas = Nucleo.datos.peliculas().filter(p => estadoDe(p).vista).length;
   const racha = rachaSemanas();
   const mesMax = maxVistasEnUnMes();
   return [
@@ -157,8 +157,8 @@ function calificacionesDeSemana() {
   const hoy = hoyLocalISO();
   const inicio = inicioSemanaISO(hoy);
   const salida = [];
-  peliculas.forEach(p => {
-    const h = (marcas[p.titulo] || {}).historial || [];
+  Nucleo.datos.peliculas().forEach(p => {
+    const h = (Nucleo.datos.marcas()[p.titulo] || {}).historial || [];
     const evs = h.filter(e => e.f >= inicio && e.f <= hoy &&
       (String(e.a).indexOf("calificada") === 0 || e.a === "sin calificación"));
     if (!evs.length) return;
@@ -184,7 +184,7 @@ function textoCalificaciones() {
 function renderActividad() {
   const sec = $("actividad");
   const hayFiltrosAct = hayFiltros();
-  if (!peliculas.length || pestana !== "vistas") {
+  if (!Nucleo.datos.peliculas().length || pestana !== "vistas") {
     sec.style.display = "none";
     return;
   }
@@ -245,7 +245,7 @@ async function asegurarColumnaPaleta() {
 }
 
 async function guardarPaletasEnHoja() {
-  const pendientes = peliculas.filter(p => !paletaDeTexto(p[NOMBRE_PALETA]).length && p.portada);
+  const pendientes = Nucleo.datos.peliculas().filter(p => !paletaDeTexto(p[NOMBRE_PALETA]).length && p.portada);
   if (!pendientes.length) {
     setEstado("Todas las portadas ya tienen paleta guardada.");
     return;

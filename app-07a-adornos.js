@@ -132,7 +132,7 @@ function planearNoche(minutosPedidos, tema, dir) {
   let base = pendientesNoVistas();
   let aviso = "";
   if (!base.length) {
-    base = peliculas.filter(p => !estadoDe(p).vista && !(marcas[p.titulo] || {}).descartada);
+    base = Nucleo.datos.peliculas().filter(p => !estadoDe(p).vista && !(Nucleo.datos.marcas()[p.titulo] || {}).descartada);
     aviso = "No tienes pendientes, así que armo con películas que no has visto.";
   }
   base = base.filter(p => {

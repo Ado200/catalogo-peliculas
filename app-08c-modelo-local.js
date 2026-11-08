@@ -6,10 +6,10 @@ let motorLocal = null;
 let motorLocalCargando = null;
 
 function resumenCatalogoParaModelo() {
-  const mk = p => marcas[p.titulo] || {};
+  const mk = p => Nucleo.datos.marcas()[p.titulo] || {};
   const linea = p => "- " + p.titulo + " (" + (p["año"] || "s/a") + ", " + (generosDe(p).join("/") || "s/g") + ", " + (minutos(p) || "?") + " min)";
-  const pend = peliculas.filter(p => mk(p).pendiente && !mk(p).vista).slice(0, 25);
-  const vist = peliculas.filter(p => mk(p).vista).slice(-12);
+  const pend = Nucleo.datos.peliculas().filter(p => mk(p).pendiente && !mk(p).vista).slice(0, 25);
+  const vist = Nucleo.datos.peliculas().filter(p => mk(p).vista).slice(-12);
   return "Pendientes:\n" + pend.map(linea).join("\n") + "\nYa vistas:\n" + vist.map(linea).join("\n");
 }
 

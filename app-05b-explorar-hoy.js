@@ -150,7 +150,7 @@ function saludoHoy() {
 function retoActual() {
   const hoy = new Date();
   const mes = hoy.getFullYear() + "-" + String(hoy.getMonth() + 1).padStart(2, "0");
-  const vistasMes = peliculas.filter(p => ((marcas[p.titulo] || {}).historial || [])
+  const vistasMes = Nucleo.datos.peliculas().filter(p => ((Nucleo.datos.marcas()[p.titulo] || {}).historial || [])
     .some(h => h.a === "vista" && String(h.f).startsWith(mes)));
   const reto = RETOS_MES[hoy.getMonth() % RETOS_MES.length];
   return { texto: reto.texto, hecho: Math.min(reto.cuenta(vistasMes), reto.meta), meta: reto.meta };
@@ -164,7 +164,7 @@ function renderHoy() {
     return;
   }
   const pend = pendientesNoVistas().length;
-  const conAlguien = peliculas.filter(p => (marcas[p.titulo] || {}).conAlguien && !(marcas[p.titulo] || {}).vista).length;
+  const conAlguien = Nucleo.datos.peliculas().filter(p => (Nucleo.datos.marcas()[p.titulo] || {}).conAlguien && !(Nucleo.datos.marcas()[p.titulo] || {}).vista).length;
   const r = retoActual();
   const sAhora = (typeof elegirParaAhora === "function") ? elegirParaAhora(null) : null;
   const resumenPend = pend ? pend + " pendiente" + (pend === 1 ? "" : "s") : "Aún no tienes pendientes";

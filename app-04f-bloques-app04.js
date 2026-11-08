@@ -225,7 +225,7 @@
     snap = {
       titulo: t,
       tipo: b.dataset.accion,
-      previo: marcas[t] ? Object.assign({}, marcas[t]) : null
+      previo: Nucleo.datos.marcas()[t] ? Object.assign({}, Nucleo.datos.marcas()[t]) : null
     };
   }, true);
 
@@ -234,7 +234,7 @@
     const s = snap;
     snap = null;
     const antes = JSON.stringify(s.previo);
-    const despues = JSON.stringify(marcas[s.titulo] || null);
+    const despues = JSON.stringify(Nucleo.datos.marcas()[s.titulo] || null);
     if (antes === despues) return;
     const etiqueta = s.tipo === "vista" ? "marcada como vista" : "puesta en pendientes";
     mostrarDeshacer("«" + s.titulo + "» " + etiqueta + ".", [{ titulo: s.titulo, previo: s.previo }]);
@@ -462,14 +462,14 @@
 
   // ---------- 2. Respaldo semanal de marcas en tu Drive (se conservan 4) ----------
   async function respaldoSemanal() {
-    if (!accessToken || !idMarcas || !Object.keys(marcas).length) return;
+    if (!accessToken || !idMarcas || !Object.keys(Nucleo.datos.marcas()).length) return;
     const lunes = inicioSemanaISO(hoyLocalISO());
     if (modoGuardado("respaldo_semana", "") === lunes) return;
     try {
       const nombre = "respaldo-marcas-" + lunes + ".json";
       const frontera = "respaldo_frontera";
       const meta = JSON.stringify({ name: nombre, parents: ["appDataFolder"] });
-      const cuerpo = JSON.stringify(marcas);
+      const cuerpo = JSON.stringify(Nucleo.datos.marcas());
       const partes = "--" + frontera + "\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n" + meta +
         "\r\n--" + frontera + "\r\nContent-Type: application/json\r\n\r\n" + cuerpo + "\r\n--" + frontera + "--";
       await driveFetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart", {
@@ -493,7 +493,7 @@
   function mantener() {
     const hoy = hoyLocalISO();
     guardarJSON("recordatorio_cerrados", leerJSON("recordatorio_cerrados", []).filter(k => k.endsWith("|" + hoy)));
-    if (!peliculas.length || pestana !== "catalogo") return;
+    if (!Nucleo.datos.peliculas().length || pestana !== "catalogo") return;
     renderAvisoEstancados();
     actualizarAvisoFecha();
   }
@@ -503,7 +503,7 @@
   const CAMPOS = ["estado", "tipo", "genero", "tema", "anio", "pais", "duracion"];
 
   function guardarSesion() {
-    if (!peliculas.length) return;
+    if (!Nucleo.datos.peliculas().length) return;
     const datos = { y: window.scrollY, buscar: buscar.value, orden: $("orden").value };
     CAMPOS.forEach(k => { datos[k] = sel[k].value; });
     guardarJSON(CLAVE_SESION, datos);
@@ -527,7 +527,7 @@
 
   // Cuando la hoja ya cargó: restaura la sesión y revisa el respaldo una vez
   const espera = setInterval(() => {
-    if (!peliculas.length || $("app").style.display !== "block") return;
+    if (!Nucleo.datos.peliculas().length || $("app").style.display !== "block") return;
     clearInterval(espera);
     restaurarSesion();
     respaldoSemanal();

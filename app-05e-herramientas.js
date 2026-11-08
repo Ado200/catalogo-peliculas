@@ -17,7 +17,7 @@ function abrirVentanaSimple(id, titulo, cuerpo) {
 
 /* ---------- Cápsula del año ---------- */
 function vistasDelAno(ano) {
-  return peliculas.filter(p => ((marcas[p.titulo] || {}).historial || [])
+  return Nucleo.datos.peliculas().filter(p => ((Nucleo.datos.marcas()[p.titulo] || {}).historial || [])
     .some(h => h.a === "vista" && String(h.f).startsWith(ano)));
 }
 
@@ -29,7 +29,7 @@ function abrirCapsulaAno() {
       '<p class="meta">Aún no marcas películas como vistas este año. Cuando lo hagas, aquí verás tu resumen.</p>');
     return;
   }
-  const est = p => (marcas[p.titulo] || {}).estrellas || 0;
+  const est = p => (Nucleo.datos.marcas()[p.titulo] || {}).estrellas || 0;
   const top = vistas.slice().sort((a, b) => est(b) - est(a)).slice(0, 5);
   const genero = {};
   vistas.forEach(p => String(p.genero || "").split(/[,\/]/).map(x => x.trim()).filter(Boolean)
@@ -63,7 +63,7 @@ function alternarModoPareja() {
 }
 
 function sugerirParaDos() {
-  const pool = peliculas.filter(p => (marcas[p.titulo] || {}).conAlguien && !(marcas[p.titulo] || {}).vista);
+  const pool = Nucleo.datos.peliculas().filter(p => (Nucleo.datos.marcas()[p.titulo] || {}).conAlguien && !(Nucleo.datos.marcas()[p.titulo] || {}).vista);
   if (!pool.length) {
     setEstado("Aún no tienen películas para ver juntos. Marca «Para ver con alguien» en una pendiente.");
     return;
@@ -79,14 +79,14 @@ const RETOS_MES = [
   { texto: "Ve una película anterior a 1980", meta: 1,
     cuenta: vs => vs.filter(p => Number(p["año"]) < 1980).length },
   { texto: "Ve 2 películas que califiques con 4 o 5★", meta: 2,
-    cuenta: vs => vs.filter(p => ((marcas[p.titulo] || {}).estrellas || 0) >= 4).length }
+    cuenta: vs => vs.filter(p => ((Nucleo.datos.marcas()[p.titulo] || {}).estrellas || 0) >= 4).length }
 ];
 
 function renderRetoMes() {
   const sec = $("retoMes");
   const hoy = new Date();
   const mes = hoy.getFullYear() + "-" + String(hoy.getMonth() + 1).padStart(2, "0");
-  const vistasMes = peliculas.filter(p => ((marcas[p.titulo] || {}).historial || [])
+  const vistasMes = Nucleo.datos.peliculas().filter(p => ((Nucleo.datos.marcas()[p.titulo] || {}).historial || [])
     .some(h => h.a === "vista" && String(h.f).startsWith(mes)));
   const reto = RETOS_MES[hoy.getMonth() % RETOS_MES.length];
   const hecho = Math.min(reto.cuenta(vistasMes), reto.meta);
@@ -102,8 +102,8 @@ function renderRetoMes() {
 /* ---------- Diario de cine ---------- */
 function abrirDiario() {
   const entradas = [];
-  peliculas.forEach(p => {
-    const o = marcas[p.titulo] || {};
+  Nucleo.datos.peliculas().forEach(p => {
+    const o = Nucleo.datos.marcas()[p.titulo] || {};
     if (!o.vista) return;
     const v = (o.historial || []).filter(h => h.a === "vista").slice(-1)[0];
     entradas.push({ p, o, f: v ? String(v.f) : "" });
@@ -130,8 +130,8 @@ function abrirDiario() {
 function perfilGustos() {
   const gen = {}, dir = {}, neg = {};
   let pend = 0;
-  peliculas.forEach(p => {
-    const o = marcas[p.titulo] || {};
+  Nucleo.datos.peliculas().forEach(p => {
+    const o = Nucleo.datos.marcas()[p.titulo] || {};
     const gs = String(p.genero || "").split(/[,\/]/).map(x => x.trim()).filter(Boolean);
     if (o.pendiente) pend++;
     if (o.vista && (o.estrellas || 0) >= 4) {

@@ -14,7 +14,7 @@ function coloresGrafica() {
 function vistasPorMes() {
   const anio = new Date().getFullYear();
   const conteo = new Array(12).fill(0);
-  Object.entries(marcas).forEach(([titulo, m]) => {
+  Object.entries(Nucleo.datos.marcas()).forEach(([titulo, m]) => {
     if (!m || !m.vista || !m.vistaDesde) return;
     const f = new Date(m.vistaDesde + "T00:00:00");
     if (f.getFullYear() === anio) conteo[f.getMonth()]++;
@@ -38,13 +38,13 @@ function renderGraficas() {
   Chart.defaults.borderColor = c.rejilla;
 
   const generos = {};
-  peliculas.forEach(p => {
+  Nucleo.datos.peliculas().forEach(p => {
     if (estadoDe(p).vista) generosDe(p).forEach(g => generos[g] = (generos[g] || 0) + 1);
   });
   const topG = Object.entries(generos).sort((a, b) => b[1] - a[1]).slice(0, 8);
 
   const estrellas = [0, 0, 0, 0, 0];
-  peliculas.forEach(p => {
+  Nucleo.datos.peliculas().forEach(p => {
     const n = estadoDe(p).estrellas;
     if (n >= 1 && n <= 5) estrellas[n - 1]++;
   });
@@ -92,7 +92,7 @@ function renderEstadisticas() {
   let vistas = 0, pendientes = 0, sinVer = 0, favoritas = 0;
   let minutosVistos = 0, sumaEst = 0, conEst = 0;
 
-  peliculas.forEach(p => {
+  Nucleo.datos.peliculas().forEach(p => {
     const s = estadoDe(p);
     if (s.vista) {
       vistas++;
@@ -108,7 +108,7 @@ function renderEstadisticas() {
     }
   });
 
-  const total = peliculas.length;
+  const total = Nucleo.datos.peliculas().length;
   const promedio = conEst ? (sumaEst / conEst).toFixed(1) : "—";
   const horas = Math.floor(minutosVistos / 60);
   const mins = minutosVistos % 60;

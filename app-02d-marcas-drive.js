@@ -12,7 +12,7 @@ async function driveFetch(url, opts = {}) {
 }
 
 function estadoDe(p) {
-  const o = marcas[p.titulo] || {};
+  const o = Nucleo.datos.marcas()[p.titulo] || {};
   return {
     vista: !!o.vista,
     pendiente: !!o.pendiente,
@@ -22,7 +22,7 @@ function estadoDe(p) {
 }
 
 function cambiarEstado(titulo, cambios) {
-  const previo = marcas[titulo] || {};
+  const previo = Nucleo.datos.marcas()[titulo] || {};
   const nuevo = Object.assign({}, previo, cambios);
   if (cambios.vista === true) {
     if (previo.conAlguien && previo.conQuien) nuevo.vistaCon = previo.conQuien;
@@ -60,19 +60,19 @@ function cambiarEstado(titulo, cambios) {
     const hoyH = hoyLocalISO();
     nuevo.historial = (previo.historial || []).concat(eventos.map(a => ({ f: hoyH, a }))).slice(-30);
   }
-  marcas[titulo] = nuevo;
+  Nucleo.datos.marcas()[titulo] = nuevo;
   programarGuardado();
 }
 
 function alternarConAlguien(titulo) {
-  const previo = marcas[titulo] || {};
+  const previo = Nucleo.datos.marcas()[titulo] || {};
   if (previo.conAlguien) {
     const nuevo = Object.assign({}, previo);
     delete nuevo.conAlguien;
     delete nuevo.conQuien;
     delete nuevo.conAlguienDesde;
     delete nuevo.conFecha;
-    marcas[titulo] = nuevo;
+    Nucleo.datos.marcas()[titulo] = nuevo;
     programarGuardado();
     setEstado("Quitada de «Para ver con alguien».");
     return;
@@ -98,7 +98,7 @@ function alternarConAlguien(titulo) {
     delete nuevo.conFecha;
   }
 
-  marcas[titulo] = nuevo;
+  Nucleo.datos.marcas()[titulo] = nuevo;
   programarGuardado();
   if (!nuevo.pendiente) {
     setEstado("Marcada para ver con alguien." + aviso + " Si la quieres ver pronto, también puedes ponerla en pendientes.");
@@ -108,7 +108,7 @@ function alternarConAlguien(titulo) {
 }
 
 function cambiarFechaConAlguien(titulo) {
-  const previo = marcas[titulo] || {};
+  const previo = Nucleo.datos.marcas()[titulo] || {};
   if (!previo.conAlguien) {
     setEstado("Primero marca la película como «Para ver con alguien».");
     return;
@@ -127,13 +127,13 @@ function cambiarFechaConAlguien(titulo) {
     nuevo.conFecha = f;
     setEstado("Fecha guardada: " + f + ".");
   }
-  marcas[titulo] = nuevo;
+  Nucleo.datos.marcas()[titulo] = nuevo;
   programarGuardado();
 }
 
 function guardarNota(titulo, texto) {
   const t = String(texto || "").trim();
-  const nuevo = Object.assign({}, marcas[titulo] || {});
+  const nuevo = Object.assign({}, Nucleo.datos.marcas()[titulo] || {});
   if (t) {
     nuevo.nota = t;
     nuevo.notaFecha = new Date().toISOString().slice(0, 10);
@@ -141,7 +141,7 @@ function guardarNota(titulo, texto) {
     delete nuevo.nota;
     delete nuevo.notaFecha;
   }
-  marcas[titulo] = nuevo;
+  Nucleo.datos.marcas()[titulo] = nuevo;
   programarGuardado();
 }
 

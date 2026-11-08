@@ -301,9 +301,9 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
   function resumenGustos() {
     const perfil = perfilGustos();
     const top = obj => Object.entries(obj).sort((a, b) => b[1] - a[1]).slice(0, 3).map(x => x[0]);
-    const gustaron = peliculas.filter(p => { const e = estadoDe(p); return e.vista && e.estrellas >= 4; }).slice(0, 8).map(p => p.titulo);
-    const noGustaron = peliculas.filter(p => { const e = estadoDe(p); return e.vista && e.estrellas && e.estrellas <= 2; }).slice(0, 8).map(p => p.titulo);
-    const descartadas = peliculas.filter(p => (marcas[p.titulo] || {}).descartada).slice(0, 8).map(p => p.titulo);
+    const gustaron = Nucleo.datos.peliculas().filter(p => { const e = estadoDe(p); return e.vista && e.estrellas >= 4; }).slice(0, 8).map(p => p.titulo);
+    const noGustaron = Nucleo.datos.peliculas().filter(p => { const e = estadoDe(p); return e.vista && e.estrellas && e.estrellas <= 2; }).slice(0, 8).map(p => p.titulo);
+    const descartadas = Nucleo.datos.peliculas().filter(p => (Nucleo.datos.marcas()[p.titulo] || {}).descartada).slice(0, 8).map(p => p.titulo);
     return {
       generos_que_mas_disfruta: top(perfil.genero),
       directores_que_mas_disfruta: top(perfil.director),
@@ -319,12 +319,12 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
   }
 
   function recomendarSinIA(n = 3) {
-    if (!peliculas.length) return "Primero necesito que tu catálogo cargue.";
+    if (!Nucleo.datos.peliculas().length) return "Primero necesito que tu catálogo cargue.";
     const perfil = { genero: {}, director: {}, reparto: {} };
     const sumar = (mapa, claves, peso) => claves.forEach(c => { mapa[c] = (mapa[c] || 0) + peso; });
 
     // Lo que ya viste pesa según tus estrellas (sin calificar cuenta como 1)
-    peliculas.forEach(p => {
+    Nucleo.datos.peliculas().forEach(p => {
       const e = estadoDe(p);
       if (!e.vista) return;
       const peso = e.estrellas || 1;
@@ -333,8 +333,8 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
       sumar(perfil.reparto, listaCampo(p, "reparto").slice(0, 5), peso);
     });
 
-    const candidatos = peliculas.filter(p => {
-      const m = marcas[p.titulo] || {};
+    const candidatos = Nucleo.datos.peliculas().filter(p => {
+      const m = Nucleo.datos.marcas()[p.titulo] || {};
       return !estadoDe(p).vista && !m.descartada;
     }).map(p => {
       const e = estadoDe(p);
@@ -366,7 +366,7 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
   function titulosEnTexto(texto) {
     const t = String(texto || "").toLowerCase();
     const hallados = [];
-    peliculas.forEach(p => {
+    Nucleo.datos.peliculas().forEach(p => {
       const titulo = String(p.titulo || "").toLowerCase();
       if (titulo.length < 2) return;
       const pos = t.indexOf(titulo);
@@ -567,8 +567,8 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
     .replace(/\b(hay algo bueno|algo bueno)\b/g, "algo bueno");
   const elegir = arr => arr[Math.floor(Math.random() * arr.length)];
   const listaTitulos = arr => arr.slice(0, 5).map(p => "• " + p.titulo + (p["año"] ? " (" + p["año"] + ")" : "")).join("\n");
-  const pendientesDe = () => peliculas.filter(p => estadoDe(p).pendiente && !(marcas[p.titulo] || {}).descartada);
-  const vistasDe = () => peliculas.filter(p => estadoDe(p).vista);
+  const pendientesDe = () => Nucleo.datos.peliculas().filter(p => estadoDe(p).pendiente && !(Nucleo.datos.marcas()[p.titulo] || {}).descartada);
+  const vistasDe = () => Nucleo.datos.peliculas().filter(p => estadoDe(p).vista);
 
   // ----- Recomendador local con memoria de la sesión -----
   const sesionSugeridas = new Set();
@@ -670,11 +670,11 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
   function seleccionParaIA(texto) {
     // Solo se envían las películas que sirven para responder: el catálogo completo pesa mucho y vuelve lenta la respuesta
     const LIMITE = 60;   // máximo de películas que se envían a la IA
-    if (peliculas.length <= LIMITE) return peliculas;
+    if (Nucleo.datos.peliculas().length <= LIMITE) return Nucleo.datos.peliculas();
     const e = p => estadoDe(p);
-    const pend = peliculas.filter(p => e(p).pendiente && !e(p).vista).slice(0, 20);
-    const vistas = peliculas.filter(p => e(p).vista).slice(-10);
-    const sinMarcar = peliculas.filter(p => !e(p).vista && !e(p).pendiente);
+    const pend = Nucleo.datos.peliculas().filter(p => e(p).pendiente && !e(p).vista).slice(0, 20);
+    const vistas = Nucleo.datos.peliculas().filter(p => e(p).vista).slice(-10);
+    const sinMarcar = Nucleo.datos.peliculas().filter(p => !e(p).vista && !e(p).pendiente);
     const palabras = normalizarChat(texto).split(/\s+/).filter(w => w.length > 3);
     const coincide = p => { const txt = normalizarChat([p.titulo, p.genero, p.director, p.reparto].join(" ")); return palabras.some(w => txt.includes(w)); };
     const perfil = perfilGustos();
@@ -697,7 +697,7 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
     });
     // Tus votos A/B también cuentan: la película elegida suma a sus géneros y director
     leerVotos().forEach(t => {
-      const p = peliculas.find(x => x.titulo === t);
+      const p = Nucleo.datos.peliculas().find(x => x.titulo === t);
       if (!p) return;
       generosDe(p).forEach(g => { perfil.genero[g] = (perfil.genero[g] || 0) + 1.5; });
       directoresDe(p).forEach(d => { perfil.director[d] = (perfil.director[d] || 0) + 1; });
@@ -716,7 +716,7 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
   }
 
   function votacionAB() {
-    const pool = peliculas.filter(p => !estadoDe(p).vista && !(marcas[p.titulo] || {}).descartada);
+    const pool = Nucleo.datos.peliculas().filter(p => !estadoDe(p).vista && !(Nucleo.datos.marcas()[p.titulo] || {}).descartada);
     if (pool.length < 2) { burbuja("Necesito al menos dos películas sin ver para votar.", "ia"); return; }
     const a = pool[Math.floor(Math.random() * pool.length)];
     let b = a;
@@ -743,7 +743,7 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
     const semanas = new Set();
     let vistasSemana = 0;
     const lunesEsta = lunesDe(new Date());
-    peliculas.forEach(p => ((marcas[p.titulo] || {}).historial || []).forEach(h => {
+    Nucleo.datos.peliculas().forEach(p => ((Nucleo.datos.marcas()[p.titulo] || {}).historial || []).forEach(h => {
       if (h.a !== "vista") return;
       semanas.add(lunesDe(new Date(h.f + "T12:00:00")));
       if (String(h.f) >= lunesEsta) vistasSemana++;
@@ -811,8 +811,8 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
 
   function sugerirLocal(filtro, n = 2, razonFija = null) {
     const perfil = perfilGustos();
-    const candidatos = peliculas
-      .filter(p => !estadoDe(p).vista && !(marcas[p.titulo] || {}).descartada && !sesionSugeridas.has(p.titulo) && (!filtro || filtro(p)))
+    const candidatos = Nucleo.datos.peliculas()
+      .filter(p => !estadoDe(p).vista && !(Nucleo.datos.marcas()[p.titulo] || {}).descartada && !sesionSugeridas.has(p.titulo) && (!filtro || filtro(p)))
       .map(p => ({ p, s: puntuar(p, perfil) }))
       .sort((a, b) => b.s - a.s);
     if (!candidatos.length) return null;
@@ -837,7 +837,7 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
     ultimasSeriesSugeridas = [];
     const texto = sugerirLocal(filtro, 2, razon);
     if (!texto) {
-      const hayAlgo = peliculas.some(p => !estadoDe(p).vista && !(marcas[p.titulo] || {}).descartada && (!filtro || filtro(p)));
+      const hayAlgo = Nucleo.datos.peliculas().some(p => !estadoDe(p).vista && !(Nucleo.datos.marcas()[p.titulo] || {}).descartada && (!filtro || filtro(p)));
       return hayAlgo
         ? "Ya te propuse todo lo que encaja con tu lista. Marca algunas películas más como vistas y afino las sugerencias."
         : "Con ese criterio no me sale nada en tu lista ahorita. ¿Probamos con más tiempo, quitando el año o con otro género?";
@@ -872,7 +872,7 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
   // Opinión basada en tus gustos, no en una lista genérica
   function opinionLocal(p) {
     const perfil = perfilGustos();
-    const ranking = peliculas.map(x => puntuar(x, perfil)).sort((a, b) => a - b);
+    const ranking = Nucleo.datos.peliculas().map(x => puntuar(x, perfil)).sort((a, b) => a - b);
     const mediana = ranking[Math.floor(ranking.length / 2)] || 0;
     const mi = puntuar(p, perfil);
     const dirs = directoresDe(p).filter(d => perfil.director[d]);
@@ -916,7 +916,7 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
       const conteo = {};
       const esteAno = /este ano|este año|de este ano|del ano/.test(n);
       const base = esteAno
-        ? vistasDe().filter(p => ((marcas[p.titulo] || {}).historial || []).some(h => h.a === "vista" && String(h.f).startsWith(year)))
+        ? vistasDe().filter(p => ((Nucleo.datos.marcas()[p.titulo] || {}).historial || []).some(h => h.a === "vista" && String(h.f).startsWith(year)))
         : vistasDe();
       base.forEach(p => generosDe(p).forEach(g => { conteo[g] = (conteo[g] || 0) + 1; }));
       const top = Object.entries(conteo).sort((a, b) => b[1] - a[1]).slice(0, 2);
@@ -959,12 +959,12 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
     if (ultimoTitulo && /director|quien la dirigio|quien la hizo|quien la dirige/.test(n)) {
       const dirs = directoresDe(ultimoTitulo);
       if (!dirs.length) return "No tengo el director de «" + ultimoTitulo.titulo + "» en tu catálogo.";
-      const otras = peliculas.filter(p => p !== ultimoTitulo && directoresDe(p).some(d => dirs.includes(d)));
+      const otras = Nucleo.datos.peliculas().filter(p => p !== ultimoTitulo && directoresDe(p).some(d => dirs.includes(d)));
       return "«" + ultimoTitulo.titulo + "» es de " + dirs.join(" y ") + "." + (otras.length ? " Otras de él en tu catálogo: " + otras.map(p => p.titulo).slice(0, 4).join(", ") + "." : " No tengo más de él en tu catálogo.");
     }
 
     // Comparar dos películas de tu catálogo
-    const encontradas = peliculas
+    const encontradas = Nucleo.datos.peliculas()
       .filter(p => String(p.titulo).length > 3 && n.includes(normalizarChat(p.titulo)))
       .map(p => ({ p, i: n.indexOf(normalizarChat(p.titulo)) }))
       .sort((x, y) => x.i - y.i)
@@ -974,7 +974,7 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
     }
 
     // Conversación natural: películas que menciona, despedidas, clima, planes, respuestas cortas
-    const titulo = peliculas.filter(p => String(p.titulo).length > 3).find(p => n.includes(normalizarChat(p.titulo)));
+    const titulo = Nucleo.datos.peliculas().filter(p => String(p.titulo).length > 3).find(p => n.includes(normalizarChat(p.titulo)));
     // Algo parecido a una película de tu catálogo
     if (titulo && /parecid|como la |como el |similar|algo como/.test(n)) {
       const gensT = generosDe(titulo);
@@ -1048,7 +1048,7 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
     if (animo) {
       return respuestaSugerencia(animo.intro, p => generosDe(p).some(g => animo.gen.some(x => normalizarChat(g).includes(x))), "para este momento");
     }
-    const generoTexto = [...new Set(peliculas.flatMap(p => generosDe(p)))].find(g => n.includes(normalizarChat(g)));
+    const generoTexto = [...new Set(Nucleo.datos.peliculas().flatMap(p => generosDe(p)))].find(g => n.includes(normalizarChat(g)));
     if (generoTexto) {
       return respuestaSugerencia(elegir(["Buena elección. De " + generoTexto.toLowerCase() + " te propongo:", "¡Me gusta tu gusto! Va de " + generoTexto.toLowerCase() + ":"]), p => generosDe(p).includes(generoTexto), (p, perfil) => razonGenero(p, generoTexto.toLowerCase(), perfil));
     }
@@ -1120,21 +1120,21 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
       return "Has visto " + vistas.length + " películas. Las más recientes:\n\n" + listaTitulos(vistas.slice(-5).reverse());
     }
     if (/cuantas|cuantos|total|tengo en total/.test(n)) {
-      return "¡Tienes " + peliculas.length + " películas en tu colección! " + vistas.length + " ya vistas y " + pend.length + " esperando por ti.";
+      return "¡Tienes " + Nucleo.datos.peliculas().length + " películas en tu colección! " + vistas.length + " ya vistas y " + pend.length + " esperando por ti.";
     }
 
     // Género o director mencionados en la pregunta
-    const generos = [...new Set(peliculas.flatMap(p => generosDe(p)))];
+    const generos = [...new Set(Nucleo.datos.peliculas().flatMap(p => generosDe(p)))];
     const genero = generos.find(g => n.includes(normalizarChat(g)));
     if (genero) {
-      const de = peliculas.filter(p => generosDe(p).includes(genero) && !estadoDe(p).vista);
+      const de = Nucleo.datos.peliculas().filter(p => generosDe(p).includes(genero) && !estadoDe(p).vista);
       if (!de.length) return "No tengo películas pendientes de " + genero.toLowerCase() + ". ¿Quieres que busque en lo que ya viste?";
       return elegir(["Buena elección. De " + genero.toLowerCase() + " tienes:", "¡Me gusta tu gusto! Estas son de " + genero.toLowerCase() + ":"]) + "\n\n" + listaTitulos(de);
     }
-    const directores = [...new Set(peliculas.flatMap(p => directoresDe(p)))];
+    const directores = [...new Set(Nucleo.datos.peliculas().flatMap(p => directoresDe(p)))];
     const director = directores.filter(d => d.length > 3).find(d => n.includes(normalizarChat(d)));
     if (director) {
-      const de = peliculas.filter(p => directoresDe(p).includes(director));
+      const de = Nucleo.datos.peliculas().filter(p => directoresDe(p).includes(director));
       return "De " + director + " tienes " + de.length + ":\n\n" + listaTitulos(de);
     }
 
@@ -1173,7 +1173,7 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
 
   function generosCatalogo() {
     const set = new Set();
-    peliculas.forEach(p => generosDe(p).forEach(g => set.add(g)));
+    Nucleo.datos.peliculas().forEach(p => generosDe(p).forEach(g => set.add(g)));
     return [...set];
   }
 
@@ -1214,7 +1214,7 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
 
   function personaPedida(n) {
     let mejor = null;
-    peliculas.forEach(p => personasDe(p).forEach(nombre => {
+    Nucleo.datos.peliculas().forEach(p => personasDe(p).forEach(nombre => {
       const nn = normalizarChat(nombre);
       if (nn.length >= 5 && n.includes(nn) && (!mejor || nn.length > normalizarChat(mejor).length)) mejor = nombre;
     }));
@@ -1223,7 +1223,7 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
 
   function tituloPedido(n) {
     let mejor = null;
-    peliculas.forEach(p => {
+    Nucleo.datos.peliculas().forEach(p => {
       const tn = normalizarChat(p.titulo);
       if (tn.length >= 4 && n.includes(tn) && (!mejor || tn.length > normalizarChat(mejor.titulo).length)) mejor = p;
     });
@@ -1357,7 +1357,7 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
   }
 
   async function preguntar(texto, oculta = false, yaMostrada = false) {
-    if (!accessToken || !peliculas.length) {
+    if (!accessToken || !Nucleo.datos.peliculas().length) {
       burbuja("Primero necesito que tu catálogo cargue. Intenta en unos segundos.", "error");
       return;
     }
@@ -1594,7 +1594,7 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
 
   // La IA arma la noche: se confirma antes de abrir el modo cine
   function proponerMaratonIA(titulos) {
-    const films = (titulos || []).map(t => peliculas.find(p => p.titulo === t)).filter(Boolean).slice(0, 5);
+    const films = (titulos || []).map(t => Nucleo.datos.peliculas().find(p => p.titulo === t)).filter(Boolean).slice(0, 5);
     if (!films.length) { burbuja("No encontré esas películas en tu catálogo.", "error"); return; }
     const lista = films.map(f => "• " + f.titulo + " (" + minutos(f) + " min)").join("\n");
     preguntarConfirmacion("Te armé esta noche:\n\n" + lista + "\n\n¿La empezamos en modo cine?", "Empezar", () => {
@@ -1603,7 +1603,7 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
   }
 
   function proponerMarca(titulo, estado) {
-    const p = peliculas.find(x => String(x.titulo).toLowerCase() === titulo.toLowerCase());
+    const p = Nucleo.datos.peliculas().find(x => String(x.titulo).toLowerCase() === titulo.toLowerCase());
     if (!p) {
       burbuja("No encontré «" + titulo + "» en tu catálogo. Revisa que el título esté escrito igual.", "error");
       return;
@@ -1617,7 +1617,7 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
   }
 
   function proponerNotaPelicula(titulo, texto) {
-    const p = peliculas.find(x => String(x.titulo).toLowerCase() === titulo.toLowerCase());
+    const p = Nucleo.datos.peliculas().find(x => String(x.titulo).toLowerCase() === titulo.toLowerCase());
     if (!p) {
       burbuja("No encontré «" + titulo + "» en tu catálogo. Revisa que el título esté escrito igual.", "error");
       return;
@@ -1627,7 +1627,7 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
       burbuja("La nota debe tener entre 1 y 1000 caracteres.", "error");
       return;
     }
-    const previa = (marcas[p.titulo] || {}).nota || "";
+    const previa = (Nucleo.datos.marcas()[p.titulo] || {}).nota || "";
     const aviso = previa ? "\n\nSe agregará debajo de tu nota actual, sin borrarla." : "";
     preguntarConfirmacion("¿Guardo esta nota en «" + p.titulo + "»?\n\n«" + t + "»" + aviso, "Guardar nota", () => {
       guardarNota(p.titulo, previa ? previa + "\n" + t : t);
@@ -1637,7 +1637,7 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
   }
 
   async function redactarNotaIA(titulo) {
-    const p = peliculas.find(x => String(x.titulo).toLowerCase() === titulo.toLowerCase());
+    const p = Nucleo.datos.peliculas().find(x => String(x.titulo).toLowerCase() === titulo.toLowerCase());
     if (!p) {
       burbuja("No encontré «" + titulo + "» en tu catálogo. Revisa que el título esté escrito igual.", "error");
       return;
@@ -1650,7 +1650,7 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
     const limpio = texto.replace(/^["«»]+|["«»]+$/g, "").trim().slice(0, 1000);
     burbuja(limpio, "ia");
     preguntarConfirmacion("¿Guardo esta nota en «" + p.titulo + "»?", "Guardar nota", () => {
-      const previa = (marcas[p.titulo] || {}).nota || "";
+      const previa = (Nucleo.datos.marcas()[p.titulo] || {}).nota || "";
       guardarNota(p.titulo, previa ? previa + "\n" + limpio : limpio);
       if (typeof refrescarTodo === "function") refrescarTodo();
       burbuja("Nota guardada en «" + p.titulo + "».", "ia");
@@ -1661,7 +1661,7 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
   function estadisticasDeCine() {
     const vistas = vistasDe();
     const year = String(new Date().getFullYear());
-    const esteAno = vistas.filter(p => ((marcas[p.titulo] || {}).historial || []).some(h => h.a === "vista" && String(h.f).startsWith(year)));
+    const esteAno = vistas.filter(p => ((Nucleo.datos.marcas()[p.titulo] || {}).historial || []).some(h => h.a === "vista" && String(h.f).startsWith(year)));
     const conteoGeneros = {};
     vistas.forEach(p => generosDe(p).forEach(g => { conteoGeneros[g] = (conteoGeneros[g] || 0) + 1; }));
     const generoFavorito = Object.entries(conteoGeneros).sort((a, b) => b[1] - a[1])[0];
@@ -1772,7 +1772,7 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
   // Resumen de la semana: lo que viste, tu mejor calificación y tus pendientes
   function resumenSemana() {
     const hace7 = isoLocal(new Date(Date.now() - 7 * 86400000));
-    const vistasSem = peliculas.filter(p => ((marcas[p.titulo] || {}).historial || []).some(h => h.a === "vista" && String(h.f) >= hace7));
+    const vistasSem = Nucleo.datos.peliculas().filter(p => ((Nucleo.datos.marcas()[p.titulo] || {}).historial || []).some(h => h.a === "vista" && String(h.f) >= hace7));
     const pend = pendientesDe();
     const calificadas = vistasSem.filter(p => estadoDe(p).estrellas);
     let t = "Así va tu semana en cine.\n\n";
@@ -1891,7 +1891,7 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
     const ultima = bs.length ? bs[bs.length - 1].textContent : "";
     const txt = normalizarChat(ultima);
     if (!txt) return [];
-    return peliculas.filter(p => {
+    return Nucleo.datos.peliculas().filter(p => {
       const tn = normalizarChat(p.titulo);
       return tn.length >= 4 && txt.includes(tn);
     });

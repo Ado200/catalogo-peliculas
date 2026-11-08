@@ -17,7 +17,7 @@ function etiquetasDeNota(texto) {
 }
 
 function coincideEtiqueta(p, etiqueta) {
-  const m = marcas[p.titulo] || {};
+  const m = Nucleo.datos.marcas()[p.titulo] || {};
   const buscada = norm(etiqueta);
   return etiquetasDeNota(m.nota).some(t => norm(t) === buscada);
 }
@@ -33,8 +33,8 @@ function etiquetasFichaHtml(texto) {
 function renderBarraEtiquetas() {
   const bar = $("tagsNotas");
   const conteo = new Map();
-  peliculas.forEach(p => {
-    etiquetasDeNota((marcas[p.titulo] || {}).nota).forEach(t => {
+  Nucleo.datos.peliculas().forEach(p => {
+    etiquetasDeNota((Nucleo.datos.marcas()[p.titulo] || {}).nota).forEach(t => {
       const clave = norm(t);
       const previo = conteo.get(clave) || { t, n: 0 };
       previo.n++;

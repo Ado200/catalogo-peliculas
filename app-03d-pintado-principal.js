@@ -6,8 +6,8 @@ function pintar() {
   $("tagsNotas").style.display = "none";
 
   const f = buscar.value.trim().toLowerCase();
-  visibles = peliculas.filter(p => {
-    const m = marcas[p.titulo] || {};
+  visibles = Nucleo.datos.peliculas().filter(p => {
+    const m = Nucleo.datos.marcas()[p.titulo] || {};
     const texto = [p.titulo, p.director, p.reparto, m.nota || "", m.conQuien || ""].join(" ").toLowerCase();
     return coincideBusqueda(p, f) &&
       (!sel.tipo.value || p.tipo === sel.tipo.value) &&
@@ -41,7 +41,7 @@ function pintar() {
   actualizarBotonSalud();
   actualizarBotonAvanzados();
   renderChips();
-  contador.textContent = visibles.length + " de " + peliculas.length + " títulos · " +
+  contador.textContent = visibles.length + " de " + Nucleo.datos.peliculas().length + " títulos · " +
     vistas + " vistas · " + pendientes + " pendientes" + (datosLimitados() ? " · modo ahorro" : "");
 
   ajustarQueVer();
@@ -94,13 +94,13 @@ function pintarPestana() {
     const f = buscar.value.trim().toLowerCase();
     const etiquetaBuscada = f.startsWith("#") ? f.slice(1) : "";
     titulo = "Mis notas";
-    items = peliculas.filter(p => (marcas[p.titulo] || {}).nota)
+    items = Nucleo.datos.peliculas().filter(p => (Nucleo.datos.marcas()[p.titulo] || {}).nota)
       .filter(p => etiquetaBuscada
         ? coincideEtiqueta(p, etiquetaBuscada)
-        : [p.titulo, (marcas[p.titulo] || {}).nota].join(" ").toLowerCase().includes(f))
+        : [p.titulo, (Nucleo.datos.marcas()[p.titulo] || {}).nota].join(" ").toLowerCase().includes(f))
       .sort(ordenNotasFn());
     extra = p => {
-      const m = marcas[p.titulo] || {};
+      const m = Nucleo.datos.marcas()[p.titulo] || {};
       const txt = String(m.nota || "").slice(0, 160) + (String(m.nota || "").length > 160 ? "…" : "");
       const tags = etiquetasDeNota(m.nota).map(t => '<button class="etiqueta" data-tag="' + esc(t) + '">#' + esc(t) + '</button>').join("");
       return '<p class="nota-corta">' + esc(txt) + '</p>' +
@@ -111,15 +111,15 @@ function pintarPestana() {
     renderBarraEtiquetas();
   } else if (pestana === "pendientes") {
     titulo = "Planes";
-    const todas = peliculas.filter(p => estadoDe(p).pendiente);
+    const todas = Nucleo.datos.peliculas().filter(p => estadoDe(p).pendiente);
     const planeadas = todas.filter(p => estadoDe(p).conAlguien)
       .sort((a, b) => {
-        const fa = (marcas[a.titulo] || {}).conFecha || "9999-12-31";
-        const fb = (marcas[b.titulo] || {}).conFecha || "9999-12-31";
-        return fa.localeCompare(fb) || String((marcas[a.titulo] || {}).conAlguienDesde || "").localeCompare(String((marcas[b.titulo] || {}).conAlguienDesde || ""));
+        const fa = (Nucleo.datos.marcas()[a.titulo] || {}).conFecha || "9999-12-31";
+        const fb = (Nucleo.datos.marcas()[b.titulo] || {}).conFecha || "9999-12-31";
+        return fa.localeCompare(fb) || String((Nucleo.datos.marcas()[a.titulo] || {}).conAlguienDesde || "").localeCompare(String((Nucleo.datos.marcas()[b.titulo] || {}).conAlguienDesde || ""));
       });
     const resto = todas.filter(p => !estadoDe(p).conAlguien)
-      .sort((a, b) => String((marcas[a.titulo] || {}).pendienteDesde || "9999").localeCompare(String((marcas[b.titulo] || {}).pendienteDesde || "9999")));
+      .sort((a, b) => String((Nucleo.datos.marcas()[a.titulo] || {}).pendienteDesde || "9999").localeCompare(String((Nucleo.datos.marcas()[b.titulo] || {}).pendienteDesde || "9999")));
     items = [...planeadas, ...resto];
     extra = p => '<div class="meta" style="margin-top:6px">' + esc(diasPendiente(p) === null ? "fecha desconocida" : "hace " + diasPendiente(p) + " días") + '</div>';
 
@@ -136,7 +136,7 @@ function pintarPestana() {
         '<div class="grupo-items">' +
         planeadas.map((p, i) => filaPestana(p, i,
           extra(p) +
-          (marcas[p.titulo] && marcas[p.titulo].conQuien ? '<div class="meta">con ' + esc(marcas[p.titulo].conQuien) + '</div>' : '') +
+          (Nucleo.datos.marcas()[p.titulo] && Nucleo.datos.marcas()[p.titulo].conQuien ? '<div class="meta">con ' + esc(Nucleo.datos.marcas()[p.titulo].conQuien) + '</div>' : '') +
           lineaFechaConAlguien(p)
         )).join("") +
         '</div></div>';
@@ -153,18 +153,18 @@ function pintarPestana() {
     return;
   } else if (pestana === "vistas") {
     titulo = "Vistas";
-    items = peliculas.filter(p => estadoDe(p).vista)
-      .sort((a, b) => String((marcas[b.titulo] || {}).vistaDesde || "").localeCompare(String((marcas[a.titulo] || {}).vistaDesde || "")));
+    items = Nucleo.datos.peliculas().filter(p => estadoDe(p).vista)
+      .sort((a, b) => String((Nucleo.datos.marcas()[b.titulo] || {}).vistaDesde || "").localeCompare(String((Nucleo.datos.marcas()[a.titulo] || {}).vistaDesde || "")));
     $("toolbarVistas").style.display = "flex";
-    const personas = [...new Set(peliculas.map(p => (marcas[p.titulo] || {}).vistaCon).filter(Boolean))]
+    const personas = [...new Set(Nucleo.datos.peliculas().map(p => (Nucleo.datos.marcas()[p.titulo] || {}).vistaCon).filter(Boolean))]
       .sort((a, b) => a.localeCompare(b, "es"));
     const selP = $("personaVistas");
     const previoP = selP.value;
     selP.innerHTML = '<option value="">Todas</option>' + personas.map(x => '<option value="' + esc(x) + '">' + esc(x) + '</option>').join("");
     selP.value = personas.includes(previoP) ? previoP : "";
-    if (selP.value) items = items.filter(p => (marcas[p.titulo] || {}).vistaCon === selP.value);
+    if (selP.value) items = items.filter(p => (Nucleo.datos.marcas()[p.titulo] || {}).vistaCon === selP.value);
     extra = p => {
-      const m = marcas[p.titulo] || {};
+      const m = Nucleo.datos.marcas()[p.titulo] || {};
       return (m.vistaDesde ? '<div class="meta" style="margin-top:6px">Vista el ' + esc(m.vistaDesde) + (m.vistaCon ? ' con ' + esc(m.vistaCon) : '') + '</div>' : '') +
         (m.nota ? '<details class="nota-recuerdo"><summary>Ver mi nota</summary><p class="nota-corta">' + esc(String(m.nota)) + '</p>' +
           (m.notaFecha ? '<div class="meta">Editada: ' + esc(m.notaFecha) + '</div>' : '') + '</details>' : '');

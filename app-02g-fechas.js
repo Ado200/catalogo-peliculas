@@ -16,7 +16,7 @@ function diasHasta(s) {
 }
 
 function lineaFechaConAlguien(p) {
-  const m = marcas[p.titulo] || {};
+  const m = Nucleo.datos.marcas()[p.titulo] || {};
   if (!m.conFecha) return '<div class="meta" style="margin-top:6px">📅 Sin fecha</div>';
   const d = diasHasta(m.conFecha);
   const cuando = d === 0 ? "hoy" : d === 1 ? "mañana" : d < 0 ? "pasó hace " + (-d) + " días" : "en " + d + " días";
@@ -28,8 +28,8 @@ function recordatoriosActivos() {
   const hoy = hoyLocalISO();
   const cerrados = leerJSON("recordatorio_cerrados", []);
   const salida = [];
-  peliculas.forEach(p => {
-    const m = marcas[p.titulo] || {};
+  Nucleo.datos.peliculas().forEach(p => {
+    const m = Nucleo.datos.marcas()[p.titulo] || {};
     if (!m.conAlguien || !m.conFecha) return;
     const d = diasHasta(m.conFecha);
     if (d < 0 || d > 2) return;
@@ -68,21 +68,21 @@ function cerrarRecordatorio() {
 }
 
 function diasPendiente(p) {
-  const f = (marcas[p.titulo] || {}).pendienteDesde;
+  const f = (Nucleo.datos.marcas()[p.titulo] || {}).pendienteDesde;
   if (!f) return null;
   const ms = Date.now() - new Date(f + "T00:00:00").getTime();
   return Math.max(0, Math.floor(ms / 86400000));
 }
 
 function diasConAlguien(p) {
-  const f = (marcas[p.titulo] || {}).conAlguienDesde;
+  const f = (Nucleo.datos.marcas()[p.titulo] || {}).conAlguienDesde;
   if (!f) return null;
   const ms = Date.now() - new Date(f + "T00:00:00").getTime();
   return Math.max(0, Math.floor(ms / 86400000));
 }
 
 function diasDescartada(p) {
-  const f = (marcas[p.titulo] || {}).descartadaDesde;
+  const f = (Nucleo.datos.marcas()[p.titulo] || {}).descartadaDesde;
   if (!f) return null;
   const ms = Date.now() - new Date(f + "T00:00:00").getTime();
   return Math.max(0, Math.floor(ms / 86400000));
@@ -102,15 +102,15 @@ function controlesHtml(p) {
   } else if (s.pendiente) {
     textoDias = '<span class="meta" style="margin:0">fecha desconocida</span>';
   }
-  const descartada = !!(marcas[p.titulo] || {}).descartada;
+  const descartada = !!(Nucleo.datos.marcas()[p.titulo] || {}).descartada;
   const botonRestaurar = descartada
     ? ' <button class="chipc" data-accion="restaurar" data-clave="' + k + '">↩ Restaurar</button>'
     : '';
-  const quien = (marcas[p.titulo] || {}).conQuien;
+  const quien = (Nucleo.datos.marcas()[p.titulo] || {}).conQuien;
   const etiquetaAlguien = s.conAlguien
     ? '👥 Con alguien' + (quien ? ' · ' + esc(quien) : '')
     : '👥 Con alguien';
-  const fechaPlan = (marcas[p.titulo] || {}).conFecha;
+  const fechaPlan = (Nucleo.datos.marcas()[p.titulo] || {}).conFecha;
   const botonFecha = s.conAlguien
     ? '<button class="chipc' + (fechaPlan ? ' activo' : '') + '" data-accion="conFecha" data-clave="' + k + '">📅 ' + (fechaPlan ? esc(fechaPlan) : 'Fecha') + '</button>'
     : '';
@@ -126,7 +126,7 @@ function controlesHtml(p) {
 
 function contarEstados() {
   let vistas = 0, pendientes = 0;
-  peliculas.forEach(p => {
+  Nucleo.datos.peliculas().forEach(p => {
     const s = estadoDe(p);
     if (s.vista) vistas++;
     if (s.pendiente) pendientes++;

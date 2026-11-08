@@ -2,13 +2,13 @@
 
 function llenarFiltros() {
   const llenar = (el, arr) => [...new Set(arr.filter(x => x))].sort().forEach(x => el.add(new Option(x, x)));
-  llenar(sel.tipo, peliculas.map(p => p.tipo));
-  llenar(sel.genero, peliculas.flatMap(generosDe));
-  llenar(sel.anio, peliculas.map(p => String(p["año"] || "")));
-  llenar(sel.pais, peliculas.map(p => p.pais));
+  llenar(sel.tipo, Nucleo.datos.peliculas().map(p => p.tipo));
+  llenar(sel.genero, Nucleo.datos.peliculas().flatMap(generosDe));
+  llenar(sel.anio, Nucleo.datos.peliculas().map(p => String(p["año"] || "")));
+  llenar(sel.pais, Nucleo.datos.peliculas().map(p => p.pais));
 
   const conteo = {};
-  peliculas.flatMap(temasDe).forEach(t => conteo[t] = (conteo[t] || 0) + 1);
+  Nucleo.datos.peliculas().flatMap(temasDe).forEach(t => conteo[t] = (conteo[t] || 0) + 1);
   Object.keys(conteo).sort().forEach(t => sel.tema.add(new Option(`${t} (${conteo[t]})`, t)));
 }
 
@@ -82,8 +82,8 @@ function heroPestana(tipo, items, extras) {
   const tile = (n, t, acento) => '<div class="pest-stat' + (acento ? ' acento' : '') + '"><b>' + n + '</b><span>' + t + '</span></div>';
   if (tipo === "vistas") {
     const mes = hoyLocalISO().slice(0, 7);
-    const delMes = items.filter(p => String((marcas[p.titulo] || {}).vistaDesde || "").slice(0, 7) === mes).length;
-    const conNota = items.filter(p => (marcas[p.titulo] || {}).estrellas || estadoDe(p).estrellas);
+    const delMes = items.filter(p => String((Nucleo.datos.marcas()[p.titulo] || {}).vistaDesde || "").slice(0, 7) === mes).length;
+    const conNota = items.filter(p => (Nucleo.datos.marcas()[p.titulo] || {}).estrellas || estadoDe(p).estrellas);
     const prom = conNota.length ? (conNota.reduce((a, p) => a + Number(estadoDe(p).estrellas || 0), 0) / conNota.length).toFixed(1) : "–";
     return '<div class="pest-hero">' + tile(items.length, "vistas", false) + tile(delMes, "este mes", true) + tile("★ " + prom, "promedio", false) + '</div>';
   }
@@ -120,7 +120,7 @@ function renderDestacados() {
   const DIAS = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
   const etiquetaFecha = f => { const [a, m, d] = f.split("-"); return Number(d) + " " + MESES[Number(m) - 1] + " " + a; };
   const etiquetaDia = f => DIAS[new Date(f + "T00:00").getDay()] + " " + etiquetaFecha(f);
-  const conFecha = peliculas.filter(p => fechaValida(p.estreno));
+  const conFecha = Nucleo.datos.peliculas().filter(p => fechaValida(p.estreno));
   let lista, sub;
   if (conFecha.length) {
     const ya = conFecha.filter(p => p.estreno <= hoy && dias(p.estreno) >= -120).sort((a, b) => b.estreno.localeCompare(a.estreno)).slice(0, 8);
@@ -128,14 +128,14 @@ function renderDestacados() {
     lista = ya.map(p => ({ p, tipo: "ya" })).concat(pronto.map(p => ({ p, tipo: "pronto" })));
     sub = "Según su fecha de estreno real";
   } else {
-    lista = [...peliculas].filter(p => Number(p["año"]))
+    lista = [...Nucleo.datos.peliculas()].filter(p => Number(p["año"]))
       .sort((a, b) => Number(b["año"]) - Number(a["año"])).slice(0, 8).map(p => ({ p, tipo: "" }));
     sub = "";
   }
   $("destSub").textContent = sub;
   renderProximosCines();
   $("carrusel").innerHTML = lista.map(({ p, tipo }) => {
-    const idx = peliculas.indexOf(p);
+    const idx = Nucleo.datos.peliculas().indexOf(p);
     const s = estadoDe(p);
     const img = (p.portada && !datosLimitados())
       ? '<img src="' + esc(p.portada) + '" alt="" loading="lazy">'
@@ -187,7 +187,7 @@ function renderProximosCines() {
   const lista = proximosCines.filter(x => x.fecha >= hoy).slice(0, 12);
   document.getElementById("proxSub").textContent = lista.length ? "Cartelera de cines en México. Toca una para ver de qué trata." : "";
   cont.innerHTML = lista.map((x, i) => {
-    const idx = peliculas.findIndex(p => normTxt(p.titulo) === normTxt(x.titulo));
+    const idx = Nucleo.datos.peliculas().findIndex(p => normTxt(p.titulo) === normTxt(x.titulo));
     const [a, m, d] = x.fecha.split("-");
     const dif = Math.round((new Date(x.fecha + "T00:00") - new Date(hoy + "T00:00")) / 86400000);
     const etiqueta = dif === 0 ? "Hoy" : (dif === 1 ? "Mañana" : "En " + dif + " días");
@@ -206,7 +206,7 @@ function renderProximosCines() {
     cont.addEventListener("click", e => {
       const t = e.target.closest("[data-prox]");
       if (!t) return;
-      if (t.dataset.idx !== undefined) { desdeAleatorio = false; abrirDetalle(peliculas[Number(t.dataset.idx)]); return; }
+      if (t.dataset.idx !== undefined) { desdeAleatorio = false; abrirDetalle(Nucleo.datos.peliculas()[Number(t.dataset.idx)]); return; }
       const x = proximosCines[Number(t.dataset.prox)];
       const hoyTxt = hoyLocalISO();
       if (x) abrirVentanaSimple("ventanaProximo", x.titulo,
@@ -218,7 +218,7 @@ function renderProximosCines() {
 }
 
 // Estrenos se reacomoda solo: se vuelve a pintar cada hora (cambia de «próximo» a «estrenó» al pasar la fecha)
-setInterval(() => { if (peliculas.length) renderDestacados(); }, 60 * 60 * 1000);
+setInterval(() => { if (Nucleo.datos.peliculas().length) renderDestacados(); }, 60 * 60 * 1000);
 
 function hayFiltros() {
   return buscar.value.trim() !== "" || Object.values(sel).some(s => s.value !== "");
@@ -249,7 +249,7 @@ function renderChips() {
 }
 
 function coincideEstado(p, valor) {
-  if (marcas[p.titulo] && marcas[p.titulo].descartada) return false;
+  if (Nucleo.datos.marcas()[p.titulo] && Nucleo.datos.marcas()[p.titulo].descartada) return false;
   if (!valor) return true;
   const s = estadoDe(p);
   if (valor === "vista") return s.vista;
@@ -291,13 +291,13 @@ function actualizarBotonSalud() {
 
 function revisarSalud() {
   const sec = $("salud");
-  if (!peliculas.length) return;
+  if (!Nucleo.datos.peliculas().length) return;
 
   const sinEs = [], sinPortada = [], sinPaleta = [], sinTrailer = [], linkRevisar = [];
   const titulosVistos = new Map();
   const duplicados = [];
 
-  peliculas.forEach(p => {
+  Nucleo.datos.peliculas().forEach(p => {
     const t = String(p.titulo || "").trim();
     const clave = slugDe(p);
     if (titulosVistos.has(clave)) duplicados.push(t);
@@ -320,7 +320,7 @@ function revisarSalud() {
   };
 
   sec.innerHTML =
-    '<details open><summary><b>Salud de la hoja</b> · ' + peliculas.length + ' títulos</summary>' +
+    '<details open><summary><b>Salud de la hoja</b> · ' + Nucleo.datos.peliculas().length + ' títulos</summary>' +
     '<ul>' +
       bloque("Sin tráiler en español", sinEs, "Todas tienen tráiler en español") +
       bloque("Sin ningún tráiler", sinTrailer, "Todas tienen algún tráiler") +
@@ -382,7 +382,7 @@ function abrirDetalle(p) {
 function abrirDetalleBase(p) {
   detalleActual = p;
   ponerIdEnUrl(slugDe(p));
-  const notaActual = (marcas[p.titulo] || {}).nota || "";
+  const notaActual = (Nucleo.datos.marcas()[p.titulo] || {}).nota || "";
   $("detalle").innerHTML =
     (p.portada && !datosLimitados() ? '<img class="portada" loading="lazy" decoding="async" src="' + esc(p.portada) + '" alt="">' : '') +
     '<h2>' + esc(p.titulo) + '</h2>' +
@@ -429,7 +429,7 @@ function montarNotasFicha(p) {
   panel.className = "fp-notas";
   panel.hidden = true;
   function pintarPanel() {
-    const m = marcas[p.titulo] || {};
+    const m = Nucleo.datos.marcas()[p.titulo] || {};
     const nota = m.nota || "";
     panel.innerHTML = nota
       ? '<p class="nota-leer">' + esc(nota) + '</p>' +

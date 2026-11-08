@@ -12,7 +12,7 @@ function datoParaDecidir(p) {
   const tono = intensidadDe_(p);
   if (tono === 1) out.push("Tono ligero, para relajarte.");
   if (tono === 3) out.push("Tono intenso: mejor con tiempo para asimilarla.");
-  const m = marcas[p.titulo] || {};
+  const m = Nucleo.datos.marcas()[p.titulo] || {};
   if (m.vista && m.estrellas) out.push("Ya la calificaste con " + m.estrellas + " estrella" + (m.estrellas === 1 ? "" : "s") + ".");
   return out;
 }
@@ -24,7 +24,7 @@ function datoParaDecidir(p) {
     const h2 = detalle.querySelector("h2");
     if (!h2 || detalle.querySelector(".dato-decidir")) return;
     const titulo = h2.textContent.trim();
-    const p = peliculas.find(x => x.titulo === titulo);
+    const p = Nucleo.datos.peliculas().find(x => x.titulo === titulo);
     if (!p) return;
     const lineas = datoParaDecidir(p);
     if (!lineas.length) return;
@@ -38,7 +38,7 @@ function datoParaDecidir(p) {
 // 2) Tarjeta del día en Inicio: una curiosidad distinta cada día, elegida por el orden adaptativo
 function renderTarjetaDia() {
   const sec = document.getElementById("tarjetaDia");
-  if (!sec || !document.body.classList.contains("con-sesion") || !peliculas.length) return;
+  if (!sec || !document.body.classList.contains("con-sesion") || !Nucleo.datos.peliculas().length) return;
   const lista = curioFiltrada();
   if (!lista.length) { sec.style.display = "none"; return; }
   const dia = Math.floor(Date.now() / 86400000);
@@ -74,7 +74,7 @@ function construirCuriosidadesInternet(copia) {
     .map(r => ({ tmdb: r[c("tmdb_id")], titulo: r[c("titulo")], dato: r[c("dato")], fuente: r[c("fuente")], url: r[c("url")], fecha: r[c("fecha_consulta")], estado: r[c("estado")], tipo: r[c("tipo")] }))
     .filter(x => x.estado === "verificado" && x.dato)
     .map(x => {
-      const peli = peliculas.find(p => String(p.tmdb_id || "").trim() === String(x.tmdb).trim());
+      const peli = Nucleo.datos.peliculas().find(p => String(p.tmdb_id || "").trim() === String(x.tmdb).trim());
       return peli ? {
         peli: peli,
         tema: "Internet · " + (x.tipo || "Dato"),
@@ -185,22 +185,22 @@ function curioDiagnostico() {
 /* ---------- Diagnóstico de datos: revisa tu cuenta y su estado, con respaldo de un toque ---------- */
 function abrirDiagnostico() {
   cerrarPaneles();
-  const claves = new Set(peliculas.map(p => claveDe(p)));
-  const enMarcas = Object.keys(marcas).filter(k => !k.startsWith("__"));
+  const claves = new Set(Nucleo.datos.peliculas().map(p => claveDe(p)));
+  const enMarcas = Object.keys(Nucleo.datos.marcas()).filter(k => !k.startsWith("__"));
   const huerfanas = enMarcas.filter(k => !claves.has(k));
   const conMarcas = enMarcas.filter(k => claves.has(k)).length;
   const porTitulo = {};
-  peliculas.forEach(p => { porTitulo[p.titulo] = (porTitulo[p.titulo] || 0) + 1; });
+  Nucleo.datos.peliculas().forEach(p => { porTitulo[p.titulo] = (porTitulo[p.titulo] || 0) + 1; });
   const repetidos = Object.keys(porTitulo).filter(t => porTitulo[t] > 1);
-  const sinId = peliculas.filter(p => !/^\d+$/.test(String(p.tmdb_id || "").trim())).length;
-  const kb = (new Blob([JSON.stringify(marcas)]).size / 1024).toFixed(1) + " KB";
+  const sinId = Nucleo.datos.peliculas().filter(p => !/^\d+$/.test(String(p.tmdb_id || "").trim())).length;
+  const kb = (new Blob([JSON.stringify(Nucleo.datos.marcas())]).size / 1024).toFixed(1) + " KB";
   const fmt = iso => { if (!iso) return "todavía no"; const d = new Date(iso); return isNaN(d) ? "desconocida" : d.toLocaleString("es-MX", { dateStyle: "short", timeStyle: "short" }); };
   let copiaSemanal = null;
   try { copiaSemanal = localStorage.getItem("respaldo_drive_fecha"); } catch (e) {}
   const enLinea = navigator.onLine !== false;
 
   const filas = [
-    { t: "Películas en tu hoja", v: String(peliculas.length), ok: true },
+    { t: "Películas en tu hoja", v: String(Nucleo.datos.peliculas().length), ok: true },
     { t: "Películas con marcas", v: String(conMarcas), ok: true },
     { t: "Tamaño de tus marcas", v: kb, ok: true },
     { t: "Último guardado en Drive", v: fmt(ultimaSyncOk), ok: !!ultimaSyncOk && !syncPendiente },

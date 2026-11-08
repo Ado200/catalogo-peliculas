@@ -15,7 +15,7 @@ function actualizarAhorro() {
   if (nuevo === ahorroActivo) return;
   ahorroActivo = nuevo;
   document.body.classList.toggle("ahorro", nuevo);
-  if (!peliculas.length) return;
+  if (!Nucleo.datos.peliculas().length) return;
   renderDestacados();
   pintarSugerencia();
   pintar();
@@ -53,7 +53,7 @@ function ponerIdEnUrl(valor) {
 function abrirDesdeUrl() {
   const id = new URLSearchParams(location.search).get("id");
   if (!id) return;
-  const p = peliculas.find(x => slugDe(x) === id);
+  const p = Nucleo.datos.peliculas().find(x => slugDe(x) === id);
   if (p) {
     desdeAleatorio = false;
     abrirDetalle(p);
@@ -112,8 +112,8 @@ function esFinDeSemanaTarde() {
 // Grupo base: «pendientes» (lo que quieres ver) o «no-vistas» (si no hay pendientes que cumplan)
 function baseElegir({ estado = "pendientes", excluir = null } = {}) {
   let base = estado === "pendientes"
-    ? peliculas.filter(p => estadoDe(p).pendiente)
-    : peliculas.filter(p => !estadoDe(p).vista && !(marcas[p.titulo] || {}).descartada);
+    ? Nucleo.datos.peliculas().filter(p => estadoDe(p).pendiente)
+    : Nucleo.datos.peliculas().filter(p => !estadoDe(p).vista && !(Nucleo.datos.marcas()[p.titulo] || {}).descartada);
   if (excluir && base.length > 1) base = base.filter(p => p.titulo !== excluir.titulo);
   return base;
 }
@@ -226,7 +226,7 @@ function nuevaSugerencia(excluir) {
 
 function actualizarAhora() {
   const sec = $("ahora");
-  const hayPendientes = peliculas.some(p => estadoDe(p).pendiente);
+  const hayPendientes = Nucleo.datos.peliculas().some(p => estadoDe(p).pendiente);
   if (hayFiltros() || !hayPendientes || pestana !== "catalogo") {
     sec.style.display = "none";
     return;
@@ -265,7 +265,7 @@ function resumenDePrueba() {
 }
 
 function sugerenciaSemanal() {
-  const pend = peliculas.filter(p => estadoDe(p).pendiente);
+  const pend = Nucleo.datos.peliculas().filter(p => estadoDe(p).pendiente);
   if (!pend.length) return null;
 
   const hoy = hoyLocalISO();
@@ -296,17 +296,17 @@ function actualizarResumenSemana() {
   const esLunes = new Date().getDay() === 1;
   const mostrarHoy = esLunes || resumenDePrueba();
 
-  if (!peliculas.length || !mostrarHoy || modoGuardado("resumen_cerrado", "") === hoy || pestana !== "vistas") {
+  if (!Nucleo.datos.peliculas().length || !mostrarHoy || modoGuardado("resumen_cerrado", "") === hoy || pestana !== "vistas") {
     sec.style.display = "none";
     return;
   }
 
   const desde = diaISODesde(6);
-  const vistasSemana = peliculas.filter(p => {
-    const m = marcas[p.titulo] || {};
+  const vistasSemana = Nucleo.datos.peliculas().filter(p => {
+    const m = Nucleo.datos.marcas()[p.titulo] || {};
     return m.vista && m.vistaDesde && m.vistaDesde >= desde && m.vistaDesde <= hoy;
   });
-  const pendLargas = peliculas.filter(p => {
+  const pendLargas = Nucleo.datos.peliculas().filter(p => {
     const d = diasPendiente(p);
     return estadoDe(p).pendiente && d !== null && d > 30;
   }).length;
@@ -337,7 +337,7 @@ function actualizarResumenSemana() {
 
 /* ---------- Modo cena: pendiente de menos de 2 h, con alguien si aplica ---------- */
 function candidatasCena() {
-  return peliculas.filter(p => {
+  return Nucleo.datos.peliculas().filter(p => {
     const s = estadoDe(p);
     const m = minutos(p);
     return s.pendiente && m > 0 && m < 120;
@@ -360,7 +360,7 @@ function elegirCena(otra) {
 
 function renderCena() {
   const sec = $("cena");
-  if (!peliculas.length || hayFiltros() || pestana !== "catalogo") {
+  if (!Nucleo.datos.peliculas().length || hayFiltros() || pestana !== "catalogo") {
     sec.style.display = "none";
     return;
   }
@@ -369,7 +369,7 @@ function renderCena() {
     cuerpo = '<p class="meta">' + esc(cenaMensaje || "Pulsa el botón y te doy una película pendiente de menos de 2 horas.") + '</p>' +
       '<button class="pildora destacado" id="btnCena">Elegir para esta noche</button>';
   } else {
-    const m = (marcas[cenaElegida.titulo] || {});
+    const m = (Nucleo.datos.marcas()[cenaElegida.titulo] || {});
     const conAlguien = estadoDe(cenaElegida).conAlguien;
     cuerpo = (cenaElegida.portada && !datosLimitados()
         ? '<img class="cena-portada" src="' + esc(cenaElegida.portada) + '" alt="">'
@@ -399,8 +399,8 @@ function desplazarMes(ym, delta) {
 function planesProximos7Dias() {
   const hoy = hoyLocalISO();
   const limite = sumarDiasISO(hoy, 7);
-  return peliculas
-    .map(p => ({ p, m: marcas[p.titulo] || {} }))
+  return Nucleo.datos.peliculas()
+    .map(p => ({ p, m: Nucleo.datos.marcas()[p.titulo] || {} }))
     .filter(({ m }) => m.conAlguien && m.conFecha && m.conFecha >= hoy && m.conFecha <= limite)
     .sort((a, b) => a.m.conFecha.localeCompare(b.m.conFecha));
 }
@@ -416,7 +416,7 @@ function etiquetaDia(iso) {
 
 function renderEstaSemana() {
   const sec = $("estaSemana");
-  if (!peliculas.length || hayFiltros() || pestana !== "catalogo") {
+  if (!Nucleo.datos.peliculas().length || hayFiltros() || pestana !== "catalogo") {
     sec.style.display = "none";
     return;
   }
@@ -438,7 +438,7 @@ function renderEstaSemana() {
 let parDuelo = null;
 
 function elegirPar() {
-  const pend = peliculas.filter(p => {
+  const pend = Nucleo.datos.peliculas().filter(p => {
     const s = estadoDe(p);
     return s.pendiente && !s.conAlguien;
   });
@@ -451,7 +451,7 @@ function elegirPar() {
 
 function renderDuelo() {
   const sec = $("duelo");
-  if (!peliculas.length || hayFiltros() || pestana !== "catalogo") {
+  if (!Nucleo.datos.peliculas().length || hayFiltros() || pestana !== "catalogo") {
     sec.style.display = "none";
     return;
   }
@@ -479,9 +479,9 @@ function renderDuelo() {
 }
 
 function elegirEnDuelo(titulo) {
-  const previo = marcas[titulo] || {};
+  const previo = Nucleo.datos.marcas()[titulo] || {};
   const nuevo = Object.assign({}, previo, { pendienteElegidaDesde: hoyLocalISO() });
-  marcas[titulo] = nuevo;
+  Nucleo.datos.marcas()[titulo] = nuevo;
   programarGuardado();
   parDuelo = null;
   setEstado("Elegida en el duelo: «" + titulo + "».");
@@ -505,11 +505,11 @@ function topConteo(items, n) {
 function renderMapaGustos() {
   const sec = $("mapaGustos");
   destruirMapa();
-  if (!peliculas.length || pestana !== "vistas") {
+  if (!Nucleo.datos.peliculas().length || pestana !== "vistas") {
     sec.style.display = "none";
     return;
   }
-  const favoritas = peliculas.filter(p => estadoDe(p).estrellas >= 4);
+  const favoritas = Nucleo.datos.peliculas().filter(p => estadoDe(p).estrellas >= 4);
   if (favoritas.length < 2 || typeof Chart === "undefined") {
     sec.style.display = "none";
     return;
@@ -551,13 +551,13 @@ const PREGUNTAS = [
 
 function preguntaDelDia() {
   const hoy = hoyLocalISO();
-  const pd = marcas.__preguntaDia || null;
+  const pd = Nucleo.datos.marcas().__preguntaDia || null;
   if (pd && pd.fecha === hoy) {
-    const m = marcas[pd.titulo] || {};
+    const m = Nucleo.datos.marcas()[pd.titulo] || {};
     if (m.vista && !m.descartada) return pd;
   }
   const recientes = ((pd && pd.recientes) || []).filter(r => r.f >= diaISODesde(6));
-  const vistas = peliculas.filter(p => estadoDe(p).vista && !(marcas[p.titulo] || {}).descartada);
+  const vistas = Nucleo.datos.peliculas().filter(p => estadoDe(p).vista && !(Nucleo.datos.marcas()[p.titulo] || {}).descartada);
   if (!vistas.length) return null;
   let cand = vistas.filter(p => !recientes.some(r => r.t === p.titulo));
   if (!cand.length) cand = vistas;
@@ -569,7 +569,7 @@ function preguntaDelDia() {
     recientes: recientes.concat([{ t: elegida.titulo, f: hoy }]).slice(-10),
     omitida: pd && pd.fecha === hoy ? pd.omitida : undefined
   };
-  marcas.__preguntaDia = nuevo;
+  Nucleo.datos.marcas().__preguntaDia = nuevo;
   programarGuardado();
   return nuevo;
 }
@@ -580,7 +580,7 @@ function textoPregunta(pd) {
 
 function renderPregunta() {
   const sec = $("pregunta");
-  if (!peliculas.length || hayFiltros() || pestana !== "catalogo") {
+  if (!Nucleo.datos.peliculas().length || hayFiltros() || pestana !== "catalogo") {
     sec.style.display = "none";
     return;
   }
@@ -590,12 +590,12 @@ function renderPregunta() {
     sec.style.display = "none";
     return;
   }
-  const p = peliculas.find(x => x.titulo === pd.titulo);
+  const p = Nucleo.datos.peliculas().find(x => x.titulo === pd.titulo);
   if (!p) {
     sec.style.display = "none";
     return;
   }
-  const entrada = ((marcas[p.titulo] || {}).preguntas || []).find(e => e.f === hoy);
+  const entrada = ((Nucleo.datos.marcas()[p.titulo] || {}).preguntas || []).find(e => e.f === hoy);
   const pregunta = textoPregunta(pd);
   const cuerpo = entrada
     ? '<p class="resumen-titulo">' + esc(pregunta) + '</p>' +
@@ -618,10 +618,10 @@ function guardarRespuestaDia(titulo) {
   const pd = preguntaDelDia();
   if (!pd) return;
   const hoy = hoyLocalISO();
-  const m = marcas[titulo] || {};
+  const m = Nucleo.datos.marcas()[titulo] || {};
   const lista = (m.preguntas || []).filter(e => e.f !== hoy)
     .concat([{ f: hoy, p: textoPregunta(pd), r: texto }]);
-  marcas[titulo] = Object.assign({}, m, { preguntas: lista });
+  Nucleo.datos.marcas()[titulo] = Object.assign({}, m, { preguntas: lista });
   programarGuardado();
   setEstado("Respuesta guardada.");
   refrescarTodo();
@@ -630,13 +630,13 @@ function guardarRespuestaDia(titulo) {
 function omitirPreguntaHoy() {
   const pd = preguntaDelDia();
   if (!pd) return;
-  marcas.__preguntaDia = Object.assign({}, pd, { omitida: hoyLocalISO() });
+  Nucleo.datos.marcas().__preguntaDia = Object.assign({}, pd, { omitida: hoyLocalISO() });
   programarGuardado();
   refrescarTodo();
 }
 
 function preguntasFichaHtml(p) {
-  const lista = (marcas[p.titulo] || {}).preguntas || [];
+  const lista = (Nucleo.datos.marcas()[p.titulo] || {}).preguntas || [];
   if (!lista.length) return "";
   return '<details class="historial"><summary>Mis respuestas (' + lista.length + ')</summary><ul>' +
     lista.slice().sort((a, b) => b.f.localeCompare(a.f)).map(e =>
@@ -648,8 +648,8 @@ function preguntasFichaHtml(p) {
 // Guía para cuando todavía no hay marcas: explica lo básico y se oculta solo.
 function renderBienvenida() {
   const sec = $("bienvenida");
-  const hayMarcas = Object.keys(marcas).some(k => !k.startsWith("__") && marcas[k] && Object.keys(marcas[k]).length);
-  if (!peliculas.length || hayMarcas || hayFiltros() || pestana !== "catalogo") {
+  const hayMarcas = Object.keys(Nucleo.datos.marcas()).some(k => !k.startsWith("__") && Nucleo.datos.marcas()[k] && Object.keys(Nucleo.datos.marcas()[k]).length);
+  if (!Nucleo.datos.peliculas().length || hayMarcas || hayFiltros() || pestana !== "catalogo") {
     sec.style.display = "none";
     return;
   }
@@ -692,8 +692,8 @@ function htmlCalendario() {
       (eventos[f] = eventos[f] || []).push({ tipo, titulo });
     }
   };
-  peliculas.forEach(p => {
-    const o = marcas[p.titulo] || {};
+  Nucleo.datos.peliculas().forEach(p => {
+    const o = Nucleo.datos.marcas()[p.titulo] || {};
     const s = estadoDe(p);
     if (s.pendiente) agregar(o.pendienteDesde, "📌", p.titulo);
     if (s.conAlguien) {

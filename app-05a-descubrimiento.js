@@ -13,7 +13,7 @@ const TEMAS_NOCHE = [
 ];
 
 function pendientesNoVistas() {
-  return peliculas.filter(p => (marcas[p.titulo] || {}).pendiente && !(marcas[p.titulo] || {}).vista);
+  return Nucleo.datos.peliculas().filter(p => (Nucleo.datos.marcas()[p.titulo] || {}).pendiente && !(Nucleo.datos.marcas()[p.titulo] || {}).vista);
 }
 
 function generoCoincide(p, patron) {
@@ -73,7 +73,7 @@ function armarMaraton(minutosPedidos) {
 
 /* 8) Modo sorpresa con reglas */
 function abrirSorpresa() {
-  const generos = [...new Set(peliculas.flatMap(p => String(p.genero || "").split(/[,\/]/).map(x => x.trim()).filter(Boolean)))].sort();
+  const generos = [...new Set(Nucleo.datos.peliculas().flatMap(p => String(p.genero || "").split(/[,\/]/).map(x => x.trim()).filter(Boolean)))].sort();
   abrirVentanaSimple("sorpresa", "Sorpresa con reglas",
     '<label class="campo">Duración máxima<select id="sorpDur"><option value="0">Cualquiera</option><option value="90">Hasta 90 min</option><option value="120">Hasta 2 h</option></select></label>' +
     '<label class="campo">Género<select id="sorpGen"><option value="">Cualquiera</option>' +
@@ -233,8 +233,8 @@ function paisesDe(p) {
 
 function abrirMapaViaje() {
   const mapa = {};
-  peliculas.forEach(p => {
-    const o = marcas[p.titulo] || {};
+  Nucleo.datos.peliculas().forEach(p => {
+    const o = Nucleo.datos.marcas()[p.titulo] || {};
     paisesDe(p).forEach(c => {
       mapa[c] = mapa[c] || { total: 0, vistas: 0, films: [] };
       mapa[c].total++;
@@ -257,7 +257,7 @@ function abrirMapaViaje() {
     const pais = e.target.closest("[data-pais]");
     const peli = e.target.closest("[data-titulo]");
     if (peli) {
-      const p = peliculas.find(x => x.titulo === peli.dataset.titulo);
+      const p = Nucleo.datos.peliculas().find(x => x.titulo === peli.dataset.titulo);
       ventana.remove();
       if (p) abrirDetalle(p);
       return;
@@ -267,7 +267,7 @@ function abrirMapaViaje() {
     const films = mapa[c].films;
     document.getElementById("paisDetalle").innerHTML = '<h4>' + esc(c) + ' (' + films.length + ')</h4>' +
       films.map(p => {
-        const o = marcas[p.titulo] || {};
+        const o = Nucleo.datos.marcas()[p.titulo] || {};
         const estado = o.vista ? "✓ vista" : o.pendiente ? "⏳ pendiente" : "sin ver";
         return '<button type="button" class="explorar-item" data-titulo="' + esc(p.titulo) + '"><b>' + esc(p.titulo) +
           '</b><span class="meta">' + esc(p["año"] || "") + ' · ' + estado + '</span></button>';
@@ -278,7 +278,7 @@ function abrirMapaViaje() {
 /* ---------- Etapa 3b: rachas de gustos ---------- */
 function detectarRachas() {
   const avisos = [];
-  const vistas = peliculas.map(p => ({ p, o: marcas[p.titulo] || {} }))
+  const vistas = Nucleo.datos.peliculas().map(p => ({ p, o: Nucleo.datos.marcas()[p.titulo] || {} }))
     .filter(x => x.o.vista && x.o.estrellas)
     .map(x => {
       const ultima = (x.o.historial || []).filter(h => h.a === "vista").slice(-1)[0];
@@ -315,17 +315,17 @@ function fechaMasMeses(iso, meses) {
 
 function cartasListas() {
   const hoy = hoyLocalISO();
-  return peliculas.filter(p => {
-    const c = (marcas[p.titulo] || {}).carta;
+  return Nucleo.datos.peliculas().filter(p => {
+    const c = (Nucleo.datos.marcas()[p.titulo] || {}).carta;
     return c && !c.leida && fechaMasMeses(c.fecha, c.meses) <= hoy;
   });
 }
 
 function abrirBuzon() {
   const listas = cartasListas();
-  const vistas = peliculas.filter(p => (marcas[p.titulo] || {}).vista && !(marcas[p.titulo] || {}).carta);
+  const vistas = Nucleo.datos.peliculas().filter(p => (Nucleo.datos.marcas()[p.titulo] || {}).vista && !(Nucleo.datos.marcas()[p.titulo] || {}).carta);
   const cartaHtml = p => {
-    const c = marcas[p.titulo].carta;
+    const c = Nucleo.datos.marcas()[p.titulo].carta;
     return '<div class="carta-caja"><b>' + esc(p.titulo) + '</b> <span class="meta">escrita el ' + esc(c.fecha) + '</span>' +
       '<p>' + esc(c.texto) + '</p></div>';
   };
@@ -346,7 +346,7 @@ function abrirBuzon() {
 
   const marcarLeidas = document.getElementById("marcarLeidas");
   if (marcarLeidas) marcarLeidas.addEventListener("click", () => {
-    listas.forEach(p => { marcas[p.titulo] = Object.assign({}, marcas[p.titulo], { carta: Object.assign({}, marcas[p.titulo].carta, { leida: true }) }); });
+    listas.forEach(p => { Nucleo.datos.marcas()[p.titulo] = Object.assign({}, Nucleo.datos.marcas()[p.titulo], { carta: Object.assign({}, Nucleo.datos.marcas()[p.titulo].carta, { leida: true }) }); });
     programarGuardado();
     document.querySelector("#buzon [data-cerrar]").click();
     pintar();
@@ -358,7 +358,7 @@ function abrirBuzon() {
     const titulo = document.getElementById("cartaPeli").value;
     const texto = document.getElementById("cartaTexto").value.trim();
     if (!texto) { avisar("Escribe algo en la carta antes de guardarla."); return; }
-    marcas[titulo] = Object.assign({}, marcas[titulo], {
+    Nucleo.datos.marcas()[titulo] = Object.assign({}, Nucleo.datos.marcas()[titulo], {
       carta: { texto, fecha: hoyLocalISO(), meses: Number(document.getElementById("cartaMeses").value), leida: false }
     });
     programarGuardado();
@@ -408,7 +408,7 @@ function abrirModoViaje() {
       '<p class="meta">Aún no tienes una lista de viaje. Usa «Preparar viaje» cuando tengas internet.</p>');
     return;
   }
-  const pendientes = paq.lista.filter(x => !((marcas[x.titulo] || {}).vista));
+  const pendientes = paq.lista.filter(x => !((Nucleo.datos.marcas()[x.titulo] || {}).vista));
   const cuerpo = '<p class="meta">Preparada el ' + esc(paq.fecha) + ' · ' + pendientes.length + ' por ver</p>' +
     (pendientes.length
       ? pendientes.map(x => '<div class="viaje-fila"><div><b>' + esc(x.titulo) + '</b>' +

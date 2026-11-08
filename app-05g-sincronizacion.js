@@ -20,7 +20,7 @@ function syncLeerLocal() {
 function syncGuardarLocal() {
   if (!syncUid) return;
   try {
-    localStorage.setItem(syncClave(), JSON.stringify({ marcas: marcas, base: syncBase, pendiente: syncPendiente }));
+    localStorage.setItem(syncClave(), JSON.stringify({ marcas: Nucleo.datos.marcas(), base: syncBase, pendiente: syncPendiente }));
   } catch (e) {}
 }
 
@@ -33,18 +33,18 @@ function syncBorrarLocal() {
 // Marca la hora solo en las películas que cambiaron desde la última sincronización
 function syncMarcarCambios() {
   const ahora = Date.now();
-  new Set([...Object.keys(marcas), ...Object.keys(syncBase)]).forEach(k => {
-    if (k.startsWith("__") || !marcas[k]) return;
-    if (!syncIguales(marcas[k], syncBase[k])) marcas[k].mod = ahora;
+  new Set([...Object.keys(Nucleo.datos.marcas()), ...Object.keys(syncBase)]).forEach(k => {
+    if (k.startsWith("__") || !Nucleo.datos.marcas()[k]) return;
+    if (!syncIguales(Nucleo.datos.marcas()[k], syncBase[k])) Nucleo.datos.marcas()[k].mod = ahora;
   });
 }
 
 // Cuenta los cambios de este dispositivo que todavía no están en Drive
 function syncContarPendientes() {
   let n = 0;
-  new Set([...Object.keys(marcas), ...Object.keys(syncBase)]).forEach(k => {
+  new Set([...Object.keys(Nucleo.datos.marcas()), ...Object.keys(syncBase)]).forEach(k => {
     if (k.startsWith("__")) return;
-    if (!syncIguales(marcas[k], syncBase[k])) n++;
+    if (!syncIguales(Nucleo.datos.marcas()[k], syncBase[k])) n++;
   });
   return n;
 }
@@ -159,10 +159,10 @@ async function syncTodo() {
   try {
     syncMarcarCambios();
     const { ids, combinado, versiones } = await syncLeerTodos();
-    const antes = syncClon(marcas);
-    marcas = envolverMarcas(syncMezclar(marcas, combinado, syncBase));
-    const cambio = !syncIguales(antes, marcas);
-    const enviar = syncClon(marcas);
+    const antes = syncClon(Nucleo.datos.marcas());
+    marcas = envolverMarcas(syncMezclar(Nucleo.datos.marcas(), combinado, syncBase));
+    const cambio = !syncIguales(antes, Nucleo.datos.marcas());
+    const enviar = syncClon(Nucleo.datos.marcas());
     if (!syncIguales(enviar, combinado) || ids.length > 1) {
       if (ids.length || Object.keys(enviar).length) {
         if (await syncArchivosCambiaron(ids, versiones)) throw new Error("CONFLICTO_DRIVE");
@@ -176,9 +176,9 @@ async function syncTodo() {
     }
     syncBase = enviar;
     syncReintentos = 0;
-    syncPendiente = !syncIguales(marcas, enviar);
+    syncPendiente = !syncIguales(Nucleo.datos.marcas(), enviar);
     syncGuardarLocal();
-    if (cambio && peliculas.length) refrescarTodo();
+    if (cambio && Nucleo.datos.peliculas().length) refrescarTodo();
     const hora = new Date().toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" });
     ultimaSyncOk = Date.now();
     setEstado((syncPendiente ? "Hay cambios nuevos por subir…" : "Guardado en tu Drive · " + hora) + avisoIds());
@@ -189,7 +189,7 @@ async function syncTodo() {
       return;
     }
     syncReintentos = 0;
-    syncPendiente = !syncIguales(marcas, syncBase);
+    syncPendiente = !syncIguales(Nucleo.datos.marcas(), syncBase);
     syncGuardarLocal();
     setEstado(navigator.onLine === false
       ? mensajeSinConexion()
@@ -203,10 +203,10 @@ async function syncTodo() {
 
 // Avisa en la barra de estado si hay marcas que ya no coinciden con ninguna fila de la hoja
 function avisoIds() {
-  if (!peliculas.length) return "";
-  const ids = new Set(peliculas.map(idDe));
-  const huerfanas = Object.keys(marcas).filter(k => !k.startsWith("__") && marcas[k] && !ids.has(k)).length;
-  const sinId = peliculas.filter(p => !/^\d+$/.test(String(p.tmdb_id || "").trim())).length;
+  if (!Nucleo.datos.peliculas().length) return "";
+  const ids = new Set(Nucleo.datos.peliculas().map(idDe));
+  const huerfanas = Object.keys(Nucleo.datos.marcas()).filter(k => !k.startsWith("__") && Nucleo.datos.marcas()[k] && !ids.has(k)).length;
+  const sinId = Nucleo.datos.peliculas().filter(p => !/^\d+$/.test(String(p.tmdb_id || "").trim())).length;
   let t = "";
   if (huerfanas) t += " · " + huerfanas + (huerfanas === 1 ? " marca sin película en la hoja" : " marcas sin película en la hoja");
   if (sinId) t += " · " + sinId + (sinId === 1 ? " película sin tmdb_id" : " películas sin tmdb_id");
@@ -227,7 +227,7 @@ const tieneProp = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
 
 function construirMapaTitulos() {
   mapaTitulos = {};
-  peliculas.forEach(p => { if (!tieneProp(mapaTitulos, p.titulo)) mapaTitulos[p.titulo] = claveDe(p); });
+  Nucleo.datos.peliculas().forEach(p => { if (!tieneProp(mapaTitulos, p.titulo)) mapaTitulos[p.titulo] = claveDe(p); });
 }
 
 // Pasa las claves de título a su clave estable; si dos registros chocan, combina sus campos (gana el más reciente)
@@ -260,13 +260,13 @@ function envolverMarcas(obj) {
 
 // Migración única: respaldo local previo, conversión de claves y marca de versión 2
 function migrarClaves() {
-  if (marcas.__version === 2) return false;
-  if (syncUid) { try { localStorage.setItem("respaldo_antes_de_claves_" + syncUid, JSON.stringify(marcas)); } catch (e) {} }
-  const antes = JSON.stringify(marcas);
-  marcas = envolverMarcas(marcas);
-  marcas.__version = 2;
+  if (Nucleo.datos.marcas().__version === 2) return false;
+  if (syncUid) { try { localStorage.setItem("respaldo_antes_de_claves_" + syncUid, JSON.stringify(Nucleo.datos.marcas())); } catch (e) {} }
+  const antes = JSON.stringify(Nucleo.datos.marcas());
+  marcas = envolverMarcas(Nucleo.datos.marcas());
+  Nucleo.datos.marcas().__version = 2;
   programarGuardado();
-  return JSON.stringify(marcas) !== antes;
+  return JSON.stringify(Nucleo.datos.marcas()) !== antes;
 }
 
 // Funciones que usa el resto de la página
@@ -312,7 +312,7 @@ function syncAlVolver() {
   if (document.visibilityState !== "visible") return;
   if (Date.now() - syncUltimaVuelta < 30000) return;
   syncUltimaVuelta = Date.now();
-  if (peliculas.length) syncTodo();
+  if (Nucleo.datos.peliculas().length) syncTodo();
 }
 document.addEventListener("visibilitychange", syncAlVolver);
 window.addEventListener("focus", syncAlVolver);
@@ -320,12 +320,12 @@ window.addEventListener("online", () => { setEstado("Conexión recuperada. Sincr
 window.addEventListener("offline", () => setEstado(mensajeSinConexion()));
 // Sincronización periódica: solo con la app visible y con señal (no gasta datos en segundo plano)
 setInterval(() => {
-  if (peliculas.length && !document.hidden && navigator.onLine !== false) syncTodo();
+  if (Nucleo.datos.peliculas().length && !document.hidden && navigator.onLine !== false) syncTodo();
 }, 300000);
 
 // Cuando la hoja ya cargó: reconcilia las marcas por id y sincroniza una vez
 const esperaSync = setInterval(() => {
-  if (!peliculas.length || !accessToken) return;
+  if (!Nucleo.datos.peliculas().length || !accessToken) return;
   clearInterval(esperaSync);
   construirMapaTitulos();
   if (migrarClaves()) refrescarTodo();

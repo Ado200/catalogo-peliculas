@@ -146,7 +146,7 @@ function elegirNoche(otra) {
 function refrescarTodo() {
   pintar();
   if ($("modal").classList.contains("abierto")) {
-    const actual = peliculas.find(p => p.titulo === $("detalle").querySelector("h2")?.textContent);
+    const actual = Nucleo.datos.peliculas().find(p => p.titulo === $("detalle").querySelector("h2")?.textContent);
     if (actual) abrirDetalle(actual);
   }
 }
@@ -279,7 +279,7 @@ window.addEventListener("load", () => {
     }
   });
   window.addEventListener("offline", () => {
-    if (accessToken && peliculas.length) mostrarBannerOffline(new Date().toISOString());
+    if (accessToken && Nucleo.datos.peliculas().length) mostrarBannerOffline(new Date().toISOString());
   });
   if (!navigator.onLine) {
     cargarDesdeCopia();
@@ -446,9 +446,9 @@ window.addEventListener("load", () => {
 
   $("sagas").addEventListener("click", e => {
     const d = e.target.closest("[data-idx]");
-    if (d && peliculas[Number(d.dataset.idx)]) {
+    if (d && Nucleo.datos.peliculas()[Number(d.dataset.idx)]) {
       desdeAleatorio = false;
-      origenPoster = d.querySelector("img"); abrirDetalle(peliculas[Number(d.dataset.idx)]);
+      origenPoster = d.querySelector("img"); abrirDetalle(Nucleo.datos.peliculas()[Number(d.dataset.idx)]);
     }
   });
 
@@ -456,7 +456,7 @@ window.addEventListener("load", () => {
     const d = e.target.closest("[data-idx]");
     if (d) {
       desdeAleatorio = false;
-      origenPoster = d.querySelector("img"); abrirDetalle(peliculas[Number(d.dataset.idx)]);
+      origenPoster = d.querySelector("img"); abrirDetalle(Nucleo.datos.peliculas()[Number(d.dataset.idx)]);
     }
   });
 
@@ -464,7 +464,7 @@ window.addEventListener("load", () => {
   $("recomCarrusel").addEventListener("click", e => {
     const pq = e.target.closest("[data-porque]");
     if (pq) {
-      const titulo = peliculas[Number(pq.dataset.porque)].titulo;
+      const titulo = Nucleo.datos.peliculas()[Number(pq.dataset.porque)].titulo;
       if (porQueAbiertos.has(titulo)) porQueAbiertos.delete(titulo);
       else porQueAbiertos.add(titulo);
       renderRecomendaciones();
@@ -473,7 +473,7 @@ window.addEventListener("load", () => {
     const d = e.target.closest("[data-idx]");
     if (d) {
       desdeAleatorio = false;
-      origenPoster = d.querySelector("img"); abrirDetalle(peliculas[Number(d.dataset.idx)]);
+      origenPoster = d.querySelector("img"); abrirDetalle(Nucleo.datos.peliculas()[Number(d.dataset.idx)]);
     }
   });
 
@@ -508,7 +508,7 @@ window.addEventListener("load", () => {
 
     if (e.target.id === "cerrarResumen") { cerrarResumenSemana(); return; }
     if (e.target.id === "resumenVer") {
-      const p = peliculas.find(x => x.titulo === e.target.dataset.titulo);
+      const p = Nucleo.datos.peliculas().find(x => x.titulo === e.target.dataset.titulo);
       if (p) { desdeAleatorio = false; abrirDetalle(p); }
       return;
     }
@@ -530,7 +530,7 @@ window.addEventListener("load", () => {
     if (botonActor) { cerrarDetalle(); abrirActor(botonActor.dataset.actor); return; }
     const filaActor = e.target.closest("[data-actor-titulo]");
     if (filaActor) {
-      const p = peliculas.find(x => x.titulo === filaActor.dataset.actorTitulo);
+      const p = Nucleo.datos.peliculas().find(x => x.titulo === filaActor.dataset.actorTitulo);
       cerrarActor();
       if (p) { desdeAleatorio = false; abrirDetalle(p); }
       return;
@@ -542,12 +542,12 @@ window.addEventListener("load", () => {
     if (botonSaga) { marcarSagaPendiente(botonSaga.dataset.sagaPend); return; }
     const botonSiguiente = e.target.closest("[data-siguiente]");
     if (botonSiguiente) {
-      const p = peliculas.find(x => x.titulo === botonSiguiente.dataset.siguiente);
+      const p = Nucleo.datos.peliculas().find(x => x.titulo === botonSiguiente.dataset.siguiente);
       if (p) { desdeAleatorio = false; abrirDetalle(p); }
       return;
     }
     if (e.target.id === "cenaVer") {
-      const p = peliculas.find(x => x.titulo === e.target.dataset.titulo);
+      const p = Nucleo.datos.peliculas().find(x => x.titulo === e.target.dataset.titulo);
       if (p) { desdeAleatorio = false; abrirDetalle(p); }
       return;
     }
@@ -581,7 +581,7 @@ window.addEventListener("load", () => {
     e.stopPropagation();
 
     const titulo = b.dataset.clave;
-    const p = peliculas.find(x => x.titulo === titulo);
+    const p = Nucleo.datos.peliculas().find(x => x.titulo === titulo);
     if (!p) return;
     const s = estadoDe(p);
 
@@ -712,9 +712,9 @@ function exportarCSV() {
   };
 
   const filas = [columnas.join(",")];
-  peliculas.forEach(p => {
+  Nucleo.datos.peliculas().forEach(p => {
     const s = estadoDe(p);
-    const m = marcas[p.titulo] || {};
+    const m = Nucleo.datos.marcas()[p.titulo] || {};
     const valores = columnas.map(c => {
       if (c === "vista") return s.vista ? "sí" : "no";
       if (c === "pendiente") return s.pendiente ? "sí" : "no";
@@ -737,7 +737,7 @@ function exportarCSV() {
   a.click();
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
-  setEstado("CSV exportado: " + peliculas.length + " títulos.");
+  setEstado("CSV exportado: " + Nucleo.datos.peliculas().length + " títulos.");
 }
 
 $("exportar").addEventListener("click", exportarCSV);

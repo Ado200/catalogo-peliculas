@@ -63,8 +63,8 @@ setInterval(actualizarCopiaEstado, 60000);
 /* 3) Pendientes viejos: más de 60 días en la lista */
 function pendientesViejos() {
   const limite = Date.now() - 60 * 86400000;
-  return peliculas.filter(p => {
-    const m = marcas[p.titulo] || {};
+  return Nucleo.datos.peliculas().filter(p => {
+    const m = Nucleo.datos.marcas()[p.titulo] || {};
     if (!m.pendiente || m.vista || !m.pendienteDesde) return false;
     return Date.parse(m.pendienteDesde) < limite;
   }).map(p => p.titulo);
@@ -90,7 +90,7 @@ $("guardarPaletas").addEventListener("click", () => {
 });
 function paletasAutomaticas() {
   if (leerLS("paletas_duena") !== "1" || typeof guardarPaletasEnHoja !== "function") return;
-  if (peliculas.some(p => p.portada && !paletaDeTexto(p[NOMBRE_PALETA]).length)) guardarPaletasEnHoja();
+  if (Nucleo.datos.peliculas().some(p => p.portada && !paletaDeTexto(p[NOMBRE_PALETA]).length)) guardarPaletasEnHoja();
 }
 
 /* Memoria de gustos: ajuste visible */
@@ -100,7 +100,7 @@ selGustos.addEventListener("change", () => escribirLS("gustos_memoria", selGusto
 
 /* Arranque: cuando el catálogo ya cargó */
 const esperaAuto = setInterval(() => {
-  if (typeof peliculas === "undefined" || !peliculas.length) return;
+  if (typeof peliculas === "undefined" || !Nucleo.datos.peliculas().length) return;
   clearInterval(esperaAuto);
   setTimeout(() => { restaurarFiltrosAuto(); paletasAutomaticas(); }, 800);
 }, 500);

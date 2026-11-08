@@ -6,7 +6,7 @@ const CLIENT_ID = "45846987194-cm8mnhijljms8k8u8j44n8aeq674vuis.apps.googleuserc
 const DOMINIO_INSTITUCIONAL = "ucaribe.edu.mx";
 // Modo prueba: si existe "hoja_id_prueba" en el navegador, la app usa esa hoja en lugar de la real.
 const HOJA_ID = localStorage.getItem("hoja_id_prueba") || "1W5oSA5yy4TpbVYxjya6S9T6NkeE6irwSHABXFAijO2k";
-const SCOPES = "https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.appdata openid email";
+const SCOPES = "https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.appdata https://www.googleapis.com/auth/calendar.events openid email";
 const NOMBRE_PALETA = "paleta_poster";
 
 let peliculas = [];

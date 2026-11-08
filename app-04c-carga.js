@@ -78,10 +78,10 @@ async function cargarDesdeCopia() {
     if (!f[0]) return;
     const o = { _fila: i + 2 };
     encabezados.forEach((n, j) => o[n] = f[j] ?? "");
-    peliculas.push(o);
+    Nucleo.datos.peliculas().push(o);
   });
   fotosActores = {};
-  peliculas.forEach(p => {
+  Nucleo.datos.peliculas().forEach(p => {
     try {
       const m = JSON.parse(p.fotos_reparto || "{}");
       Object.entries(m).forEach(([n, u]) => { if (!fotosActores[n]) fotosActores[n] = u; });
@@ -119,11 +119,11 @@ async function cargarHoja() {
       if (!f[0]) return;
       const o = { _fila: i + 2 };
       encabezados.forEach((n, j) => o[n] = f[j] ?? "");
-      peliculas.push(o);
+      Nucleo.datos.peliculas().push(o);
     });
 
     fotosActores = {};
-    peliculas.forEach(p => {
+    Nucleo.datos.peliculas().forEach(p => {
       try {
         const m = JSON.parse(p.fotos_reparto || "{}");
         Object.entries(m).forEach(([n, u]) => { if (!fotosActores[n]) fotosActores[n] = u; });

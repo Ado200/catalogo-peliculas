@@ -1,6 +1,6 @@
 // Versión de la caché: súbela (catalogo-v3, v4…) cuando cambies index.html, iconos o estilos.
 // app.js y estilos.css ya se piden primero a la red, así que sus cambios llegan sin subir la versión.
-const VERSION = "catalogo-20261108135854";
+const VERSION = "catalogo-v101";
 const SHELL = [
   "./",
   "./index.html",
@@ -12,6 +12,7 @@ const SHELL = [
   "./estilos.css",
   "./app-00-nucleo.js",
   "./app-00a-utilidades.js",
+  "./app-00b-migraciones.js",
   "./app-01-inicio-y-sugerencias.js",
   "./app-01c-inicio-secciones.js",
   "./app-01b-sagas-actores.js",
@@ -43,6 +44,13 @@ const SHELL = [
   "./app-06b-asistente.js",
   "./app-06c-navegacion-yo.js",
   "./app-06d-reglas.js",
+  "./app-06e-calendario-ics.js",
+  "./app-06f-calendario-google.js",
+  "./app-06g-atajos-enlaces.js",
+  "./app-06h-importar-historial.js",
+  "./app-06i-compartir.js",
+  "./app-06j-novedades.js",
+  "./app-06k-diagnostico-completo.js",
   "./app-07a-adornos.js",
   "./app-07-saludo-y-bloques.js",
   "./app-07b-saludo.js",

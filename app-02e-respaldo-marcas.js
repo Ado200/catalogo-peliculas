@@ -8,7 +8,7 @@ function respaldarMarcas() {
     formato: "catalogo-marcas",
     version: 1,
     fecha: new Date().toISOString(),
-    marcas: marcas
+    marcas: Nucleo.datos.marcas()
   };
   const blob = new Blob([JSON.stringify(datos, null, 2)], { type: "application/json" });
   const url = URL.createObjectURL(blob);
@@ -19,7 +19,7 @@ function respaldarMarcas() {
   a.click();
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
-  setEstado("Respaldo descargado: " + Object.keys(marcas).length + " películas con marcas.");
+  setEstado("Respaldo descargado: " + Object.keys(Nucleo.datos.marcas()).length + " películas con marcas.");
 }
 
 function validarRespaldo(texto) {
@@ -41,7 +41,7 @@ async function restaurarMarcasDesdeArchivo(archivo) {
   if (res.error) { setEstado(res.error); return; }
 
   const n = Object.keys(res.marcas).filter(k => !k.startsWith("__")).length;
-  const ok = confirm("¿Reemplazar tus marcas actuales (" + Object.keys(marcas).filter(k => !k.startsWith("__")).length + ") por las de este respaldo (" + n + " películas)? Esto también reemplaza tus filtros guardados. Las marcas actuales se perderán.");
+  const ok = confirm("¿Reemplazar tus marcas actuales (" + Object.keys(Nucleo.datos.marcas()).filter(k => !k.startsWith("__")).length + ") por las de este respaldo (" + n + " películas)? Esto también reemplaza tus filtros guardados. Las marcas actuales se perderán.");
   if (!ok) { setEstado("Restauración cancelada."); return; }
 
   clearTimeout(guardadoTimer);

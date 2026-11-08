@@ -2,7 +2,7 @@
 /* ---------- Sagas (requiere columna "saga" en la hoja) ---------- */
 function sagasAgrupadas() {
   const mapa = {};
-  peliculas.forEach(p => {
+  Nucleo.datos.peliculas().forEach(p => {
     const nombre = String(p.saga || "").trim();
     if (!nombre || nombre === "-") return; // "-" = sin saga o serie
     (mapa[nombre] = mapa[nombre] || []).push(p);
@@ -13,7 +13,7 @@ function sagasAgrupadas() {
       const vistas = lista.filter(p => estadoDe(p).vista).length;
       const pendientesPosibles = lista.filter(p => {
         const s = estadoDe(p);
-        return !s.vista && !s.pendiente && !(marcas[p.titulo] || {}).descartada;
+        return !s.vista && !s.pendiente && !(Nucleo.datos.marcas()[p.titulo] || {}).descartada;
       }).length;
       return { nombre, total: lista.length, vistas, pendientesPosibles, lista };
     })
@@ -43,7 +43,7 @@ function etiquetaEstadoSaga(p) {
   const s = estadoDe(p);
   if (s.vista) return "✓ Vista";
   if (s.pendiente) return "⏳ Pendiente";
-  if ((marcas[p.titulo] || {}).descartada) return "Descartada";
+  if ((Nucleo.datos.marcas()[p.titulo] || {}).descartada) return "Descartada";
   return "Sin ver";
 }
 
@@ -53,7 +53,7 @@ function marcarSagaPendiente(nombre) {
   let n = 0;
   grupo.lista.forEach(p => {
     const s = estadoDe(p);
-    if (!s.vista && !s.pendiente && !(marcas[p.titulo] || {}).descartada) {
+    if (!s.vista && !s.pendiente && !(Nucleo.datos.marcas()[p.titulo] || {}).descartada) {
       cambiarEstado(p.titulo, { pendiente: true, vista: false });
       n++;
     }
@@ -64,7 +64,7 @@ function marcarSagaPendiente(nombre) {
 
 function renderSagas() {
   const sec = $("sagas");
-  if (!peliculas.length || hayFiltros() || pestana !== "catalogo") {
+  if (!Nucleo.datos.peliculas().length || hayFiltros() || pestana !== "catalogo") {
     sec.style.display = "none";
     return;
   }
@@ -77,7 +77,7 @@ function renderSagas() {
     grupos.map(g => {
       const pct = Math.round(g.vistas / g.total * 100);
       const peliculasEnOrden = [...g.lista].sort(ordenEnSaga);
-      const siguiente = peliculasEnOrden.find(p => { const e = estadoDe(p); return !e.vista && !(marcas[p.titulo] || {}).descartada; });
+      const siguiente = peliculasEnOrden.find(p => { const e = estadoDe(p); return !e.vista && !(Nucleo.datos.marcas()[p.titulo] || {}).descartada; });
       const tarjetas = peliculasEnOrden.map((p, i) => {
         const n = numeroOrdenSaga(p);
         const e = estadoDe(p);
@@ -87,7 +87,7 @@ function renderSagas() {
           ? '<img src="' + esc(p.portada) + '" alt="" loading="lazy">'
           : '<div class="sg-sinportada">🎬</div>';
         const insignia = visto ? '<span class="sg-ins ok">✓</span>' : (e.pendiente ? '<span class="sg-ins pend">⏳</span>' : '');
-        return '<div class="sg-card' + (visto ? ' visto' : '') + (esSiguiente ? ' siguiente' : '') + '" data-idx="' + peliculas.indexOf(p) + '">' +
+        return '<div class="sg-card' + (visto ? ' visto' : '') + (esSiguiente ? ' siguiente' : '') + '" data-idx="' + Nucleo.datos.peliculas().indexOf(p) + '">' +
           '<div class="sg-poster">' + portada +
             '<span class="sg-num">' + esc(n !== null ? n : i + 1) + '</span>' + insignia +
             (esSiguiente ? '<span class="sg-tag">Sigue aquí</span>' : '') +
@@ -121,20 +121,20 @@ function nombresReparto(p) {
 // Caché: el agrupado depende solo del catálogo; se recalcula cuando cambia la lista de películas
 let actoresCache = { ref: null, n: -1, datos: null };
 function actoresAgrupados() {
-  if (actoresCache.ref === peliculas && actoresCache.n === peliculas.length) return actoresCache.datos;
+  if (actoresCache.ref === Nucleo.datos.peliculas() && actoresCache.n === Nucleo.datos.peliculas().length) return actoresCache.datos;
   const mapa = {};
-  peliculas.forEach(p => {
+  Nucleo.datos.peliculas().forEach(p => {
     nombresReparto(p).forEach(n => { (mapa[n] = mapa[n] || []).push(p); });
   });
   const datos = Object.entries(mapa)
     .sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0], "es"));
-  actoresCache = { ref: peliculas, n: peliculas.length, datos };
+  actoresCache = { ref: Nucleo.datos.peliculas(), n: Nucleo.datos.peliculas().length, datos };
   return datos;
 }
 
 function infoActores() {
   const mapa = {};
-  peliculas.forEach(p => {
+  Nucleo.datos.peliculas().forEach(p => {
     let m = {};
     try { m = JSON.parse(p.actores_info || "{}") || {}; } catch (e) { m = {}; }
     Object.keys(m).forEach(n => {
@@ -172,7 +172,7 @@ function fechaLarga(iso) {
 
 function renderActores() {
   const sec = $("actores");
-  if (!peliculas.length || hayFiltros() || pestana !== "catalogo") {
+  if (!Nucleo.datos.peliculas().length || hayFiltros() || pestana !== "catalogo") {
     sec.style.display = "none";
     return;
   }
@@ -192,7 +192,7 @@ function renderActores() {
 }
 
 function abrirActor(nombre) {
-  const films = peliculas.filter(p => nombresReparto(p).includes(nombre));
+  const films = Nucleo.datos.peliculas().filter(p => nombresReparto(p).includes(nombre));
   const info = infoActores()[nombre] || {};
   const foto = fotoDeActor(nombre, info);
   const vistas = films.filter(p => estadoDe(p).vista).length;
@@ -219,7 +219,7 @@ function abrirActor(nombre) {
     '<h4 class="actor-films-titulo">Películas en tu catálogo</h4>' +
     '<div class="actor-films">' + films.map(p => {
       const s2 = estadoDe(p);
-      const estado = (marcas[p.titulo] || {}).descartada ? "descartada" : s2.vista ? "vista" : s2.pendiente ? "pendiente" : "sin ver";
+      const estado = (Nucleo.datos.marcas()[p.titulo] || {}).descartada ? "descartada" : s2.vista ? "vista" : s2.pendiente ? "pendiente" : "sin ver";
       const portada = p.portada && !datosLimitados()
         ? '<img class="actor-film-poster" src="' + esc(p.portada) + '" alt="" loading="lazy">'
         : '<span class="actor-film-poster sinportada-mini">🎬</span>';

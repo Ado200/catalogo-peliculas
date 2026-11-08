@@ -8,7 +8,7 @@ function coincideBusqueda(p, f) {
   if (gen) return generosDe(p).some(x => norm(x) === gen[1].trim());
   const anio = g.match(/^ano:\s*(\d{4})$/);
   if (anio) return String(p["año"]) === anio[1];
-  const m = marcas[p.titulo] || {};
+  const m = Nucleo.datos.marcas()[p.titulo] || {};
   // Sin acentos ni mayúsculas, y cada palabra debe aparecer (con tolerancia a una o dos letras mal escritas)
   const texto = norm([p.titulo, p.director, p.reparto, p.genero, m.nota || "", m.conQuien || ""].join(" "));
   const tokens = texto.split(/[^a-z0-9]+/).filter(Boolean);
@@ -43,15 +43,15 @@ function distanciaEdicion(a, b) {
 function llenarSugerencias() {
   if (!busquedaActiva()) { $("sugerencias").innerHTML = ""; return; }
   const nombres = new Set();
-  peliculas.forEach(p => {
+  Nucleo.datos.peliculas().forEach(p => {
     nombres.add(p.titulo);
     personasDe(p).forEach(n => nombres.add(n));
   });
   const dl = $("sugerencias");
   const extras = [];
-  [...new Set(peliculas.flatMap(generosDe))].sort((a, b) => a.localeCompare(b, "es"))
+  [...new Set(Nucleo.datos.peliculas().flatMap(generosDe))].sort((a, b) => a.localeCompare(b, "es"))
     .forEach(g => extras.push("género: " + g));
-  [...new Set(peliculas.map(p => String(p["año"] || "")).filter(Boolean))].sort((a, b) => b.localeCompare(a))
+  [...new Set(Nucleo.datos.peliculas().map(p => String(p["año"] || "")).filter(Boolean))].sort((a, b) => b.localeCompare(a))
     .forEach(a => extras.push("año: " + a));
   dl.innerHTML = extras.map(x => '<option value="' + esc(x) + '"></option>').join("") +
     [...nombres].sort((a, b) => a.localeCompare(b, "es"))

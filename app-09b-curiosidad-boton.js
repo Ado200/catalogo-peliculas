@@ -52,7 +52,7 @@ function hechosDePelicula(p) {
   const out = [];
   const saga = String(p.saga || "").trim();
   if (saga && saga !== "-") {
-    const n = peliculas.filter(x => String(x.saga || "").trim() === saga).length;
+    const n = Nucleo.datos.peliculas().filter(x => String(x.saga || "").trim() === saga).length;
     out.push("Es parte de la saga «" + saga + "». En tu colección hay " + n + " película" + (n === 1 ? "" : "s") + " de ella.");
   }
   const pais = String(p.pais || "").trim();
@@ -66,7 +66,7 @@ function hechosDePelicula(p) {
   if (min) out.push("Dura " + min + " minutos.");
   const dir = String(p.director || "").split(",")[0].trim();
   if (dir) {
-    const n = peliculas.filter(x => String(x.director || "").split(",")[0].trim() === dir).length;
+    const n = Nucleo.datos.peliculas().filter(x => String(x.director || "").split(",")[0].trim() === dir).length;
     if (n > 1) out.push(dir + " tiene " + n + " películas en tu colección.");
   }
   const anio = Number(p["año"]);
@@ -84,7 +84,7 @@ function hechosDeActores(p) {
     else if (/^\d{4}/.test(i.nacimiento || "")) out.push(nombre + " nació en " + String(i.nacimiento).slice(0, 4) + ".");
     const bio = String(i.bio || "").split(/(?<=[.!?])\s+/)[0] || "";
     if (bio.length > 20 && bio.length < 260) out.push(nombre + ": " + bio);
-    const n = peliculas.filter(x => nombresReparto(x).indexOf(nombre) !== -1).length;
+    const n = Nucleo.datos.peliculas().filter(x => nombresReparto(x).indexOf(nombre) !== -1).length;
     if (n > 1) out.push(nombre + " aparece en " + n + " películas de tu colección.");
   });
   return out;
@@ -93,10 +93,10 @@ function hechosDeActores(p) {
 // Conexiones: "te suena porque…" (actor en otra película que ya viste) y "puente" (actor en otra pendiente)
 function conexionesDe(p) {
   const out = [];
-  const m = a => marcas[a.titulo] || {};
+  const m = a => Nucleo.datos.marcas()[a.titulo] || {};
   const reparto = nombresReparto(p);
   reparto.forEach(nombre => {
-    const otras = peliculas.filter(x => x.titulo !== p.titulo && nombresReparto(x).indexOf(nombre) !== -1);
+    const otras = Nucleo.datos.peliculas().filter(x => x.titulo !== p.titulo && nombresReparto(x).indexOf(nombre) !== -1);
     const vistas = otras.filter(x => m(x).vista);
     if (vistas.length) out.push("Te suena porque " + nombre + " también salió en «" + vistas[0].titulo + "», que ya marcaste como vista.");
     const pend = otras.filter(x => !m(x).vista && !m(x).descartada);
@@ -104,7 +104,7 @@ function conexionesDe(p) {
   });
   const saga = String(p.saga || "").trim();
   if (saga && saga !== "-") {
-    const vistasSaga = peliculas.filter(x => x.titulo !== p.titulo && String(x.saga || "").trim() === saga && m(x).vista).length;
+    const vistasSaga = Nucleo.datos.peliculas().filter(x => x.titulo !== p.titulo && String(x.saga || "").trim() === saga && m(x).vista).length;
     if (vistasSaga) out.push("De la saga «" + saga + "» ya viste " + vistasSaga + " más.");
   }
   return out;
@@ -138,8 +138,8 @@ function curioTipo(c) {
 // Relevancia (tus gustos) · novedad (no vista) · calidad (con fuente) · aprendizaje (tus reacciones)
 // Diversidad: no pone dos del mismo tipo seguidas.
 function perfilCurio() {
-  const m = a => marcas[a.titulo] || {};
-  const favoritas = peliculas.filter(p => m(p).vista && (m(p).estrellas || 0) >= 4);
+  const m = a => Nucleo.datos.marcas()[a.titulo] || {};
+  const favoritas = Nucleo.datos.peliculas().filter(p => m(p).vista && (m(p).estrellas || 0) >= 4);
   const perfil = { genero: {}, director: {}, actor: {} };
   const sumar = (obj, clave) => { if (clave) obj[clave] = (obj[clave] || 0) + 1; };
   favoritas.forEach(p => {

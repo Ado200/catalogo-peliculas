@@ -29,12 +29,12 @@ function sugeridasRecientes() {
 }
 
 function candidataSaga(hoy) {
-  const mk = t => marcas[t] || {};
-  const empezadas = new Set(peliculas
+  const mk = t => Nucleo.datos.marcas()[t] || {};
+  const empezadas = new Set(Nucleo.datos.peliculas()
     .filter(p => mk(p.titulo).vista && String(p.saga || "").trim() && String(p.saga).trim() !== "-")
     .map(p => String(p.saga).trim()));
   const ahora = hoy.getTime();
-  const p = peliculas.find(x => {
+  const p = Nucleo.datos.peliculas().find(x => {
     const s = String(x.saga || "").trim();
     if (!s || s === "-" || !empezadas.has(s)) return false;
     const m = mk(x.titulo);
@@ -58,9 +58,9 @@ function candidataFinde(hoy) {
   if (dia !== 5 && dia !== 6 && dia !== 0) return null;
   const clave = "auto_finde_" + semanaAuto(hoy);
   if (leerLS(clave) === "1") return null;
-  const mk = t => marcas[t] || {};
+  const mk = t => Nucleo.datos.marcas()[t] || {};
   const recientes = new Set(sugeridasRecientes().filter(x => Date.now() - x.f < 7 * 86400000).map(x => x.t));
-  const pool = peliculas.filter(p => {
+  const pool = Nucleo.datos.peliculas().filter(p => {
     const m = mk(p.titulo);
     const min = minutos(p);
     return m.pendiente && !m.vista && !m.descartada && min > 0 && min <= 120 && !recientes.has(p.titulo);
@@ -84,13 +84,13 @@ function candidataFinde(hoy) {
 function candidataLunes(hoy) {
   const clave = "auto_lunes_" + semanaAuto(hoy);
   if (leerLS(clave) === "1") return null;
-  const mk = t => marcas[t] || {};
+  const mk = t => Nucleo.datos.marcas()[t] || {};
   const inicioSem = lunesAuto(hoy);
   const inicioAnt = new Date(inicioSem); inicioAnt.setDate(inicioAnt.getDate() - 7);
   const finAnt = new Date(inicioSem); finAnt.setDate(finAnt.getDate() - 1);
   const a = isoAuto(inicioAnt), b = isoAuto(finAnt);
-  const vistas = peliculas.filter(p => { const d = String(mk(p.titulo).vistaDesde || ""); return mk(p.titulo).vista && d >= a && d <= b; }).length;
-  const pend = peliculas.filter(p => mk(p.titulo).pendiente && !mk(p.titulo).vista && !mk(p.titulo).descartada).length;
+  const vistas = Nucleo.datos.peliculas().filter(p => { const d = String(mk(p.titulo).vistaDesde || ""); return mk(p.titulo).vista && d >= a && d <= b; }).length;
+  const pend = Nucleo.datos.peliculas().filter(p => mk(p.titulo).pendiente && !mk(p.titulo).vista && !mk(p.titulo).descartada).length;
   const reto = retoActual();
   const planes = recordatoriosActivos().length;
   let texto = vistas
@@ -103,7 +103,7 @@ function candidataLunes(hoy) {
 
 function renderTarjetaAuto() {
   const sec = $("tarjetaAuto");
-  if (!sec || tarjetaMostradaSesion || !document.body.classList.contains("con-sesion") || !peliculas.length) return;
+  if (!sec || tarjetaMostradaSesion || !document.body.classList.contains("con-sesion") || !Nucleo.datos.peliculas().length) return;
   const hoy = fechaAuto();
   const opciones = [
     { on: "auto-lunes", fn: () => candidataLunes(hoy) },
