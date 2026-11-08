@@ -221,9 +221,92 @@ function curioProgreso() {
   return curioLista.filter(c => vistas.has(claveCurio(c))).length;
 }
 
+// ===== Curiosidades e historias con IA (dentro de esta misma ventana) =====
+// Mismo servidor que el asistente. Si el Worker no reenvía "accion", cambia esta URL por la de Apps Script.
+const CURIO_IA_URL = "https://catalogo-chat.240300696.workers.dev";
+const CURIO_IA_HIST_KEY = "curio_ia_historial";
+let curioIA = null; // null = se ve el catálogo; si no, {tipo, peli, cargando|error|texto...}
+
+function curioIAHistorial() {
+  try { return JSON.parse(leerLS(CURIO_IA_HIST_KEY) || "[]"); } catch (e) { return []; }
+}
+function curioIAGuardar(texto, titulo) {
+  const h = curioIAHistorial();
+  h.unshift({ titulo: titulo, texto: texto });
+  escribirLS(CURIO_IA_HIST_KEY, JSON.stringify(h.slice(0, 60)));
+}
+function curioIAContexto(p) {
+  const hora = new Date().getHours();
+  const momento = hora < 6 ? "madrugada" : hora < 12 ? "mañana" : hora < 19 ? "tarde" : "noche";
+  const est = (typeof estadoDe === "function") ? estadoDe(p) : {};
+  const formatos = ["una escena breve", "una carta", "una página de diario", "un diálogo", "una noticia de periódico ficticia", "un monólogo"];
+  return {
+    momento: momento,
+    estrellas: est.estrellas || 0,
+    conAlguien: !!est.conAlguien,
+    vista: !!est.vista,
+    formato: formatos[Math.floor(Math.random() * formatos.length)],
+    personajes: Math.random() < 0.5 ? "de la película" : "nuevos, inspirados en la trama"
+  };
+}
+async function curioIAPedir(accion, p) {
+  curioIA = { tipo: accion === "historia" ? "historia" : "curiosidad", peli: p, cargando: true };
+  renderCuriosidadModal();
+  const evitar = curioIAHistorial().map(h => h.texto);
+  try {
+    const r = await fetch(CURIO_IA_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({
+        token: accessToken,
+        accion: accion,
+        pelicula: { titulo: p.titulo, año: p.año, director: p.director, reparto: p.reparto, genero: p.genero, pais: p.pais },
+        evitar: evitar,
+        contexto: curioIAContexto(p)
+      })
+    });
+    const j = await r.json();
+    if (j.error) {
+      curioIA = { tipo: curioIA.tipo, peli: p, error: j.error };
+    } else if (accion === "historia") {
+      curioIA = { tipo: "historia", peli: p, titulo: j.titulo, texto: j.texto };
+      curioIAGuardar(j.texto, p.titulo);
+    } else {
+      curioIA = { tipo: "curiosidad", peli: p, tema: j.tema, texto: j.texto, fuente: j.fuente, url: j.url };
+      curioIAGuardar(j.texto, p.titulo);
+    }
+  } catch (e) {
+    curioIA = { tipo: curioIA.tipo, peli: p, error: "No pude conectar. Revisa tu conexión e inténtalo de nuevo." };
+  }
+  renderCuriosidadModal();
+}
+function pieCurioIA() {
+  return '<div class="cur-pie">' +
+    '<button type="button" class="pildora" data-cur="ia-otra">Otra curiosidad</button>' +
+    '<button type="button" class="pildora" data-cur="ia-historia">Historia</button>' +
+    '<button type="button" class="pildora" data-cur="ia-cerrar">Volver al catálogo</button>' +
+    '</div>';
+}
+function htmlCurioIA() {
+  const x = curioIA;
+  const cab = '<div class="cur-cab"><h2 class="series-h2">' + (x.tipo === "historia" ? "Historia" : "Curiosidad con IA") + '</h2></div>';
+  if (x.cargando) return cab + '<p class="cur-texto cur-cargando">' + (x.tipo === "historia" ? "Escribiendo una historia…" : "Buscando un dato verificado…") + '</p>';
+  if (x.error) return cab + '<p class="cur-texto">' + esc(x.error) + '</p>' + pieCurioIA();
+  if (x.tipo === "historia") {
+    return cab + '<p class="cur-tema">Ficción inspirada en ' + esc(x.peli.titulo) + '</p>' +
+      '<h3 class="cur-h3">' + esc(x.titulo) + '</h3><p class="cur-texto cur-historia">' + esc(x.texto) + '</p>' +
+      '<small class="cur-fuente">Historia inventada. No es un hecho real.</small>' + pieCurioIA();
+  }
+  return cab + '<p class="cur-tema">' + esc(x.tema || "Dato") + ' · ' + esc(x.peli.titulo) + '</p>' +
+    '<p class="cur-texto">' + esc(x.texto) + '</p>' +
+    '<small class="cur-fuente">Fuente: <a href="' + esc(x.url) + '" target="_blank" rel="noopener">' + esc(x.fuente || x.url) + '</a></small>' +
+    pieCurioIA();
+}
+
 function renderCuriosidadModal() {
   const body = $("curioBody");
   if (!body) return;
+  if (curioIA) { body.innerHTML = htmlCurioIA(); return; }
   curioLista = curioFiltrada();
   if (curioIdx >= curioLista.length) curioIdx = 0;
   const c = curioLista[curioIdx];
@@ -274,6 +357,8 @@ function renderCuriosidadModal() {
       '<button type="button" class="pildora" data-cur="compartir">Compartir</button>' +
       '<button type="button" class="pildora" data-cur="reportar">Reportar</button>' +
       '<button type="button" class="pildora" data-cur="ver">Ver ficha</button>' +
+      '<button type="button" class="pildora" data-cur="ia-otra">Curiosidad IA</button>' +
+      '<button type="button" class="pildora" data-cur="ia-historia">Historia</button>' +
     '</div>';
   marcarCurioVista(c);
   curioRegistrar(c, null);
@@ -312,6 +397,7 @@ function cerrarCuriosidad() {
   document.addEventListener("keydown", e => {
     if (!ventana.classList.contains("abierto")) return;
     if (e.key === "Escape") cerrarCuriosidad();
+    if (curioIA && (e.key === "ArrowRight" || e.key === "ArrowLeft")) curioIA = null;
     if (e.key === "ArrowRight") { curioIdx = (curioIdx + 1) % Math.max(curioLista.length, 1); renderCuriosidadModal(); }
     if (e.key === "ArrowLeft") { curioIdx = (curioIdx - 1 + Math.max(curioLista.length, 1)) % Math.max(curioLista.length, 1); renderCuriosidadModal(); }
   });
@@ -331,6 +417,13 @@ function cerrarCuriosidad() {
     if (!b) return;
     const acc = b.dataset.cur;
     const c = curioLista[curioIdx];
+    if (acc === "ia-otra" || acc === "ia-historia") {
+      const p = (c && c.peli) || (curioIA && curioIA.peli);
+      if (p) curioIAPedir(acc === "ia-otra" ? "curiosidad" : "historia", p);
+      return;
+    }
+    if (acc === "ia-cerrar") { curioIA = null; renderCuriosidadModal(); return; }
+    if (acc !== "ia-otra") curioIA = null;
     if (acc === "filtro") { curioFiltro = b.dataset.valor; curioIdx = 0; renderCuriosidadModal(); }
     else if (acc === "ant" && curioLista.length) { curioIdx = (curioIdx - 1 + curioLista.length) % curioLista.length; renderCuriosidadModal(); }
     else if (acc === "sig" && curioLista.length) { curioIdx = (curioIdx + 1) % curioLista.length; renderCuriosidadModal(); }

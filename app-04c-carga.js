@@ -20,6 +20,21 @@ async function cuentaPermitida(token) {
   }
 }
 
+// Esqueleto de carga: tarjetas grises mientras llega el catálogo, para no mostrar una pantalla vacía
+function pintarEsqueleto(n = 6) {
+  const l = $("lista");
+  if (!l) return;
+  l.setAttribute("aria-busy", "true");
+  l.innerHTML = Array.from({ length: n }, () => '<div class="esqueleto" aria-hidden="true"></div>').join("");
+}
+
+// Vuelve al inicio de sesión (cuando la carga falla antes de tener datos)
+function volverAlLogin() {
+  $("app").style.display = "none";
+  $("login").style.display = "";
+  document.body.classList.remove("con-sesion");
+}
+
 function mostrarError(msg) {
   $("error").textContent = msg;
   $("btnLogin").disabled = false;
@@ -103,6 +118,11 @@ async function cargarDesdeCopia() {
 }
 
 async function cargarHoja() {
+  // La app se muestra de inmediato con esqueleto; si la lectura falla, regresa al inicio de sesión
+  $("login").style.display = "none";
+  $("app").style.display = "block";
+  document.body.classList.add("con-sesion");
+  pintarEsqueleto();
   try {
     const r = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${HOJA_ID}/values/A:Z`, {
       headers: { Authorization: "Bearer " + accessToken }
@@ -139,9 +159,11 @@ async function cargarHoja() {
     llenarFiltros();
     llenarSugerencias();
     renderDestacados();
+    $("lista").removeAttribute("aria-busy");
     pintar();
     abrirDesdeUrl();
   } catch (e) {
+    volverAlLogin();
     mostrarError(e.message);
   }
 }

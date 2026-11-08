@@ -1,3 +1,4 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap");
 /* Estilos de Mi catálogo de películas. Orden original preservado. */
 
 /* --- bloque 1 --- */
@@ -19,7 +20,11 @@
   }
 
   * { box-sizing:border-box; }
-  body { margin:0; font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,sans-serif; background:var(--fondo); color:var(--texto); transition:background 15s linear, color 15s linear; padding-bottom:calc(72px + env(safe-area-inset-bottom, 0px)); font-size:15px; }
+  /* Cambio de tema suave (fondo y textos se desvanecen, sin saltos) */
+body, body * { transition-property: background-color, border-color, color, fill, stroke; transition-duration: .4s; transition-timing-function: ease; }
+body .pildora, body button, body input, body select, body textarea, body a { transition-duration: .2s; }
+@media (prefers-reduced-motion: reduce) { body, body * { transition-duration: 0s !important; } }
+body { margin:0; font-family:Inter,-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,sans-serif; background:var(--fondo); color:var(--texto); transition:background 15s linear, color 15s linear; padding-bottom:calc(72px + env(safe-area-inset-bottom, 0px)); font-size:15px; }
   header { padding:28px 20px 10px; text-align:center; }
   h1 { margin:0 0 16px; font-size:30px; font-weight:700; letter-spacing:-.5px; }
   #buscar { width:min(560px,100%); padding:14px 18px; font-size:16px; border:1px solid var(--borde); border-radius:999px; outline:none; background:var(--tarjeta); color:var(--texto); transition:box-shadow .2s, border-color .2s; }
