@@ -226,3 +226,8 @@ function abrirDiagnostico() {
 }
 document.getElementById("diagnosticoDatos").addEventListener("click", abrirDiagnostico);
 
+
+/* Fase 0 · Registro del módulo «fases-diagnostico» en el núcleo (el código de arriba no cambia) */
+if (window.Nucleo) {
+  Nucleo.registrar("fases-diagnostico", { version: "1.0", emite: [], escucha: [] });
+}

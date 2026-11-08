@@ -17,3 +17,8 @@
     personal.addEventListener("change", () => guardar("chat_personal", personal.checked));
   }
 })();
+
+/* Fase 0 · Registro del módulo «ajustes» en el núcleo (el código de arriba no cambia) */
+if (window.Nucleo) {
+  Nucleo.registrar("ajustes", { version: "1.0", emite: [], escucha: [] });
+}

@@ -42,3 +42,8 @@
   ajustarQueVer();
   pintarEncabezado();
 })();
+
+/* Fase 0 · Registro del módulo «hoy» en el núcleo (el código de arriba no cambia) */
+if (window.Nucleo) {
+  Nucleo.registrar("hoy", { version: "1.0", emite: [], escucha: [] });
+}

@@ -2147,3 +2147,30 @@ body.sin-juego #retoMes, body.sin-juego #pregunta, body.sin-juego #actividad { d
 .btn-ver-notas { display: block; margin: 12px 0 0; }
 .fp-notas[hidden] { display: none !important; }
 .fp-notas { margin-top: 12px; padding: 14px 16px; border-radius: 18px; background: var(--boton-suave); }
+
+/* Interruptor de módulo: curiosidades apagadas (app-04a) */
+body.sin-curiosidades #tarjetaDia,
+body.sin-curiosidades [data-accion="ver-curio"] { display: none !important; }
+
+/* Interruptor de módulo: clasificador apagado (app-04b) */
+body.sin-clasificador #clasificar,
+body.sin-clasificador #clasificador { display: none !important; }
+
+/* Interruptor de módulo: Explorar apagado (app-05b) */
+body.sin-explorar .explorar-titulo,
+body.sin-explorar .explorar-grid { display: none !important; }
+
+/* Interruptor de módulo: herramientas apagadas (app-05e) */
+body.sin-herramientas #capsula,
+body.sin-herramientas #parejaBtn,
+body.sin-herramientas #diario,
+body.sin-herramientas #retoMes,
+body.sin-herramientas #mapaGustos { display: none !important; }
+
+/* Interruptores de módulo: sagas y actores (app-01b) y Estela (app-06b) */
+body.sin-sagas button[data-zona-op="sagas"],
+body.sin-sagas button[data-zona-op="actores"],
+body.sin-sagas #sagas,
+body.sin-sagas #actores { display: none !important; }
+body.sin-estela #chatAbrir,
+body.sin-estela #chatPanel { display: none !important; }

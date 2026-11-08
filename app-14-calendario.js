@@ -64,3 +64,8 @@
   // Cada vez que se pinta el calendario, sus botones quedan etiquetados
   new MutationObserver(etiquetar).observe(document.getElementById("lista") || document.body, { childList: true, subtree: true });
 })();
+
+/* Fase 0 · Registro del módulo «calendario» en el núcleo (el código de arriba no cambia) */
+if (window.Nucleo) {
+  Nucleo.registrar("calendario", { version: "1.0", emite: [], escucha: [] });
+}

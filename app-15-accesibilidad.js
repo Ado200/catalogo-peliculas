@@ -62,3 +62,8 @@
   const reducir = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   if (reducir && window.Chart) Chart.defaults.animation = false;
 })();
+
+/* Fase 0 · Registro del módulo «accesibilidad» en el núcleo (el código de arriba no cambia) */
+if (window.Nucleo) {
+  Nucleo.registrar("accesibilidad", { version: "1.0", emite: [], escucha: [] });
+}

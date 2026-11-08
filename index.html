@@ -168,6 +168,14 @@
       <span class="grupo-titulo">Ajustes</span>
       <label class="ajuste-switch"><input type="checkbox" id="juegoOn"> Mostrar racha, insignias, reto del mes y pregunta del día</label>
       <label class="ajuste-switch"><input type="checkbox" id="chatPersonalOn"> Enviar a la IA mis preferencias, series y perfil de gustos</label>
+      <label class="ajuste-switch"><input type="checkbox" id="moduloTemaOn"> Clima solar, modo automático por hora o sol, premiere y vista cálida (si se apaga, el tema sigue al sistema)</label>
+      <label class="ajuste-switch"><input type="checkbox" id="moduloBusquedaOn"> Búsqueda con tolerancia a errores de escritura y sugerencias (si se apaga, la búsqueda es exacta)</label>
+      <label class="ajuste-switch"><input type="checkbox" id="moduloCuriosidadesOn"> Curiosidades de hoy y botón «Ver curiosidades» (si se apaga, se ocultan en Inicio y en las fichas)</label>
+      <label class="ajuste-switch"><input type="checkbox" id="moduloClasificadorOn"> Clasificar («Decidir»: botón y panel). Los gestos de deslizar en la lista siguen activos</label>
+      <label class="ajuste-switch"><input type="checkbox" id="moduloExplorarOn"> Explorar: bloque en Inicio, panel y atajo Ctrl+K</label>
+      <label class="ajuste-switch"><input type="checkbox" id="moduloHerramientasOn"> Herramientas: cápsula del año, modo pareja, diario de cine, reto del mes y perfil de gustos (la memoria de gustos de la IA es otro ajuste)</label>
+      <label class="ajuste-switch"><input type="checkbox" id="moduloSagasOn"> Pestañas Sagas y Actores</label>
+      <label class="ajuste-switch"><input type="checkbox" id="moduloEstelaOn"> Estela, el asistente de IA (botón y panel)</label>
       <button id="guardarPaletas" class="pildora">🎨 Guardar paletas</button>
       <button id="deshacer" class="pildora">↶ Deshacer</button>
       <button id="atajos" class="pildora">⌨ Atajos de teclado</button>
@@ -513,14 +521,46 @@
 
 
 
+<script src="app-00-nucleo.js" defer></script>
+<script src="app-00a-utilidades.js" defer></script>
 <script src="app-01-inicio-y-sugerencias.js" defer></script>
-<script src="app-02-filtros-notas-recomendaciones.js" defer></script>
-<script src="app-03-pintado-y-avisos.js" defer></script>
-<script src="app-04-que-ver-y-sin-conexion.js" defer></script>
-<script src="app-05-sincronizacion-y-explorar.js" defer></script>
-<script src="app-06-modulos-varios.js" defer></script>
+<script src="app-01c-inicio-secciones.js" defer></script>
+<script src="app-01b-sagas-actores.js" defer></script>
+<script src="app-02f-etiquetas.js" defer></script>
+<script src="app-02h-listeners-pliegues.js" defer></script>
+<script src="app-02g-fechas.js" defer></script>
+<script src="app-02a-estadisticas.js" defer></script>
+<script src="app-02b-recomendaciones.js" defer></script>
+<script src="app-02c-paleta-poster.js" defer></script>
+<script src="app-02d-marcas-drive.js" defer></script>
+<script src="app-02e-respaldo-marcas.js" defer></script>
+<script src="app-03a-tema.js" defer></script>
+<script src="app-03b-busqueda.js" defer></script>
+<script src="app-03d-pintado-principal.js" defer></script>
+<script src="app-03e-cine-destacados.js" defer></script>
+<script src="app-03c-avisos-descartadas.js" defer></script>
+<script src="app-04a-curiosidades.js" defer></script>
+<script src="app-04b-clasificador.js" defer></script>
+<script src="app-04c-carga.js" defer></script>
+<script src="app-04g-navegacion-arranque.js" defer></script>
+<script src="app-04f-bloques-app04.js" defer></script>
+<script src="app-05a-descubrimiento.js" defer></script>
+<script src="app-05b-explorar-hoy.js" defer></script>
+<script src="app-05c-deshacer.js" defer></script>
+<script src="app-05d-atajos.js" defer></script>
+<script src="app-05e-herramientas.js" defer></script>
+<script src="app-05g-sincronizacion.js" defer></script>
+<script src="app-06a-guia.js" defer></script>
+<script src="app-06b-asistente.js" defer></script>
+<script src="app-07a-adornos.js" defer></script>
 <script src="app-07-saludo-y-bloques.js" defer></script>
+<script src="app-07b-saludo.js" defer></script>
+<script src="app-08b-instalable.js" defer></script>
+<script src="app-08c-modelo-local.js" defer></script>
+<script src="app-08d-descarga-modelo.js" defer></script>
 <script src="app-08-automatico-y-pwa.js" defer></script>
+<script src="app-09a-ficha-series.js" defer></script>
+<script src="app-09b-curiosidad-boton.js" defer></script>
 <script src="app-09-automatizacion-y-curiosidad.js" defer></script>
 <script src="app-10-fases-y-diagnostico.js" defer></script>
 <script src="app-11-hoy.js" defer></script>

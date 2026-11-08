@@ -60,3 +60,8 @@
     mostrar("numeros");
   };
 })();
+
+/* Fase 0 · Registro del módulo «resumen» en el núcleo (el código de arriba no cambia) */
+if (window.Nucleo) {
+  Nucleo.registrar("resumen", { version: "1.0", emite: [], escucha: [] });
+}
