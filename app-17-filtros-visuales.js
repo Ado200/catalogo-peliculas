@@ -58,6 +58,35 @@
     return op ? { s: s, op: op, campo: r.campo } : null;
   }
 
+  // Unifica variantes de escritura (Acción / acción): "Acción" en todos los datos y en el select
+  let generosNormalizados = false;
+  const canonico = g => { const t = String(g || "").trim().toLowerCase(); return t ? t.charAt(0).toUpperCase() + t.slice(1) : ""; };
+  function normalizarGeneros() {
+    if (generosNormalizados || !Nucleo.datos.peliculas().length) return;
+    Nucleo.datos.peliculas().forEach(p => {
+      if (typeof p.genero === "string" && p.genero) {
+        p.genero = [...new Set(p.genero.split(",").map(canonico).filter(Boolean))].join(", ");
+      }
+    });
+    const conteo = {};
+    Nucleo.datos.peliculas().forEach(p => (p.genero || "").split(",").map(x => x.trim()).filter(Boolean)
+      .forEach(g => conteo[g] = (conteo[g] || 0) + 1));
+    const s = sel.genero;
+    if (s) {
+      s.innerHTML = '<option value="">Todos los géneros</option>' +
+        Object.keys(conteo).sort((a, b) => a.localeCompare(b, "es"))
+          .map(g => '<option value="' + esc(g) + '">' + esc(g) + '</option>').join("");
+    }
+    generosNormalizados = true;
+  }
+
+  // Géneros más comunes para la cuadrícula; «Ver todos» muestra el resto
+  let verTodosGeneros = false;
+  // Filtros que se muestran plegados detrás de «Más filtros»
+  let verMasFiltros = false;
+  const PRINCIPALES = ["tipo", "duracion"];
+  const TOP_GENEROS = 6;
+
   let host = document.getElementById("filtrosVisuales");
   if (!host) {
     host = document.createElement("div");
@@ -75,29 +104,48 @@
         '</div></div>'
       : "";
 
-    host.innerHTML = bloqueRapidos + CAMPOS.map(c => {
+    const mostrarCampo = c => c.grid || PRINCIPALES.includes(c.clave) || verMasFiltros;
+    const hayMas = CAMPOS.some(c => !c.grid && !PRINCIPALES.includes(c.clave));
+    const botonMas = hayMas
+      ? '<button type="button" class="fv-mas" data-accion="mas-filtros">' + (verMasFiltros ? "Menos filtros" : "Más filtros") + '</button>'
+      : "";
+
+    host.innerHTML = bloqueRapidos + CAMPOS.filter(mostrarCampo).map(c => {
       const s = c.select();
       if (!s) return "";
       const opciones = [...s.options];
       if (c.grid) {
+        const conteoG = {};
+        Nucleo.datos.peliculas().forEach(p => (p.genero || "").split(",").map(x => x.trim()).filter(Boolean)
+          .forEach(g => conteoG[g] = (conteoG[g] || 0) + 1));
+        const todas = opciones.filter(o => o.value);
+        const topVal = todas.slice().sort((a, b) => (conteoG[b.value] || 0) - (conteoG[a.value] || 0)).slice(0, TOP_GENEROS).map(o => o.value);
+        const visibles = verTodosGeneros ? opciones : opciones.filter(o => !o.value || topVal.includes(o.value) || o.value === s.value);
+        const boton = todas.length > TOP_GENEROS
+          ? '<button type="button" class="fv-ver-todos" data-accion="ver-todos">' + (verTodosGeneros ? "Ver menos" : "Ver todos") + '</button>' : "";
         return '<div class="fv-bloque"><h3>' + esc(c.etiqueta) + '</h3><div class="fv-grid">' +
-          opciones.map(o => {
+          visibles.map(o => {
             const e = o.value ? estiloGenero(o.value) : { a: "#6b7280", b: "#374151", i: "🎬", n: "Todos" };
-            return '<button type="button" class="fv-genero' + (o.value === s.value ? " activo" : "") +
+            const marcada = o.value !== "" && o.value === s.value; // «Todos» no se marca como elegido
+            return '<button type="button" class="fv-genero' + (marcada ? " activo" : "") +
               '" data-campo="' + c.clave + '" data-valor="' + esc(o.value) + '" style="--c:' + e.a + ';--c2:' + e.b + '">' +
               '<span class="fv-ico" aria-hidden="true">' + e.i + '</span><span class="fv-nombre">' + esc(e.n) + '</span></button>';
           }).join("") +
-          '</div></div>';
+          '</div>' + boton + '</div>';
       }
       return '<div class="fv-bloque"><h3>' + esc(c.etiqueta) + '</h3><div class="fv-pilas">' +
         opciones.map(o => '<button type="button" class="fv-pila' + (o.value === s.value ? " activo" : "") +
           '" data-campo="' + c.clave + '" data-valor="' + esc(o.value) + '">' + esc(o.text) + '</button>').join("") +
         '</div></div>';
-    }).join("");
+    }).join("") + botonMas;
   }
 
   // Al tocar una opción (o un filtro rápido): cambia el valor del select original y repinta la lista
   host.addEventListener("click", e => {
+    const v = e.target.closest && e.target.closest("[data-accion='ver-todos']");
+    if (v) { verTodosGeneros = !verTodosGeneros; pintarFiltros(); return; }
+    const m = e.target.closest && e.target.closest("[data-accion='mas-filtros']");
+    if (m) { verMasFiltros = !verMasFiltros; pintarFiltros(); return; }
     const b = e.target.closest && e.target.closest("[data-campo]");
     if (!b) return;
     const campo = CAMPOS.find(c => c.clave === b.dataset.campo);
@@ -111,6 +159,7 @@
   // Cada vez que se pinta la lista, se refrescan las tarjetas (reflejan también «Limpiar» y los filtros guardados)
   const pintarOriginal = window.pintar;
   window.pintar = function () {
+    normalizarGeneros();
     const r = pintarOriginal.apply(this, arguments);
     pintarFiltros();
     return r;

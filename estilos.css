@@ -2402,3 +2402,42 @@ body.en-buscar #estelaMini { background:#1c1c1e !important; color:#fff !importan
 body.en-buscar #estelaMini .em-texto { font-size:14px; font-weight:600; }
 body.en-buscar #estelaMini .em-avatar { background:linear-gradient(145deg,#f472b6,#8b5cf6); }
 body.en-buscar #estelaMini .em-cerrar { background:#2c2c2e; color:#8e8e93; }
+
+/* ---------- Correcciones de la pestaña Buscar (oscuro) ---------- */
+body.en-buscar #buscar { background:transparent !important; color:#fff !important; border:none !important; box-shadow:none !important; outline:none !important; -webkit-appearance:none; appearance:none; }
+body.en-buscar #buscar:focus, body.en-buscar #buscar:focus-visible { outline:none !important; box-shadow:none !important; }
+body.en-buscar #buscar::-webkit-calendar-picker-indicator, body.en-buscar #buscar::-webkit-list-button { display:none !important; opacity:0 !important; }
+body.en-buscar .pestana-buscar .buscar { display:flex; align-items:center; gap:8px; padding:6px 6px 6px 14px !important; min-height:52px; }
+body.en-buscar .pestana-buscar .buscar:focus-within { border-color:#3a3a3c !important; }
+body.en-buscar .pestana-buscar .buscar input { flex:1; min-width:0; height:40px; font-size:16px; }
+body.en-buscar #voz { background:#2c2c2e !important; color:#fff !important; border:none !important; border-radius:50%; width:40px; height:40px; flex:0 0 40px; }
+/* Selector Todas / Por estrenar / Favoritas en oscuro */
+body.en-buscar .pestana-buscar .segmentado { background:#1c1c1e !important; border:1px solid #2c2c2e; box-shadow:none !important; }
+body.en-buscar .pestana-buscar .segmentado button { color:#8e8e93 !important; background:transparent !important; box-shadow:none !important; }
+body.en-buscar .pestana-buscar .segmentado button.activa { color:#fff !important; background:#3a3a3c !important; }
+/* Títulos de sección sin flechas decorativas */
+body.en-buscar .fv-bloque h3::before, body.en-buscar .fv-bloque h3::after, body.en-buscar .pestana-buscar h3::after { content:none !important; display:none !important; }
+/* Pestaña activa en la barra: píldora sutil, no gris claro */
+body.en-buscar #tabbar button.activa { background:rgba(255,255,255,.14) !important; border-radius:18px; }
+
+/* ---------- Pestaña Buscar: limpieza de controles ajenos y títulos ---------- */
+body.en-buscar #toolbarNotas, body.en-buscar #toolbarVistas, body.en-buscar #agrupar, body.en-buscar #ordenNotas,
+body.en-buscar #personaVistas, body.en-buscar #tagsNotas, body.en-buscar #mapaGustos { display:none !important; }
+body.en-buscar #pestanaBuscar h3::before, body.en-buscar #pestanaBuscar h3::after,
+body.en-buscar #filtrosVisuales h3::before, body.en-buscar #filtrosVisuales h3::after { content:none !important; display:none !important; }
+.fv-ver-todos { align-self:flex-start; margin-top:8px; border:none; background:transparent; color:#0a84ff; font-size:14px; font-weight:600; cursor:pointer; padding:4px 2px; }
+.fv-mas { align-self:flex-start; margin-top:4px; border:1px solid #2c2c2e; background:#1c1c1e; color:#fff; border-radius:999px; padding:8px 14px; font-size:13px; font-weight:600; cursor:pointer; }
+
+/* ---------- Estela fuera de la píldora: botón circular a la izquierda, píldora con 4 botones ---------- */
+#tabbar .tab-estela { display:none !important; }
+#tabbar {
+  left:84px !important; right:16px !important;
+  transform:none !important; width:auto !important; max-width:none !important; margin:0 !important;
+}
+#chatAbrir {
+  position:fixed !important; top:auto !important; right:auto !important;
+  left:16px !important; bottom:calc(10px + env(safe-area-inset-bottom, 0px)) !important;
+  transform:none !important; width:58px !important; height:58px !important;
+  margin:0 !important; border-radius:50% !important;
+}
+#chatAbrir:active { transform:scale(.94) !important; }
