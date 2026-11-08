@@ -78,13 +78,14 @@
           .map(g => '<option value="' + esc(g) + '">' + esc(g) + '</option>').join("");
     }
     generosNormalizados = true;
+    if (typeof llenarSugerencias === "function") llenarSugerencias(); // la lista de búsqueda ya no repite variantes
   }
 
   // Géneros más comunes para la cuadrícula; «Ver todos» muestra el resto
   let verTodosGeneros = false;
   // Filtros que se muestran plegados detrás de «Más filtros»
   let verMasFiltros = false;
-  const PRINCIPALES = ["tipo", "duracion"];
+  const PRINCIPALES = []; // todo lo demás va detrás de «Más filtros»
   const TOP_GENEROS = 6;
 
   let host = document.getElementById("filtrosVisuales");
@@ -97,11 +98,14 @@
 
   function pintarFiltros() {
     const rapidos = RAPIDOS.map(r => ({ r: r, o: opcionRapida(r) })).filter(x => x.o);
-    const bloqueRapidos = rapidos.length
-      ? '<div class="fv-bloque"><h3>Filtros rápidos</h3><div class="fv-pilas">' +
-        rapidos.map(x => '<button type="button" class="fv-rapido' + (x.o.s.value === x.o.op.value ? " activo" : "") +
-          '" data-campo="' + x.o.campo + '" data-valor="' + esc(x.o.op.value) + '">' + esc(x.r.texto) + '</button>').join("") +
-        '</div></div>'
+    // Una sola fila: Todas / Por estrenar / Favoritas + filtros rápidos
+    const segs = [...document.querySelectorAll("#pestanaBuscar [data-seg]")];
+    const chipsSeg = segs.map((b, i) => '<button type="button" class="fv-rapido' + (b.classList.contains("activa") ? " activo" : "") +
+      '" data-seg-chip="' + i + '">' + esc(b.textContent.trim()) + '</button>').join("");
+    const chipsRap = rapidos.map(x => '<button type="button" class="fv-rapido' + (x.o.s.value === x.o.op.value ? " activo" : "") +
+      '" data-campo="' + x.o.campo + '" data-valor="' + esc(x.o.op.value) + '">' + esc(x.r.texto) + '</button>').join("");
+    const bloqueRapidos = (chipsSeg || chipsRap)
+      ? '<div class="fv-bloque fv-fila-unica"><div class="fv-pilas">' + chipsSeg + chipsRap + '</div></div>'
       : "";
 
     const mostrarCampo = c => c.grid || PRINCIPALES.includes(c.clave) || verMasFiltros;
@@ -142,6 +146,13 @@
 
   // Al tocar una opción (o un filtro rápido): cambia el valor del select original y repinta la lista
   host.addEventListener("click", e => {
+    const sg = e.target.closest && e.target.closest("[data-seg-chip]");
+    if (sg) {
+      const original = document.querySelectorAll("#pestanaBuscar [data-seg]")[Number(sg.dataset.segChip)];
+      if (original) original.click();
+      pintar();
+      return;
+    }
     const v = e.target.closest && e.target.closest("[data-accion='ver-todos']");
     if (v) { verTodosGeneros = !verTodosGeneros; pintarFiltros(); return; }
     const m = e.target.closest && e.target.closest("[data-accion='mas-filtros']");
@@ -158,10 +169,34 @@
 
   // Cada vez que se pinta la lista, se refrescan las tarjetas (reflejan también «Limpiar» y los filtros guardados)
   const pintarOriginal = window.pintar;
+  // Pestaña Buscar: sin controles de Notas/Vistas y sin películas hasta que haya un criterio
+  const TEXTO_AJENO = /^(Ordenar notas|Agrupar por tema)$/;
+  const ocultadosAjenos = new Set();
+  let listaOcultaPorBuscar = false;
+  function criterioActivo() {
+    return !!(buscar && buscar.value.trim()) || Object.values(sel).some(x => x && x.value);
+  }
+  function ajustarBuscar() {
+    const enB = document.body.classList.contains("en-buscar");
+    document.querySelectorAll("#app label, #app button").forEach(el => {
+      if (el.closest("#pestanaBuscar")) return;
+      if (!TEXTO_AJENO.test((el.textContent || "").trim())) return;
+      const bloque = el.closest(".campo, .barra-acciones, .toolbar, .toolbar-notas, .toolbar-vistas") || el;
+      if (enB) { bloque.style.display = "none"; ocultadosAjenos.add(bloque); }
+      else if (ocultadosAjenos.has(bloque)) { bloque.style.display = ""; ocultadosAjenos.delete(bloque); }
+    });
+    const lista = document.getElementById("lista");
+    const hub = document.getElementById("hubListas");
+    if (!lista) return;
+    if (enB && !criterioActivo()) { lista.style.display = "none"; listaOcultaPorBuscar = true; }
+    else if (listaOcultaPorBuscar && (!hub || hub.hidden)) { lista.style.display = ""; listaOcultaPorBuscar = false; }
+  }
+
   window.pintar = function () {
     normalizarGeneros();
     const r = pintarOriginal.apply(this, arguments);
     pintarFiltros();
+    ajustarBuscar();
     return r;
   };
   pintarFiltros();

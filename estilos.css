@@ -2441,3 +2441,34 @@ body.en-buscar #filtrosVisuales h3::before, body.en-buscar #filtrosVisuales h3::
   margin:0 !important; border-radius:50% !important;
 }
 #chatAbrir:active { transform:scale(.94) !important; }
+
+/* ===================== Corrección final de Buscar y de la barra ===================== */
+/* Buscar sigue el tema de la app (claro u oscuro), no fuerza el negro */
+body.en-buscar { background:var(--fondo) !important; color:var(--texto) !important; }
+body.en-buscar #app > header h1 { color:var(--texto) !important; }
+body.en-buscar #tabbar { background:var(--tarjeta) !important; }
+body.en-buscar #tabbar button { color:var(--gris) !important; }
+body.en-buscar #tabbar button.activa { color:var(--azul) !important; background:var(--tema-bg) !important; }
+body.en-buscar .pestana-buscar .buscar { background:var(--tarjeta) !important; border:1px solid var(--borde) !important; }
+body.en-buscar .pestana-buscar .buscar input { color:var(--texto) !important; background:transparent !important; }
+body.en-buscar #voz { background:var(--boton-suave) !important; color:var(--texto) !important; }
+body.en-buscar .fv-bloque h3 { color:var(--gris) !important; }
+body.en-buscar .fv-rapido, body.en-buscar .fv-pila { background:var(--tarjeta) !important; color:var(--texto) !important; border:1px solid var(--borde) !important; }
+body.en-buscar .fv-rapido.activo, body.en-buscar .fv-pila.activo { background:var(--azul) !important; color:#fff !important; border-color:transparent !important; }
+body.en-buscar #estelaMini { background:var(--tarjeta) !important; color:var(--texto) !important; border:none !important; }
+body.en-buscar #estelaMini .em-cerrar { background:var(--boton-suave) !important; color:var(--gris) !important; }
+/* El selector original queda oculto: sus opciones están en la fila única de filtros */
+body.en-buscar .pestana-buscar .colapsable { display:none !important; }
+/* Fila única de filtros: en una sola línea que se desliza */
+.fv-fila-unica .fv-pilas { flex-wrap:nowrap; }
+
+/* Asistente completo: la conversación tiene su propio espacio y el encabezado no se corta */
+#chatPanel.abierto { display:flex !important; flex-direction:column !important; overflow:hidden !important; max-height:62vh !important; }
+#chatPanel.abierto > * { flex:0 0 auto; }
+#chatPanel.abierto #chatMensajes { flex:1 1 auto !important; min-height:0 !important; overflow-y:auto !important; }
+
+/* Encabezado compacto: sin espacio vacío arriba */
+#app > header { padding-top:0 !important; padding-bottom:4px !important; }
+#app > header .cabecera-app { padding:8px 16px 0 !important; }
+#app > header h1.titulo-grande { font-size:26px !important; margin:0 !important; }
+#app > header #selectorZona { margin:4px 0 0 !important; padding:4px !important; }
