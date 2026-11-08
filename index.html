@@ -68,18 +68,21 @@
 
 <div id="app">
 <header>
-  <div class="fila-titulo">
-    <h1>Películas</h1>
-    <div class="buscar buscar-titulo"><span aria-hidden="true">⌕</span><input id="buscar" type="search" list="sugerencias" placeholder="Busca por título, director o actor"><datalist id="sugerencias"></datalist><button id="voz" class="boton-voz" title="Buscar por voz" aria-label="Buscar por voz" hidden>🎤</button></div>
-    <div class="botones-barra">
+  <div class="cabecera-app">
+    <h1 class="titulo-grande">Películas</h1>
+    <button type="button" id="toggleMas" class="boton-circular" aria-label="Más opciones" title="Más opciones">⋯</button>
+  </div>
+  <div id="selectorZona" class="segmentado selector-zona" role="group" aria-label="Secciones" style="display:none"></div>
+</header>
+<section id="pestanaBuscar" class="pestana-buscar" aria-label="Buscar y filtrar" hidden>
+  <div class="buscar buscar-titulo"><span aria-hidden="true">⌕</span><input id="buscar" type="search" list="sugerencias" placeholder="Busca por título, director o actor"><datalist id="sugerencias"></datalist><button id="voz" class="boton-voz" title="Buscar por voz" aria-label="Buscar por voz" hidden>🎤</button></div>
+  <div class="botones-barra">
     <button type="button" class="boton-circular" id="aleatorio" aria-label="Sugerir una película al azar" title="Aleatorio">🎲</button>
     <button type="button" class="boton-circular" id="btnCuriosidad" aria-label="Curiosidad" title="Curiosidad">✨</button>
     <button type="button" class="boton-circular" id="queVerNoche" aria-label="Qué ver esta noche" title="Qué ver esta noche">🍿</button>
     <button type="button" class="boton-circular" id="verSeries" aria-label="Series" title="Series">📺</button>
      <button type="button" class="boton-circular" id="toggleAvanzados" aria-label="Filtros avanzados">⚙</button>
        </div>
-  </div>
-  <div id="selectorZona" class="segmentado selector-zona" role="group" aria-label="Secciones" style="display:none"></div>
   <div class="colapsable">
   <div class="segmentado solo-catalogo" data-zona="lista" role="group" aria-label="Filtrar películas">
        <button type="button" data-seg="" class="activa">Todas</button>
@@ -88,7 +91,7 @@
   </div>
   <div id="chips" class="solo-catalogo" data-zona="lista"></div>
   </div>
-</header>
+</section>
 
 <div id="velo" aria-hidden="true"></div>
   <div id="panelAvanzados" class="panel-avanzados" data-zona="lista">
@@ -353,11 +356,11 @@
 
 <nav id="tabbar">
   <button data-tab="inicio" class="activa"><span class="ico">🏠</span>Inicio</button>
-  <button data-tab="catalogo"><span class="ico">🎬</span>Películas</button>
+  <button data-tab="catalogo"><span class="ico">🎬</span>Catálogo</button>
   <span id="tabEstela" class="tab-estela" aria-hidden="true"></span>
-  <button data-tab="pendientes"><span class="ico">⏳</span>Planes</button>
-  <button data-tab="vistas"><span class="ico">✓</span>Vistas</button>
-  <button data-tab="yo"><span class="ico">👤</span>Yo</button>
+  <button data-tab="listas"><span class="ico">🗂</span>Mis Listas</button>
+  <button data-tab="buscar"><span class="ico">🔎</span>Buscar</button>
+  <button data-tab="yo" style="display:none" aria-hidden="true" tabindex="-1">Yo</button>
 </nav>
 
 <div id="nombreFondo" class="nombre-fondo" aria-hidden="true"></div>
@@ -582,5 +585,8 @@
 <script src="app-13-resumen.js" defer></script>
 <script src="app-14-calendario.js" defer></script>
 <script src="app-15-accesibilidad.js" defer></script>
+<script src="app-16-mis-listas.js" defer></script>
+<script src="app-17-filtros-visuales.js" defer></script>
+<script src="app-18-estela-mini.js" defer></script>
 </body>
 </html>

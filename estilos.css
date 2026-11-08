@@ -2253,3 +2253,93 @@ button, .pildora, .chipc, .boton, .estrella, #tabbar, select { -webkit-user-sele
 /* Refinamiento de lectura: párrafos dentro de ventanas a 15 px con interlineado cómodo; etiquetas de campo a 13 px. */
 .ayuda-caja p, .ventana p, .ventana-larga p { font-size:15px; line-height:1.45; }
 .campo label { font-size:13px; }
+
+/* ---------- Mis Listas (hub) · Fase 2 ---------- */
+.hub-listas { padding: 8px 4px 16px; }
+.hub-titulo { font-size: 28px; font-weight: 700; letter-spacing: -.4px; margin: 6px 4px 14px; }
+.hub-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.hub-tarjeta { border: none; border-radius: 20px; padding: 16px; min-height: 124px; display: flex; flex-direction: column; align-items: flex-start; justify-content: space-between; gap: 10px; text-align: left; background: var(--tarjeta); color: var(--texto); box-shadow: 0 8px 24px rgba(0,0,0,.10); cursor: pointer; transition: transform .12s ease; -webkit-tap-highlight-color: transparent; }
+.hub-tarjeta:active { transform: scale(.97); }
+.hub-ico { font-size: 26px; line-height: 1; }
+.hub-tarjeta strong { font-size: 16px; font-weight: 600; }
+.hub-sub { font-size: 12px; line-height: 1.35; color: var(--gris); }
+.hub-tarjeta.v { background: linear-gradient(145deg, #34c77b, #158a5c); color: #fff; }
+.hub-tarjeta.p { background: linear-gradient(145deg, #4f8ff7, #1d4ed8); color: #fff; }
+.hub-tarjeta.n { background: linear-gradient(145deg, #fbbf24, #d97706); color: #fff; }
+.hub-tarjeta.a { background: linear-gradient(145deg, #7b8496, #374151); color: #fff; }
+.hub-tarjeta.v .hub-sub, .hub-tarjeta.p .hub-sub, .hub-tarjeta.n .hub-sub, .hub-tarjeta.a .hub-sub { color: rgba(255,255,255,.88); }
+
+/* ---------- Cabecera minimalista y título grande · Fase 1 ---------- */
+.cabecera-app { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:14px 16px 6px; }
+.titulo-grande { margin:0; font-size:34px; font-weight:800; letter-spacing:-.6px; line-height:1.1; transition:font-size .2s ease; }
+#app > header.compacto .titulo-grande { font-size:22px; }
+#app > header .cabecera-app .boton-circular { flex:0 0 auto; }
+
+/* ---------- Pestaña Buscar (buscador, botones y filtros) · Fase 2 ---------- */
+.pestana-buscar { padding:8px 16px 4px; }
+.pestana-buscar[hidden] { display:none; }
+.pestana-buscar .botones-barra { display:flex; flex-wrap:wrap; gap:8px; margin:8px 0; }
+
+/* ---------- Filtros visuales (sin menús desplegables) · Fase 3 ---------- */
+#panelAvanzados .campo:has(> select:not(#presetsSel)) { display:none; }
+.filtros-visuales { display:flex; flex-direction:column; gap:16px; margin-top:10px; }
+.fv-bloque h3 { font-size:12px; font-weight:600; color:var(--gris); text-transform:uppercase; letter-spacing:.4px; margin:0 0 8px; }
+.fv-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.fv-genero { position:relative; overflow:hidden; border:none; border-radius:18px; min-height:64px; padding:12px 14px; text-align:left; color:#fff; font-size:15px; font-weight:600; background:linear-gradient(145deg, var(--c), color-mix(in srgb, var(--c) 55%, #000)); box-shadow:0 6px 18px rgba(0,0,0,.14); cursor:pointer; transition:transform .12s ease; -webkit-tap-highlight-color:transparent; }
+.fv-genero:active { transform:scale(.97); }
+.fv-genero.activo { outline:3px solid var(--azul); outline-offset:2px; }
+.fv-pilas { display:flex; gap:8px; overflow-x:auto; padding:2px 2px 6px; scrollbar-width:none; -webkit-overflow-scrolling:touch; }
+.fv-pilas::-webkit-scrollbar { display:none; }
+.fv-pila { flex:0 0 auto; border:1px solid var(--borde); background:var(--tarjeta); color:var(--texto); border-radius:999px; padding:8px 14px; font-size:14px; cursor:pointer; transition:transform .12s ease; -webkit-tap-highlight-color:transparent; }
+.fv-pila:active { transform:scale(.96); }
+.fv-pila.activo { background:var(--azul); color:#fff; border-color:transparent; }
+
+/* ---------- Fase 4 · Acabados premium ---------- */
+/* Isla flotante: translúcida con desenfoque y separada del borde inferior */
+#tabbar {
+  left:16px !important; right:16px !important;
+  bottom:calc(10px + env(safe-area-inset-bottom, 0px)) !important;
+  border-radius:26px !important;
+  background:rgba(255,255,255,.62) !important;
+  -webkit-backdrop-filter:blur(20px) saturate(180%) !important;
+  backdrop-filter:blur(20px) saturate(180%) !important;
+  box-shadow:0 12px 34px rgba(0,0,0,.16), inset 0 0 0 .5px rgba(255,255,255,.5) !important;
+}
+body.oscuro #tabbar {
+  background:rgba(28,28,30,.6) !important;
+  box-shadow:0 12px 34px rgba(0,0,0,.45), inset 0 0 0 .5px rgba(255,255,255,.08) !important;
+}
+
+/* Respuesta táctil: al presionar, la tarjeta se encoge como un botón físico */
+.tarjeta:active, .fila:active, .hub-tarjeta:active, .fv-genero:active, .fv-pila:active {
+  transform:scale(.97) !important;
+  transition-duration:.12s !important;
+}
+/* En pantallas táctiles no hay hover: sin levantar tarjetas al tocar */
+@media (hover:none) {
+  .tarjeta:hover, .fila:hover, .tarjeta.amplia:hover, .tarjeta.compacta:hover { transform:none; }
+}
+
+/* Estela: al abrirla aparece como barra apilada justo encima de la isla, no en el centro */
+#chatPanel.abierto {
+  top:auto !important;
+  bottom:calc(92px + env(safe-area-inset-bottom, 0px)) !important;
+  max-height:46vh !important;
+  height:auto !important;
+  border-radius:22px !important;
+  box-shadow:0 10px 30px rgba(0,0,0,.18) !important;
+}
+
+/* ---------- Estela minimizada (barra mini sobre la isla) · Fase 4 ---------- */
+#chatMinimizar { background:none; border:none; font-size:24px; line-height:1; color:var(--gris); cursor:pointer; padding:2px 8px; }
+#chatPanel.minimizado { display:none !important; }
+#estelaMini { position:fixed; left:16px; right:16px; bottom:calc(92px + env(safe-area-inset-bottom, 0px)); z-index:12; height:50px; display:none; align-items:center; gap:10px; padding:0 8px; border-radius:25px; background:var(--tarjeta); color:var(--texto); box-shadow:0 10px 30px rgba(0,0,0,.18); cursor:pointer; -webkit-tap-highlight-color:transparent; transition:transform .12s ease; }
+#estelaMini.visible { display:flex; }
+#estelaMini:active { transform:scale(.98); }
+#estelaMini .em-avatar { flex:0 0 34px; width:34px; height:34px; border-radius:50%; background:linear-gradient(145deg,#4f8ff7,#1d4ed8); color:#fff; font-weight:700; font-size:15px; display:grid; place-items:center; }
+#estelaMini .em-texto { flex:1; min-width:0; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+#estelaMini .em-cerrar { flex:0 0 auto; width:30px; height:30px; border:none; border-radius:50%; background:var(--boton-suave); color:var(--gris); cursor:pointer; }
+#estelaMini.pulso { animation:emPulso .6s ease; }
+@keyframes emPulso { 0% { box-shadow:0 0 0 0 rgba(79,143,247,.55); } 100% { box-shadow:0 0 0 14px rgba(79,143,247,0); } }
+body.estela-mini #chatAbrir { display:none !important; }
+@media (prefers-reduced-motion: reduce) { #estelaMini.pulso { animation:none; } }
