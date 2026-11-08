@@ -110,7 +110,7 @@ function pintarPestana() {
     $("toolbarNotas").style.display = "flex";
     renderBarraEtiquetas();
   } else if (pestana === "pendientes") {
-    titulo = "Pendientes";
+    titulo = "Planes";
     const todas = peliculas.filter(p => estadoDe(p).pendiente);
     const planeadas = todas.filter(p => estadoDe(p).conAlguien)
       .sort((a, b) => {
@@ -124,7 +124,7 @@ function pintarPestana() {
     extra = p => '<div class="meta" style="margin-top:6px">' + esc(diasPendiente(p) === null ? "fecha desconocida" : "hace " + diasPendiente(p) + " días") + '</div>';
 
     visibles = items;
-    contador.textContent = "Pendientes: " + items.length + " · con alguien: " + planeadas.length;
+    contador.textContent = "Planes: " + items.length + " · con alguien: " + planeadas.length;
 
     if (!items.length) {
       lista.innerHTML = '<p class="vacio">Aún no tienes pendientes. Marca una película con «Pendiente» para verla después.</p>';

@@ -127,9 +127,29 @@ function prioridadAcompanado(pool) {
   return c.length ? c : pool;
 }
 // Elige una al azar, sin repetir la anterior si hay otras opciones
+// Rechazos de «Otra»: una película rechazada no vuelve a sugerirse durante 7 días,
+// salvo que no quede ninguna otra para elegir.
+const RECHAZO_DIAS = 7;
+function rechazosRecientes() {
+  try {
+    const r = JSON.parse(localStorage.getItem("rechazos_otra") || "{}");
+    const limite = Date.now() - RECHAZO_DIAS * 86400000;
+    return new Set(Object.keys(r).filter(t => r[t] >= limite));
+  } catch (e) { return new Set(); }
+}
+function registrarRechazo(p) {
+  try {
+    const r = JSON.parse(localStorage.getItem("rechazos_otra") || "{}");
+    r[p.titulo] = Date.now();
+    localStorage.setItem("rechazos_otra", JSON.stringify(r));
+  } catch (e) {}
+}
 function elegirUnaDe(pool, anterior = null) {
   let lista = pool;
   if (anterior && lista.length > 1) lista = lista.filter(p => p !== anterior && p.titulo !== anterior.titulo);
+  const rech = rechazosRecientes();
+  const sinRechazo = lista.filter(p => !rech.has(p.titulo));
+  if (sinRechazo.length) lista = sinRechazo;
   return lista.length ? lista[Math.floor(Math.random() * lista.length)] : null;
 }
 
@@ -168,6 +188,9 @@ function elegirParaAhora(excluir) {
     candidatas = pend;
     texto = "No tienes pendientes de este tipo; te sugiero uno de tus pendientes.";
   }
+  const rechAhora = rechazosRecientes();
+  const sinRechazoAhora = candidatas.filter(p => !rechAhora.has(p.titulo));
+  if (sinRechazoAhora.length) candidatas = sinRechazoAhora;
   return { texto, p: candidatas[Math.floor(Math.random() * candidatas.length)] };
 }
 
@@ -330,6 +353,7 @@ function elegirCena(otra) {
     return;
   }
   cenaMensaje = "";
+  if (otra && cenaElegida) registrarRechazo(cenaElegida);
   cenaElegida = elegirUnaDe(prioridadAcompanado(c), otra ? cenaElegida : null);
   renderCena();
 }

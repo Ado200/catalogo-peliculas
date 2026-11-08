@@ -556,7 +556,7 @@ window.addEventListener("load", () => {
       if (sugeridaActual) { desdeAleatorio = false; abrirDetalle(sugeridaActual); }
       return;
     }
-    if (e.target.id === "ahoraOtra") { nuevaSugerencia(sugeridaActual); return; }
+    if (e.target.id === "ahoraOtra") { if (sugeridaActual) registrarRechazo(sugeridaActual); nuevaSugerencia(sugeridaActual); return; }
 
     const cargar = e.target.closest("[data-cargar-trailer]");
     if (cargar) {

@@ -163,7 +163,8 @@ function renderRecomendaciones() {
     const detalle = abierto
       ? '<p class="porque-lista">' + esc(fraseRecomendacion(r)) + '</p>' +
         '<ul class="porque-lista porque-desglose">' +
-        lineasPorQue(r.desglose).map(l => '<li>' + esc(l) + '</li>').join('') + '</ul>'
+        lineasPorQue(r.desglose).map(l => '<li>' + esc(l) + '</li>').join('') + '</ul>' +
+        botonesNoMeInteresa(r.p)
       : '';
     return '<div class="dest" data-idx="' + idx + '">' + img +
       '<div class="dest-titulo">' + esc(r.p.titulo) + '</div>' +
@@ -175,3 +176,77 @@ function renderRecomendaciones() {
 }
 
 if (window.Nucleo) { Nucleo.registrar("recomendaciones", { version: "1.0", emite: [], escucha: [] }); }
+
+
+/* Fase 4 · Corregir el criterio: «No me interesa este director». Las recomendaciones de un director excluido
+   no aparecen. La lista
+
+/* Fase 4 · Corregir el criterio: «No me interesa» por director, género o actor. Las recomendaciones que
+   coincidan con un criterio excluido no aparecen. La lista se revisa y se quita desde Yo → Criterios excluidos. */
+const CLAVES_EXCL = { director: "recom_directores_excluidos", genero: "recom_generos_excluidos", actor: "recom_actores_excluidos" };
+const ETIQUETAS_EXCL = { director: "Director", genero: "Género", actor: "Actor" };
+const TIPOS_EXCL = ["director", "genero", "actor"];
+const PLURAL_EXCL = { director: "Directores", genero: "Géneros", actor: "Actores" };
+function excluidos(tipo) {
+  try { return new Set(JSON.parse(localStorage.getItem(CLAVES_EXCL[tipo]) || "[]")); } catch (e) { return new Set(); }
+}
+function guardarExcluidos(tipo, set) {
+  try { localStorage.setItem(CLAVES_EXCL[tipo], JSON.stringify([...set])); } catch (e) {}
+}
+function valoresDe(p, tipo) {
+  if (tipo === "director") return directoresDe(p);
+  if (tipo === "genero") return generosDe(p);
+  return String(p.reparto || "").split(",").map(x => x.trim()).filter(Boolean);
+}
+function excluirValor(tipo, nombre) {
+  const s = excluidos(tipo); s.add(nombre); guardarExcluidos(tipo, s);
+  renderRecomendaciones();
+}
+function quitarValor(tipo, nombre) {
+  const s = excluidos(tipo); s.delete(nombre); guardarExcluidos(tipo, s);
+  renderRecomendaciones();
+}
+// Un botón por criterio de la recomendación (el principal de cada tipo)
+function botonesNoMeInteresa(p) {
+  return TIPOS_EXCL.map(tipo => {
+    const v = valoresDe(p, tipo)[0];
+    return v ? '<button type="button" class="pildora" data-excluir-tipo="' + tipo + '" data-excluir-valor="' + esc(v) + '">✕ ' + ETIQUETAS_EXCL[tipo] + ': ' + esc(v) + '</button>' : "";
+  }).join("");
+}
+// Filtro envolvente: no toca el cálculo, solo quita lo que coincide con un criterio excluido
+const calcularRecomendacionesBase = calcularRecomendaciones;
+calcularRecomendaciones = function () {
+  const base = calcularRecomendacionesBase();
+  const ex = {};
+  TIPOS_EXCL.forEach(t => { ex[t] = excluidos(t); });
+  if (TIPOS_EXCL.every(t => !ex[t].size)) return base;
+  return base.filter(r => !TIPOS_EXCL.some(t => valoresDe(r.p, t).some(v => ex[t].has(v))));
+};
+function abrirCriterios() {
+  const bloques = TIPOS_EXCL.map(tipo => {
+    const lista = [...excluidos(tipo)];
+    if (!lista.length) return "";
+    return '<h4>' + PLURAL_EXCL[tipo] + ' excluidos</h4><ul class="reglas-lista">' + lista.map(v =>
+      '<li class="regla-fila"><span>' + esc(v) + '</span> <button type="button" class="pildora" data-quitar-tipo="' + tipo + '" data-quitar-valor="' + esc(v) + '">Volver a mostrar</button></li>'
+    ).join("") + '</ul>';
+  }).join("");
+  const cuerpo = (bloques || '<p class="meta">No has excluido ningún director, género ni actor. Puedes hacerlo desde «¿Por qué?» en una recomendación.</p>') +
+    '<p class="meta">Excluir un género puede quitar muchas recomendaciones.</p>';
+  abrirVentanaSimple("criterios", "Criterios excluidos", cuerpo);
+  const ventana = document.getElementById("criterios");
+  if (!ventana) return;
+  ventana.addEventListener("click", e => {
+    const b = e.target.closest && e.target.closest("[data-quitar-tipo]");
+    if (!b) return;
+    ventana.remove();
+    quitarValor(b.dataset.quitarTipo, b.dataset.quitarValor);
+    abrirCriterios();
+  });
+}
+document.addEventListener("click", e => {
+  const b = e.target.closest && e.target.closest("[data-excluir-tipo]");
+  if (b) excluirValor(b.dataset.excluirTipo, b.dataset.excluirValor);
+});
+if (window.Nucleo) {
+  Nucleo.criterios = { abrir: abrirCriterios, lista: () => TIPOS_EXCL.reduce((o, t) => (o[t] = [...excluidos(t)], o), {}) };
+}

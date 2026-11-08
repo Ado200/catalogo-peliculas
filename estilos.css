@@ -2214,3 +2214,10 @@ body.contraste-alto .tablero-pill.local { color: #ffc766; }
 body.contraste-alto .dg-ok { color: #7cf2a0; }
 body.contraste-alto .dg-warn { color: #ffc766; }
 body.contraste-alto .salud .alerta { color: #ff8a80; }
+
+/* Fase 2 · Ventana Yo: accesos en columna */
+.yo-accesos { display:flex; flex-direction:column; gap:8px; margin-top:12px; }
+.yo-accesos .pildora { width:100%; text-align:left; }
+
+/* Fase 2 · Barra de cinco botones en pantallas muy angostas (≤340 px): letra un poco menor para que quepa */
+@media (max-width: 340px) { #tabbar button { font-size: 10px; } }
