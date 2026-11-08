@@ -36,9 +36,14 @@
     return ult ? ult.textContent.trim() : "";
   }
 
+  const AVISO_BUSCAR = "¿Qué tienes ganas de ver hoy?";
+  let ocultoEnBuscar = false;
+  const enBuscar = () => document.body.classList.contains("en-buscar");
+
   function actualizarTexto(pulsar) {
     const t = ultimaRespuesta();
-    const corto = t ? (t.length > 70 ? t.slice(0, 70).trimEnd() + "…" : t) : "Pregúntame sobre tu catálogo";
+    const corto = t ? (t.length > 70 ? t.slice(0, 70).trimEnd() + "…" : t)
+      : (enBuscar() ? AVISO_BUSCAR : "Pregúntame sobre tu catálogo");
     if (texto.textContent === corto) return;
     texto.textContent = corto;
     if (pulsar) {
@@ -52,11 +57,18 @@
   function sincronizar() {
     const abierto = panel.classList.contains("abierto");
     const min = abierto && panel.classList.contains("minimizado");
+    const aviso = !abierto && enBuscar() && !ocultoEnBuscar; // en Buscar, la barra se ofrece sin minimizar nada
     panel.classList.toggle("minimizado", min);
-    mini.classList.toggle("visible", min);
-    document.body.classList.toggle("estela-mini", min);
-    if (min) actualizarTexto(false);
+    mini.classList.toggle("visible", min || aviso);
+    document.body.classList.toggle("estela-mini", min || aviso);
+    if (min || aviso) actualizarTexto(false);
   }
+
+  // Al salir de Buscar, el aviso vuelve a estar disponible
+  new MutationObserver(() => {
+    if (!enBuscar()) ocultoEnBuscar = false;
+    sincronizar();
+  }).observe(document.body, { attributes: true, attributeFilter: ["class"] });
 
   btnMin.addEventListener("click", () => {
     panel.classList.add("minimizado");
@@ -64,6 +76,11 @@
   });
 
   function expandir() {
+    if (!panel.classList.contains("abierto")) {
+      const abrir = document.getElementById("chatAbrir");
+      if (abrir) abrir.click();
+      return;
+    }
     panel.classList.remove("minimizado");
     sincronizar();
     const campo = document.getElementById("chatInput");
@@ -78,7 +95,8 @@
   });
   mini.querySelector(".em-cerrar").addEventListener("click", e => {
     e.stopPropagation();
-    cerrar.click();
+    if (panel.classList.contains("abierto")) cerrar.click();
+    else { ocultoEnBuscar = true; sincronizar(); }
   });
 
   // Al cerrar desde el panel, se limpia el estado minimizado

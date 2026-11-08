@@ -16,8 +16,15 @@
   const cabecera = document.querySelector("#app > header");
 
   // La pestaña Buscar muestra el buscador, los botones y los filtros; las demás no
+  const TITULOS = { inicio: "Inicio", catalogo: "Películas", listas: "Mis Listas", buscar: "Buscar" };
+  const h1 = document.querySelector("#app > header h1");
+  function ponerTitulo(tab) {
+    if (h1 && TITULOS[tab]) h1.textContent = TITULOS[tab];
+  }
+
   function mostrarBuscar(on) {
     if (pestanaBuscar) pestanaBuscar.hidden = !on;
+    document.body.classList.toggle("en-buscar", on);
   }
 
   function marcarActiva(tab) {
@@ -54,10 +61,19 @@
       '</div>';
   }
 
+  // Bloques de la pestaña Películas que no deben verse junto a Mis Listas
+  const BLOQUES_CATALOGO = ["salud", "destacados", "queVer", "estaSemana", "duelo", "pregunta", "bienvenida",
+    "mapaGustos", "recomendaciones", "ahora", "resumenSemana", "avisoFecha", "avisoEstancados",
+    "tagsNotas", "toolbarNotas", "toolbarVistas", "chips", "selectorZona"];
+
   function mostrarHub(on) {
     if (on) pintarHub();
     hub.hidden = !on;
     lista.style.display = on ? "none" : "";
+    BLOQUES_CATALOGO.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.style.display = on ? "none" : "";
+    });
   }
 
   // Captura: «Mis Listas» y «Buscar» se atienden aquí, antes de cambiarPestana
@@ -65,6 +81,7 @@
     const b = e.target.closest && e.target.closest("button[data-tab]");
     if (!b) return;
     const tab = b.dataset.tab;
+    if (TITULOS[tab]) ponerTitulo(tab);
     if (tab === "listas") {
       e.stopPropagation(); e.preventDefault();
       mostrarBuscar(false);

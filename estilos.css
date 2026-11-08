@@ -2343,3 +2343,62 @@ body.oscuro #tabbar {
 @keyframes emPulso { 0% { box-shadow:0 0 0 0 rgba(79,143,247,.55); } 100% { box-shadow:0 0 0 14px rgba(79,143,247,0); } }
 body.estela-mini #chatAbrir { display:none !important; }
 @media (prefers-reduced-motion: reduce) { #estelaMini.pulso { animation:none; } }
+
+/* ---------- Ajuste de diseño: alineación, márgenes y barra centrada ---------- */
+html, body { overflow-x:hidden; max-width:100%; }
+#app, #lista, #hubListas, #pestanaBuscar, #filtrosVisuales {
+  box-sizing:border-box; max-width:900px; width:100%; margin-left:auto; margin-right:auto;
+}
+#app { padding-left:16px; padding-right:16px; }
+#app > header { padding-left:0 !important; padding-right:0 !important; }
+#hubListas { padding:8px 0 16px !important; }
+#pestanaBuscar { padding:8px 0 4px !important; }
+.hub-grid, #filtrosVisuales { min-width:0; }
+/* Barra inferior: isla centrada, ocupa el ancho disponible y no se corta */
+#tabbar {
+  left:50% !important; right:auto !important; transform:translateX(-50%) !important;
+  width:calc(100% - 32px) !important; max-width:560px !important; min-width:0 !important;
+  margin:0 !important;
+}
+/* Cabecera: fondo neutro y translúcido, sin degradado de color */
+#app > header {
+  background:rgba(255,255,255,.72) !important;
+  background-image:none !important;
+  -webkit-backdrop-filter:blur(20px) saturate(170%) !important;
+  backdrop-filter:blur(20px) saturate(170%) !important;
+}
+body.oscuro #app > header { background:rgba(28,28,30,.7) !important; }
+
+/* ===================== Diseño de la pestaña Buscar (oscuro) ===================== */
+body.en-buscar { background:#000 !important; color:#f5f5f7; }
+body.en-buscar #app > header { background:transparent !important; background-image:none !important; box-shadow:none !important; border:none !important; }
+body.en-buscar #app > header h1 { color:#fff; font-size:30px; font-weight:800; }
+body.en-buscar #selectorZona { display:none !important; }
+body.en-buscar #app > header .cabecera-app .boton-circular { background:#2c2c2e; color:#fff; border:none; border-radius:50%; width:36px; height:36px; font-weight:700; }
+body.en-buscar .pestana-buscar .buscar { background:#1c1c1e !important; border:1px solid #2c2c2e !important; border-radius:14px !important; box-shadow:none !important; }
+body.en-buscar .pestana-buscar .buscar input { color:#fff; background:transparent; }
+body.en-buscar .pestana-buscar .buscar input::placeholder { color:#8e8e93; }
+body.en-buscar .pestana-buscar .buscar span { color:#8e8e93; }
+body.en-buscar .pestana-buscar .botones-barra { display:none !important; }
+body.en-buscar .fv-bloque h3 { color:#8e8e93; font-size:12px; letter-spacing:.6px; }
+body.en-buscar .fv-rapido, body.en-buscar .fv-pila { background:#1c1c1e; color:#fff; border:1px solid #2c2c2e; }
+body.en-buscar .fv-rapido.activo, body.en-buscar .fv-pila.activo { background:#fff; color:#000; border-color:#fff; }
+/* Filtros rápidos */
+.fv-rapido { flex:0 0 auto; border-radius:999px; padding:8px 14px; font-size:13px; font-weight:600; cursor:pointer; border:1px solid var(--borde); background:var(--tarjeta); color:var(--texto); transition:transform .12s ease; }
+.fv-rapido:active { transform:scale(.96); }
+/* Tarjetas de género: degradado, nombre abajo a la izquierda, icono tenue arriba a la derecha */
+.fv-genero { display:flex; flex-direction:column; justify-content:flex-end; align-items:flex-start; min-height:76px; padding:12px 14px; border:none; border-radius:16px; color:#fff; background:linear-gradient(135deg, var(--c), var(--c2)); box-shadow:none; position:relative; overflow:hidden; }
+.fv-genero.activo { outline:2px solid #fff; outline-offset:2px; }
+.fv-genero .fv-ico { position:absolute; top:8px; right:10px; font-size:30px; opacity:.28; line-height:1; transform:rotate(12deg); }
+.fv-genero .fv-nombre { font-size:16px; font-weight:700; text-align:left; }
+/* Barra de navegación inferior oscura, como en la referencia */
+body.en-buscar #tabbar { background:rgba(28,28,30,.92) !important; border-radius:22px !important; box-shadow:0 10px 30px rgba(0,0,0,.5) !important; }
+body.en-buscar #tabbar button { color:#8e8e93 !important; background:transparent !important; }
+body.en-buscar #tabbar button.activa { color:#fff !important; background:transparent !important; font-weight:700; }
+body.en-buscar #tabbar button .ico { filter:grayscale(1) brightness(1.4); }
+body.en-buscar #tabbar button.activa .ico { filter:none; }
+/* Estela en Buscar: barra oscura con etiqueta ESTELA AI */
+body.en-buscar #estelaMini { background:#1c1c1e !important; color:#fff !important; border:1px solid #2c2c2e; }
+body.en-buscar #estelaMini .em-texto { font-size:14px; font-weight:600; }
+body.en-buscar #estelaMini .em-avatar { background:linear-gradient(145deg,#f472b6,#8b5cf6); }
+body.en-buscar #estelaMini .em-cerrar { background:#2c2c2e; color:#8e8e93; }
