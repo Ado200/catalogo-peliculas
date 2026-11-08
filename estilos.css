@@ -2174,3 +2174,43 @@ body.sin-sagas #sagas,
 body.sin-sagas #actores { display: none !important; }
 body.sin-estela #chatAbrir,
 body.sin-estela #chatPanel { display: none !important; }
+
+/* Fase 1 · Alto contraste (body.contraste-alto). Va al final para ganar sobre oscuro y premiere.
+   Texto ≥ 7:1 (AAA), bordes ≥ 3:1, foco visible. Se activa desde Ajustes (app-03a). */
+body.contraste-alto {
+  --fondo:#000000; --tarjeta:#000000; --texto:#ffffff; --gris:#e5e5e5; --gris-legible:#e5e5e5;
+  --azul:#0056b3; --borde:rgba(255,255,255,.7); --boton-suave:#1a1a1a;
+  --tema-bg:rgba(126,200,255,.22); --tema-texto:#7ec8ff; --sombra:none;
+  --error:#ff8a80; --estrella:#ffd60a;
+}
+body.contraste-alto a, body.contraste-alto button { color: inherit; }
+body.contraste-alto :focus-visible { outline: 3px solid #ffd60a; outline-offset: 2px; }
+
+/* Fase 1 · Tamaño del texto, parte 1: escala el contenido principal (dentro de #app).
+   Los paneles y ventanas emergentes se escalan en la parte 2. */
+body.texto-grande #app { zoom: 1.15; }
+body.texto-muy-grande #app { zoom: 1.3; }
+
+/* Fase 1 · Tamaño del texto, parte 2: escala las ventanas emergentes.
+   Se escala la caja interior (no la capa de fondo, que ocupa toda la pantalla).
+   Las ventanas están fuera de #app, así que no se escalan dos veces. */
+body.texto-grande .ventana,
+body.texto-grande .ayuda-caja,
+body.texto-grande #clasificador > *,
+body.texto-grande #seriesModal > *,
+body.texto-grande #chatPanel { zoom: 1.15; }
+body.texto-muy-grande .ventana,
+body.texto-muy-grande .ayuda-caja,
+body.texto-muy-grande #clasificador > *,
+body.texto-muy-grande #seriesModal > *,
+body.texto-muy-grande #chatPanel { zoom: 1.3; }
+
+/* Fase 1 · Alto contraste, colores de texto que quedaban por debajo de 7:1 sobre negro o sobre sus tintes.
+   Cada color nuevo supera 7:1 sobre negro y sobre el tinte de su píldora. */
+body.contraste-alto .chat-chips button,
+body.contraste-alto .chat-votos button { color: #7ec8ff; }
+body.contraste-alto .tablero-pill.ia { color: #7cf2a0; }
+body.contraste-alto .tablero-pill.local { color: #ffc766; }
+body.contraste-alto .dg-ok { color: #7cf2a0; }
+body.contraste-alto .dg-warn { color: #ffc766; }
+body.contraste-alto .salud .alerta { color: #ff8a80; }

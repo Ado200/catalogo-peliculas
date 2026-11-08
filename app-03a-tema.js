@@ -156,3 +156,49 @@ if (window.Nucleo) {
     if (d.activo) pedirUbicacion();
   });
 }
+
+/* Fase 1 · Alto contraste: preferencia guardada (contraste_alto = "si"). Solo cambia el color; no cambia el tamaño ni el diseño. */
+{
+  const aplicarContraste = on => document.body.classList.toggle("contraste-alto", !!on);
+  let guardado = false;
+  try { guardado = localStorage.getItem("contraste_alto") === "si"; } catch (e) {}
+  aplicarContraste(guardado);
+  const interruptorCon = document.getElementById("contrasteOn");
+  if (interruptorCon) {
+    interruptorCon.checked = guardado;
+    interruptorCon.addEventListener("change", () => {
+      try { localStorage.setItem("contraste_alto", interruptorCon.checked ? "si" : "no"); } catch (e) {}
+      aplicarContraste(interruptorCon.checked);
+      actualizarTema();
+    });
+  }
+}
+
+/* Fase 1 · Tamaño del texto, parte 1: preferencia guardada (texto_tam = normal | grande | muy-grande). */
+{
+  const aplicarTexto = nivel => {
+    document.body.classList.toggle("texto-grande", nivel === "grande");
+    document.body.classList.toggle("texto-muy-grande", nivel === "muy-grande");
+  };
+  let nivel = "normal";
+  try { nivel = localStorage.getItem("texto_tam") || "normal"; } catch (e) {}
+  aplicarTexto(nivel);
+  const selTexto = document.getElementById("textoTam");
+  if (selTexto) {
+    selTexto.value = nivel;
+    selTexto.addEventListener("change", () => {
+      try { localStorage.setItem("texto_tam", selTexto.value); } catch (e) {}
+      aplicarTexto(selTexto.value);
+    });
+  }
+}
+
+/* Fase 1 · El alto contraste tiene prioridad sobre el modo premiere: los colores de premiere usan !important
+   y no se pueden sobrescribir. La elección premiere se conserva y vuelve al apagar el alto contraste. */
+{
+  const temaBase = actualizarTema;
+  actualizarTema = function () {
+    temaBase();
+    if (document.body.classList.contains("contraste-alto")) document.body.classList.remove("premiere");
+  };
+}
