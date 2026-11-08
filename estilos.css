@@ -2221,3 +2221,30 @@ body.contraste-alto .salud .alerta { color: #ff8a80; }
 
 /* Fase 2 · Barra de cinco botones en pantallas muy angostas (≤340 px): letra un poco menor para que quepa */
 @media (max-width: 340px) { #tabbar button { font-size: 10px; } }
+
+/* Refinamiento visual (estilo nativo): sin resaltado azul al tocar, sin selección en controles,
+   y transiciones suaves de color. Se conservan el efecto de escala y la sombra que ya existían. */
+*, *::before, *::after { -webkit-tap-highlight-color: transparent; }
+button, .pildora, .chipc, .boton, .estrella, #tabbar, select { -webkit-user-select: none; user-select: none; }
+.tarjeta, .fila { transition: transform .25s var(--ease), box-shadow .25s, background-color .4s ease, color .4s ease; }
+.pildora { transition: transform .15s var(--ease), background-color .4s ease, color .4s ease, border-color .4s ease; }
+#app > header { transition: padding .45s var(--ease), background-color .4s ease, color .4s ease; }
+
+/* Refinamiento: el panel de Estela usa el mismo vidrio que el resto de la app (26 px, saturación 190 %) */
+#chatPanel { -webkit-backdrop-filter: saturate(190%) blur(26px); backdrop-filter: saturate(190%) blur(26px); }
+
+/* Refinamiento: pesos de letra unificados en 700 (antes 800 en tres lugares) */
+.sg-pct { font-weight:700; }
+.pest-stat b { font-weight:700; }
+#app > header h1 { font-weight:700 !important; }
+
+/* Refinamiento: escala de tarjetas unificada. El título de lista compacta (15 px) se mantiene por densidad. */
+.tarjeta h3 { font-size:17px; }
+#lista .tarjeta.amplia .meta { font-size:13px; }
+
+/* Refinamiento: el título de las ventanas creadas desde código usa el mismo tamaño que el de las ventanas fijas (22 px). Solo el título directo de la caja. */
+.ayuda-caja > h3:first-of-type { font-size:22px; font-weight:700; letter-spacing:-.3px; }
+
+/* Refinamiento de lectura: párrafos dentro de ventanas a 15 px con interlineado cómodo; etiquetas de campo a 13 px. */
+.ayuda-caja p, .ventana p, .ventana-larga p { font-size:15px; line-height:1.45; }
+.campo label { font-size:13px; }
