@@ -88,7 +88,7 @@
     hostCatalogo.className = "filtros-visuales solo-catalogo";
     hostCatalogo.setAttribute("data-zona", "lista");
     // Justo debajo de la píldora de secciones (Lista / Estrenos / Sagas…), que se ve siempre en Catálogo
-    const ref = document.getElementById("selectorZona");
+    const ref = document.getElementById("pildorasRapidas") || document.getElementById("selectorZona");
     if (ref && ref.parentNode) ref.parentNode.insertBefore(hostCatalogo, ref.nextSibling);
     else { const lista = document.getElementById("lista"); if (lista) lista.parentNode.insertBefore(hostCatalogo, lista); }
   }

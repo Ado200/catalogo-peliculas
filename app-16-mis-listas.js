@@ -10,6 +10,7 @@
   hub.id = "hubListas";
   hub.className = "hub-listas";
   hub.hidden = true;
+  hub.dataset.zona = "lista";
   const anclaInicio = document.getElementById("inicioBloques");
   if (anclaInicio) anclaInicio.insertAdjacentElement("afterend", hub);
   else lista.parentNode.insertBefore(hub, lista);
