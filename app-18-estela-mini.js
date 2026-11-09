@@ -33,9 +33,9 @@
   mini.setAttribute("tabindex", "0");
   mini.dataset.estado = "oculta";
   mini.innerHTML =
-    '<span class="em-avatar" aria-hidden="true">🍿</span>' +
+    '<span class="em-avatar" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#a855f7" stroke-width="2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3" fill="#a855f7"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></span>' +
     '<span class="em-onda" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>' +
-    '<span class="em-info"><span class="em-etiqueta">Estela AI</span><span class="em-texto"></span></span>' +
+    '<span class="em-info"><span class="em-etiqueta">Estela</span><span class="em-texto"></span></span>' +
     '<button type="button" class="em-accion"></button>';
   document.body.appendChild(mini);
   const texto = mini.querySelector(".em-texto");
@@ -78,8 +78,7 @@
     document.body.classList.toggle("estela-mini", visible);
     velo.classList.toggle("visible", estado === "escuchando");
     texto.textContent = textoDe(estado);
-    etiqueta.textContent = resultadosUltimos && resultadosUltimos.length
-      ? "Estela AI · " + resultadosUltimos.length + " resultados" : "Estela AI";
+    etiqueta.textContent = "Estela";
     if (estado === "minimizada") accion.textContent = "✕";
     else if (estado === "escuchando") accion.textContent = "■";
     else accion.textContent = "🎤";
@@ -255,6 +254,11 @@
       return;
     }
     expandir();
+  });
+  const avatarMic = mini.querySelector(".em-avatar");
+  avatarMic.addEventListener("click", e => {
+    e.stopPropagation();
+    if (estado === "oculta" || estado === "aviso") escuchar();
   });
   mini.addEventListener("keydown", e => {
     if (e.key === "Enter" || e.key === " ") { e.preventDefault(); mini.click(); }
