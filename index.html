@@ -201,6 +201,7 @@
     </div>
     <div class="grupo-menu">
       <span class="grupo-titulo">Ajustes</span>
+    <div class="ajustes-trio">
     <div class="campo"><label for="tema-modo">Tema de la página</label>
       <select id="tema-modo">
         <option value="sistema">Automático del sistema</option>
@@ -222,6 +223,8 @@
         <option value="ahorro">Siempre ahorro</option>
         <option value="normal">Siempre normal</option>
       </select></div>
+    </div>
+      <div class="ajuste-vidrio" id="ajusteVidrio"><label for="vidrioAlfa">Transparencia del vidrio <span id="vidrioAlfaValor">72</span>%</label><input type="range" id="vidrioAlfa" min="40" max="95" step="1" value="72" aria-label="Transparencia del vidrio"></div>
     <div class="campo"><label for="saludo-modo">Saludo al entrar</label>
       <select id="saludo-modo">
         <option value="si">Mostrar con mi nombre</option>
@@ -255,7 +258,6 @@
       <select id="auto-sagas"><option value="si">Mostrar</option><option value="no">No mostrar</option></select></div>
     <div class="campo" id="campoInstalar"><button type="button" id="instalarApp" class="pildora">📲 Instalar la app</button>
       <p id="instalarEstado" style="margin:8px 0 0;font-size:13px;color:var(--gris)">Ábrela como una app, con su icono y sin barra de direcciones.</p></div>
-      <div class="ajuste-vidrio" id="ajusteVidrio"><label for="vidrioAlfa">Transparencia del vidrio <span id="vidrioAlfaValor">72</span>%</label><input type="range" id="vidrioAlfa" min="40" max="95" step="1" value="72" aria-label="Transparencia del vidrio"></div>
     </div>
     <div class="grupo-menu grupo-peligro">
       <span class="grupo-titulo">Cuenta</span>

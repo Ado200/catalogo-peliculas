@@ -2742,3 +2742,9 @@ body #chatPanel.abierto #chatMensajes { flex:1 1 auto !important; min-height:0 !
 #tabbar > button[data-tab="buscar"]::before, #tabbar > button[data-tab="buscar"]::after { display:none !important; content:none !important; }
 body.oscuro #tabbar > button[data-tab="buscar"], body.oscuro #tabbar > button[data-tab="buscar"].activa { background:#2c2c2e !important; color:#a1a1a6 !important; }
 #tabbar > button[data-tab="buscar"] .ico svg { stroke:currentColor; }
+
+/* Ajustes: tema, protección de la vista y ahorro de datos en una fila (se apilan en teléfono) */
+.ajustes-trio { display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:14px 18px; margin:10px 0 6px; }
+@media (max-width: 560px) { .ajustes-trio { grid-template-columns:1fr; } }
+.ajustes-trio .campo { margin:0; }
+.ajuste-vidrio { margin:8px 0 12px; }
