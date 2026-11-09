@@ -2676,3 +2676,20 @@ body.en-inicio #selectorZona { display:none !important; }
 #tabbar > button[data-tab="buscar"] { width:52px !important; height:52px !important; flex:0 0 52px !important; max-width:52px !important; min-width:52px !important; }
 /* Píldora de Estela separada de la barra */
 #estelaMini { bottom:calc(112px + env(safe-area-inset-bottom,0px)) !important; }
+
+/* ===== Estela: porcentaje de uso en la esquina del encabezado, conversación con todo el espacio ===== */
+#chatAviso { position:absolute !important; top:10px !important; right:70px !important; left:auto !important; width:auto !important; margin:0 !important; padding:0 !important; background:none !important; border:0 !important; box-shadow:none !important; display:block !important; z-index:3 !important; }
+#chatUso { width:34px !important; height:34px !important; font-size:11px !important; font-weight:700 !important; margin:0 !important; }
+#chatPanel.abierto { max-height:min(72vh, calc(100dvh - 240px)) !important; bottom:calc(170px + env(safe-area-inset-bottom,0px)) !important; }
+
+/* ===== Limpieza: Estela igual en Buscar, sin punto naranja, botón Agrupar compacto ===== */
+/* Estela en Buscar: misma píldora compacta que en las demás pestañas, sin borde */
+body.en-buscar #estelaMini, #estelaMini { border:none !important; outline:none !important; height:auto !important; min-height:0 !important; padding:4px 12px 4px 4px !important; box-shadow:0 10px 28px rgba(0,0,0,.12) !important; }
+body.en-buscar #estelaMini .em-onda i { background:linear-gradient(180deg,#c084fc 0%,#6366f1 50%,#ec4899 100%) !important; }
+/* Sin punto naranja en Buscar */
+#tabbar > button[data-tab="buscar"]::after, #chatAbrir::after { display:none !important; }
+/* Botones Agrupar por tema: compactos */
+#agrupar, #agruparNotas { min-height:0 !important; height:auto !important; width:auto !important; padding:6px 14px !important; font-size:13px !important; line-height:1.2 !important; border-radius:999px !important; }
+
+/* Botones Agrupar por tema ocultos: la pantalla queda más limpia (el código sigue disponible) */
+#agrupar, #agruparNotas { display:none !important; }
