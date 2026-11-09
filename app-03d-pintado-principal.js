@@ -80,6 +80,8 @@ function pintarPestana() {
   if (pestana === "vistas") {
     actualizarResumenSemana();
     renderActividad();
+    renderEstaSemana();
+    renderPregunta();
   renderExtrasActividad();
   }
 

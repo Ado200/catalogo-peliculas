@@ -2,6 +2,7 @@
 <html lang="es">
 <head>
 <link rel="stylesheet" href="estilos.css">
+<link rel="stylesheet" href="estilos-vitrina.css">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Mi catálogo de películas</title>
@@ -88,6 +89,13 @@
        <button type="button" data-seg="" class="activa">Todas</button>
     <button type="button" data-seg="sin_ver">Por estrenar</button>
     <button type="button" data-seg="favoritas">Favoritas</button>
+  </div>
+  <div id="pildorasRapidas" class="pildoras-rapidas solo-catalogo" data-zona="lista" role="group" aria-label="Accesos rápidos">
+    <button type="button" class="pildora-rapida" data-rapida="noche">🍿 Para esta noche</button>
+    <button type="button" class="pildora-rapida" data-rapida="animo">🎭 ¿Cómo te sientes?</button>
+    <button type="button" class="pildora-rapida" data-rapida="pareja">💑 En pareja</button>
+    <button type="button" class="pildora-rapida" data-rapida="sorpresa">🎁 Sorpréndeme</button>
+    <button type="button" class="pildora-rapida" data-rapida="reir">😂 Reír</button>
   </div>
   <div id="chips" class="solo-catalogo" data-zona="lista"></div>
   </div>
@@ -275,7 +283,7 @@
 <section id="tarjetaAuto" class="tarjeta-auto solo-catalogo" data-zona="inicio" style="display:none" aria-live="polite"></section>
 <section id="tarjetaDia" class="tarjeta-dia solo-catalogo" data-zona="inicio" style="display:none" aria-live="polite"></section>
 <section id="hoy" class="hoy solo-catalogo" data-zona="inicio" style="display:none"></section>
-<div id="avisoFecha" class="aviso-estancados solo-catalogo" data-zona="inicio" style="display:none">
+<div id="avisoFecha" class="aviso-estancados solo-catalogo" data-zona="ninguna" style="display:none">
   <div class="aviso-cabecera">
     <span id="avisoFechaTexto"></span>
     <button id="avisoFechaCerrar" class="cerrar-aviso" title="Cerrar recordatorio" aria-label="Cerrar recordatorio">×</button>
@@ -290,6 +298,7 @@
   <div id="avisoLista" class="aviso-lista"></div>
 </div>
 
+<section id="hero" class="hero solo-catalogo" data-zona="inicio" style="display:none" aria-label="Destacada para ti"></section>
 <div id="queVer" class="que-ver solo-catalogo" data-zona="inicio" style="display:none">
 <section id="ahora" class="destacados solo-catalogo" style="display:none">
   <h3 id="tituloAhora">Para esta hora</h3>
@@ -298,8 +307,8 @@
 </section>
 <section id="cena" class="destacados solo-catalogo" style="display:none"></section>
 </div>
-<section id="estaSemana" class="destacados solo-catalogo" data-zona="inicio" style="display:none"></section>
-<section id="pregunta" class="destacados solo-catalogo" data-zona="inicio" style="display:none"></section>
+<section id="estaSemana" class="destacados solo-catalogo" data-zona="resumen" style="display:none"></section>
+<section id="pregunta" class="destacados solo-catalogo" data-zona="resumen" style="display:none"></section>
 <section id="bienvenida" class="destacados solo-catalogo" data-zona="inicio" style="display:none"></section>
 <section id="duelo" class="destacados solo-catalogo" data-zona="duelo" style="display:none"></section>
 <section id="resumenSemana" class="destacados" data-zona="resumen" style="display:none"></section>
@@ -597,6 +606,9 @@
 <script src="app-16-mis-listas.js" defer></script>
 <script src="app-17-filtros-visuales.js" defer></script>
 <script src="app-18-estela-mini.js" defer></script>
+<script src="app-20-vitrina-color.js" defer></script>
+<script src="app-21-hero.js" defer></script>
+<script src="app-22-catalogo-pildoras.js" defer></script>
 <script src="app-19-pantalla-genero.js" defer></script>
 </body>
 </html>

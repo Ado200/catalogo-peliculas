@@ -416,7 +416,7 @@ function etiquetaDia(iso) {
 
 function renderEstaSemana() {
   const sec = $("estaSemana");
-  if (!Nucleo.datos.peliculas().length || hayFiltros() || pestana !== "catalogo") {
+  if (!Nucleo.datos.peliculas().length || pestana !== "vistas") {
     sec.style.display = "none";
     return;
   }
@@ -580,7 +580,7 @@ function textoPregunta(pd) {
 
 function renderPregunta() {
   const sec = $("pregunta");
-  if (!Nucleo.datos.peliculas().length || hayFiltros() || pestana !== "catalogo") {
+  if (!Nucleo.datos.peliculas().length || pestana !== "vistas") {
     sec.style.display = "none";
     return;
   }

@@ -2777,3 +2777,24 @@ body.texto-muy-grande #chatPanel.modo-pildora { display: contents !important; }
 .estela-controles-sup #chatUso { width: 32px !important; height: 32px !important; margin: 0 !important; padding: 0 !important; font-size: 10px !important; }
 #chatUso[hidden] { display: none !important; }
 .estela-controles-sup #chatCerrar { margin: 0; }
+
+/* ===== Vitrina · tokens del rediseño (Fase 0). Solo variables: por sí solas no cambian nada en pantalla. ===== */
+:root {
+  --vt-radio-panel: 24px;
+  --vt-radio-poster: 14px;
+  --vt-radio-pildora: 999px;
+  --vt-sombra-reposo: 0 1px 2px rgba(0,0,0,.06);
+  --vt-sombra-elevada: 0 10px 28px rgba(0,0,0,.14);
+  --vt-texto-titulo: 22px;
+  --vt-texto-seccion: 18px;
+  --vt-texto-fila: 16px;
+  --vt-texto-base: 14px;
+  --vt-texto-meta: 12px;
+  --vt-acento: var(--azul);
+  --vt-acento-texto: #fff;
+  --vt-movimiento: .25s var(--ease-fluido, cubic-bezier(.22,.9,.3,1));
+}
+body.oscuro {
+  --vt-sombra-reposo: 0 1px 2px rgba(0,0,0,.35);
+  --vt-sombra-elevada: 0 10px 28px rgba(0,0,0,.5);
+}

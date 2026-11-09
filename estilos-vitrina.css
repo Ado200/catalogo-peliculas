@@ -1,0 +1,105 @@
+/* ===== Vitrina · capa del rediseño de Inicio y Catálogo =====
+   Se carga después de estilos.css. Aquí van las reglas nuevas del rediseño.
+   Las reglas viejas NO se borran hasta que se confirme en pantalla que la nueva se ve bien.
+   Usa los tokens --vt-* definidos al final de estilos.css. */
+
+/* ===== Fase 1 · color del póster en la ficha ===== */
+#modal { --vt-acento-activo: var(--vt-acento-poster, var(--vt-acento)); }
+#modal .ventana { position: relative; }
+#modal .ventana::before {
+  content: "";
+  position: absolute; left: 0; right: 0; top: 0;
+  height: 4px;
+  background: var(--vt-acento-activo);
+  border-radius: var(--vt-radio-panel) var(--vt-radio-panel) 0 0;
+  pointer-events: none;
+}
+
+/* ===== Fase 2 · destacado de Inicio ===== */
+.hero {
+  position: relative; isolation: isolate; overflow: hidden;
+  display: flex; align-items: flex-end;
+  min-height: 300px; margin: 12px 0 18px;
+  border-radius: var(--vt-radio-panel);
+  background: #1c1c1e; color: #fff;
+}
+.hero-fondo { position: absolute; inset: 0; z-index: -2; overflow: hidden; }
+.hero-fondo img {
+  width: 100%; height: 100%; object-fit: cover; display: block;
+  transform: scale(1.2); filter: blur(26px) saturate(1.15);
+}
+.hero::after {
+  content: ""; position: absolute; inset: 0; z-index: -1;
+  background: linear-gradient(to top, rgba(0,0,0,.88) 8%, rgba(0,0,0,.35) 58%, rgba(0,0,0,.15));
+  pointer-events: none;
+}
+.hero-contenido { position: relative; width: 100%; box-sizing: border-box; padding: 22px 20px; }
+.hero-etiqueta { margin: 0 0 6px; font-size: 12px; font-weight: 600; color: rgba(255,255,255,.82); }
+.hero-titulo { margin: 0 0 6px; font-size: 30px; font-weight: 700; letter-spacing: -.02em; line-height: 1.12; color: #fff; }
+.hero-meta { margin: 0; font-size: 14px; color: rgba(255,255,255,.82); }
+.hero-acciones { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+.hero-principal, .hero-secundario {
+  border: 0; border-radius: var(--vt-radio-pildora); padding: 12px 22px;
+  font: inherit; font-size: 15px; font-weight: 600; cursor: pointer;
+}
+.hero-principal { background: #fff; color: #000; }
+.hero-secundario { background: rgba(255,255,255,.18); color: #fff; -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
+.hero-principal:active, .hero-secundario:active { transform: scale(.97); }
+
+/* ===== Fase 4 · píldoras de acceso rápido en Películas ===== */
+.pildoras-rapidas {
+  display: flex; gap: 8px;
+  overflow-x: auto; overscroll-behavior-x: contain;
+  scrollbar-width: none; -webkit-overflow-scrolling: touch;
+  padding: 10px 2px 2px; margin: 0 -2px;
+}
+.pildoras-rapidas::-webkit-scrollbar { display: none; }
+.pildora-rapida {
+  flex: 0 0 auto; border: 0; cursor: pointer; white-space: nowrap;
+  padding: 8px 14px; border-radius: var(--vt-radio-pildora);
+  background: var(--boton-suave); color: var(--texto);
+  font: inherit; font-size: 13px; font-weight: 600;
+  transition: transform .2s var(--ease-fluido, ease);
+}
+.pildora-rapida:active { transform: scale(.97); }
+
+/* ===== Fase 5 · pósteres unificados =====
+   La elevación se aplica al póster y no a la tarjeta completa, para no pelear con el
+   movimiento que ya tiene la tarjeta. */
+.tarjeta .portada {
+  border-radius: var(--vt-radio-poster);
+  box-shadow: var(--vt-sombra-reposo);
+  transition: transform var(--vt-movimiento), box-shadow var(--vt-movimiento);
+}
+@media (hover: hover) and (pointer: fine) {
+  .tarjeta:hover .portada {
+    transform: translateY(-4px);
+    box-shadow: var(--vt-sombra-elevada);
+  }
+}
+.tarjeta:active .portada { transform: scale(.98); }
+@media (prefers-reduced-motion: reduce) {
+  .tarjeta .portada, .tarjeta:hover .portada, .tarjeta:active .portada { transition: none; transform: none; }
+}
+
+/* ===== Fase 5b · pósteres de los demás carruseles, sagas, género y estrenos =====
+   Mismo tratamiento que la rejilla: esquinas, sombra y elevación en el póster. */
+.carrusel img, .carrusel .sinportada-mini, .sg-poster, .pg-poster, .carrusel-estrenos .dest2 {
+  border-radius: var(--vt-radio-poster);
+  box-shadow: var(--vt-sombra-reposo);
+}
+.carrusel img, .sg-poster, .pg-poster {
+  transition: transform var(--vt-movimiento), box-shadow var(--vt-movimiento);
+}
+@media (hover: hover) and (pointer: fine) {
+  .carrusel img:hover, .sg-card:hover .sg-poster, .pg-poster:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--vt-sombra-elevada);
+  }
+}
+.carrusel img:active, .sg-poster:active, .pg-poster:active { transform: scale(.98); }
+@media (prefers-reduced-motion: reduce) {
+  .carrusel img, .sg-poster, .pg-poster, .carrusel img:hover, .sg-card:hover .sg-poster, .pg-poster:hover {
+    transition: none; transform: none;
+  }
+}
