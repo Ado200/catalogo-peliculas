@@ -93,7 +93,7 @@
 
   function volverAlReposo(aviso) {
     avisoTemp = aviso || "";
-    poner(!panel.classList.contains("abierto") && enBuscar() && !ocultoEnBuscar ? "aviso" : "oculta");
+    poner(!panel.classList.contains("abierto") && document.body.classList.contains("con-sesion") && !(enBuscar() && ocultoEnBuscar) ? "aviso" : "oculta");
   }
 
   // ---------- Escucha con el reconocimiento de voz del navegador ----------
