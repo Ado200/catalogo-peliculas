@@ -2635,3 +2635,8 @@ body.oscuro #estelaMini .em-avatar { background:#2c2c2e !important; }
 /* 4) Fondo de la píldora de Estela claro en todas las pestañas (incluida Buscar) */
 body #estelaMini, body.en-buscar #estelaMini { background:var(--tarjeta) !important; }
 body.oscuro #estelaMini, body.oscuro.en-buscar #estelaMini { background:rgba(28,28,30,.8) !important; }
+
+/* Estela como en la referencia: nombre a la izquierda y onda que ocupa el resto de la píldora */
+#estelaMini .em-info { flex:0 0 auto !important; }
+#estelaMini .em-onda { flex:1 1 auto !important; min-width:0; margin-left:6px !important; height:40px !important; justify-content:center !important; gap:3px !important; overflow:hidden; }
+#estelaMini .em-onda i { display:block; width:3px !important; border-radius:3px; background:linear-gradient(180deg,#c084fc 0%,#6366f1 50%,#ec4899 100%) !important; }

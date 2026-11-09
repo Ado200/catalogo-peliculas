@@ -255,6 +255,14 @@
     }
     expandir();
   });
+  // Onda de 28 barras con alturas variadas, como en la referencia
+  const ondaEl = mini.querySelector(".em-onda");
+  if (ondaEl) {
+    ondaEl.innerHTML = Array.from({ length: 28 }, (_, k) => {
+      const h = 6 + Math.round(30 * Math.abs(Math.sin(k * 0.55) * Math.cos(k * 0.23)));
+      return "<i style=\"height:" + h + "px\"></i>";
+    }).join("");
+  }
   const avatarMic = mini.querySelector(".em-avatar");
   avatarMic.addEventListener("click", e => {
     e.stopPropagation();
