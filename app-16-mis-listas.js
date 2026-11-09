@@ -54,10 +54,10 @@
     hub.innerHTML =
       '<h2 class="hub-titulo">Mis Listas</h2>' +
       '<div class="hub-grid">' +
-        tarjeta("v", "✓", "Vistas", c.vistas + (c.vistas === 1 ? " película" : " películas"), "vistas") +
-        tarjeta("p", "⏳", "Pendientes", c.pendientes + " por ver · " + c.planes + " con alguien", "pendientes") +
-        tarjeta("n", "📝", "Notas", c.notas + (c.notas === 1 ? " nota" : " notas"), "notas") +
-        tarjeta("a", "⚙", "Ajustes y cuenta", "Estadísticas, respaldo y más", "yo") +
+        tarjeta("v", '<svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="5"/><path d="M8 12.2l2.7 2.6L16 9.4"/></svg>', "Vistas", c.vistas + (c.vistas === 1 ? " película" : " películas"), "vistas") +
+        tarjeta("p", '<svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3h10M7 21h10"/><path d="M8 3c0 4.5 8 5.5 8 9s-8 4.5-8 9M16 3c0 4.5-8 5.5-8 9s8 4.5 8 9"/></svg>', "Pendientes", c.pendientes + " por ver · " + c.planes + " con alguien", "pendientes") +
+        tarjeta("n", '<svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3.5h8l4 4V20a1.5 1.5 0 0 1-1.5 1.5h-10A1.5 1.5 0 0 1 5 20V5A1.5 1.5 0 0 1 6 3.5z"/><path d="M14 3.5V8h4"/><path d="M9 13h6M9 16.5h4"/></svg>', "Notas", c.notas + (c.notas === 1 ? " nota" : " notas"), "notas") +
+        tarjeta("a", '<svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg>', "Ajustes y cuenta", "Estadísticas, respaldo y más", "yo") +
       '</div>';
   }
 
@@ -76,11 +76,22 @@
     });
   }
 
+  // Fase 4: el contenido se desvanece al cambiar de pestaña; la barra se queda fija
+  function animarEntrada() {
+    [lista, hub].forEach(el => {
+      if (!el) return;
+      el.classList.remove("entra");
+      void el.offsetWidth; // reinicia la animación
+      el.classList.add("entra");
+    });
+  }
+
   // Captura: «Mis Listas» y «Buscar» se atienden aquí, antes de cambiarPestana
   tabbar.addEventListener("click", e => {
     const b = e.target.closest && e.target.closest("button[data-tab]");
     if (!b) return;
     const tab = b.dataset.tab;
+    if (TITULOS[tab] || tab === "listas") animarEntrada();
     if (TITULOS[tab]) ponerTitulo(tab);
     if (tab === "listas") {
       e.stopPropagation(); e.preventDefault();

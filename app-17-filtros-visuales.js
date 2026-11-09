@@ -159,6 +159,12 @@
     if (m) { verMasFiltros = !verMasFiltros; pintarFiltros(); return; }
     const b = e.target.closest && e.target.closest("[data-campo]");
     if (!b) return;
+    // Un género (no «Todos») abre su propia pantalla, con una respuesta táctil breve
+    if (b.dataset.campo === "genero" && b.dataset.valor && typeof abrirPantallaGenero === "function") {
+      b.classList.add("pulsa");
+      setTimeout(() => { b.classList.remove("pulsa"); abrirPantallaGenero(b.dataset.valor); }, 120);
+      return;
+    }
     const campo = CAMPOS.find(c => c.clave === b.dataset.campo);
     const s = campo && campo.select();
     if (!s) return;
