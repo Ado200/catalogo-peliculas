@@ -1,6 +1,6 @@
-/* ===== Fase 4 · Módulo «estela-mini»: Estela minimizada como barra de una línea sobre la isla.
-   No modifica el asistente: observa su panel (#chatPanel) y sus mensajes (#chatMensajes).
-   Minimizar solo oculta el panel; la conversación sigue intacta. ===== */
+/* ===== Fase 4 · Módulo «estela-mini»: barra de Estela sobre la isla.
+   Dos modos: aviso (en Buscar, con micrófono) y minimizada (última respuesta, con ✕).
+   No modifica el asistente: observa su panel (#chatPanel) y sus mensajes (#chatMensajes). ===== */
 (function () {
   const panel = document.getElementById("chatPanel");
   const mensajes = document.getElementById("chatMensajes");
@@ -17,18 +17,23 @@
   btnMin.textContent = "–";
   cab.insertBefore(btnMin, cerrar);
 
-  // Barra mínima: avatar, última respuesta y cerrar
+  // Barra: avatar, etiqueta, texto y botón de la derecha
   const mini = document.createElement("div");
   mini.id = "estelaMini";
   mini.setAttribute("role", "button");
   mini.setAttribute("tabindex", "0");
   mini.setAttribute("aria-label", "Abrir la conversación con Estela");
   mini.innerHTML =
-    '<span class="em-avatar" aria-hidden="true">E</span>' +
-    '<span class="em-texto"></span>' +
-    '<button type="button" class="em-cerrar" aria-label="Cerrar a Estela">✕</button>';
+    '<span class="em-avatar" aria-hidden="true">🍿</span>' +
+    '<span class="em-info"><span class="em-etiqueta">Estela AI</span><span class="em-texto"></span></span>' +
+    '<button type="button" class="em-accion"></button>';
   document.body.appendChild(mini);
   const texto = mini.querySelector(".em-texto");
+  const accion = mini.querySelector(".em-accion");
+
+  const AVISO_BUSCAR = "¿Qué tienes ganas de ver hoy?";
+  let ocultoEnBuscar = false;
+  const enBuscar = () => document.body.classList.contains("en-buscar");
 
   function ultimaRespuesta() {
     const burbujas = mensajes.querySelectorAll(".chat-burbuja.ia");
@@ -36,14 +41,9 @@
     return ult ? ult.textContent.trim() : "";
   }
 
-  const AVISO_BUSCAR = "¿Qué tienes ganas de ver hoy?";
-  let ocultoEnBuscar = false;
-  const enBuscar = () => document.body.classList.contains("en-buscar");
-
-  function actualizarTexto(pulsar) {
-    const t = ultimaRespuesta();
-    const corto = t ? (t.length > 70 ? t.slice(0, 70).trimEnd() + "…" : t)
-      : (enBuscar() ? AVISO_BUSCAR : "Pregúntame sobre tu catálogo");
+  function actualizarTexto(pulsar, minimizada) {
+    const t = minimizada ? ultimaRespuesta() : "";
+    const corto = t ? (t.length > 70 ? t.slice(0, 70).trimEnd() + "…" : t) : AVISO_BUSCAR;
     if (texto.textContent === corto) return;
     texto.textContent = corto;
     if (pulsar) {
@@ -57,11 +57,15 @@
   function sincronizar() {
     const abierto = panel.classList.contains("abierto");
     const min = abierto && panel.classList.contains("minimizado");
-    const aviso = !abierto && enBuscar() && !ocultoEnBuscar; // en Buscar, la barra se ofrece sin minimizar nada
+    const aviso = !abierto && enBuscar() && !ocultoEnBuscar;
     panel.classList.toggle("minimizado", min);
     mini.classList.toggle("visible", min || aviso);
     document.body.classList.toggle("estela-mini", min || aviso);
-    if (min || aviso) actualizarTexto(false);
+    mini.classList.toggle("modo-min", min);
+    if (min) accion.textContent = "✕";
+    else accion.textContent = "🎤";
+    accion.setAttribute("aria-label", min ? "Cerrar a Estela" : "Hablar con Estela");
+    if (min || aviso) actualizarTexto(false, min);
   }
 
   // Al salir de Buscar, el aviso vuelve a estar disponible
@@ -75,6 +79,7 @@
     sincronizar();
   });
 
+  // Abre la conversación completa (y el micrófono del asistente si lo tiene)
   function expandir() {
     if (!panel.classList.contains("abierto")) {
       const abrir = document.getElementById("chatAbrir");
@@ -86,17 +91,35 @@
     const campo = document.getElementById("chatInput");
     if (campo) campo.focus({ preventScroll: true });
   }
+
   mini.addEventListener("click", e => {
-    if (e.target.closest(".em-cerrar")) return;
+    if (e.target.closest(".em-accion")) return;
     expandir();
   });
   mini.addEventListener("keydown", e => {
     if (e.key === "Enter" || e.key === " ") { e.preventDefault(); expandir(); }
   });
-  mini.querySelector(".em-cerrar").addEventListener("click", e => {
+
+  // Abre la conversación y empieza a dictar con el micrófono del asistente
+  function dictar() {
+    if (!panel.classList.contains("abierto")) {
+      const abrir = document.getElementById("chatAbrir");
+      if (abrir) abrir.click();
+    }
+    panel.classList.remove("minimizado");
+    sincronizar();
+    setTimeout(() => {
+      const voz = document.getElementById("chatVoz");
+      if (voz && !voz.hidden) voz.click();
+      else expandir();
+    }, 150);
+  }
+
+  // Botón de la derecha: en modo minimizado cierra; en el aviso de Buscar, dicta
+  accion.addEventListener("click", e => {
     e.stopPropagation();
-    if (panel.classList.contains("abierto")) cerrar.click();
-    else { ocultoEnBuscar = true; sincronizar(); }
+    if (panel.classList.contains("minimizado")) cerrar.click();
+    else dictar();
   });
 
   // Al cerrar desde el panel, se limpia el estado minimizado
@@ -105,15 +128,15 @@
     sincronizar();
   });
 
-  // Cuando el panel se abre o cierra por otro camino (fondo, botón del asistente), se sincroniza
+  // Cuando el panel se abre o cierra por otro camino, se sincroniza
   new MutationObserver(sincronizar).observe(panel, { attributes: true, attributeFilter: ["class"] });
 
   // Respuesta nueva mientras está minimizada: se actualiza la línea y se pulsa
   new MutationObserver(() => {
-    if (mini.classList.contains("visible")) actualizarTexto(true);
+    if (panel.classList.contains("minimizado")) actualizarTexto(true, true);
   }).observe(mensajes, { childList: true, subtree: true });
 
   if (window.Nucleo) {
-    Nucleo.registrar("estela-mini", { version: "1.0", emite: [], escucha: [] });
+    Nucleo.registrar("estela-mini", { version: "2.0", emite: [], escucha: [] });
   }
 })();

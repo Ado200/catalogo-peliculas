@@ -2472,3 +2472,31 @@ body.en-buscar .pestana-buscar .colapsable { display:none !important; }
 #app > header .cabecera-app { padding:8px 16px 0 !important; }
 #app > header h1.titulo-grande { font-size:26px !important; margin:0 !important; }
 #app > header #selectorZona { margin:4px 0 0 !important; padding:4px !important; }
+
+/* ===================== Barra de Estela (diseño de referencia, siempre oscura) ===================== */
+#estelaMini, body.en-buscar #estelaMini {
+  left:16px !important; right:16px !important;
+  bottom:calc(92px + env(safe-area-inset-bottom, 0px)) !important;
+  height:auto !important; min-height:62px !important;
+  padding:10px 10px 10px 10px !important;
+  border-radius:20px !important;
+  background:#17171a !important; color:#fff !important;
+  border:1px solid #2a2a2f !important;
+  box-shadow:0 10px 30px rgba(0,0,0,.35) !important;
+  gap:12px !important;
+}
+#estelaMini .em-avatar {
+  flex:0 0 40px; width:40px; height:40px; border-radius:50%;
+  background:linear-gradient(145deg,#f472b6,#8b5cf6);
+  display:grid; place-items:center; font-size:20px; line-height:1;
+}
+#estelaMini .em-info { flex:1; min-width:0; display:flex; flex-direction:column; gap:3px; }
+#estelaMini .em-etiqueta { font-size:11px; font-weight:700; letter-spacing:.6px; text-transform:uppercase; color:#c084fc; }
+#estelaMini .em-texto { font-size:15px; font-weight:600; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+#estelaMini .em-accion {
+  flex:0 0 38px; width:38px; height:38px; border-radius:50%; border:none;
+  background:#2a2a2f; color:#fff; font-size:16px; cursor:pointer;
+  display:grid; place-items:center;
+}
+#estelaMini.modo-min .em-accion { color:#8e8e93; }
+#estelaMini.pulso { animation:emPulso .6s ease; }
