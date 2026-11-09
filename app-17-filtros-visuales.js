@@ -78,14 +78,15 @@
     pestana.appendChild(host);
   }
 
-  // Catálogo: los demás filtros, directamente visibles, justo después de las chips de Todas/Por estrenar/Favoritas
+  // Catálogo: los demás filtros, directamente visibles, justo debajo de la píldora de secciones
   let hostCatalogo = document.getElementById("filtrosCatalogo");
   if (!hostCatalogo) {
     hostCatalogo = document.createElement("div");
     hostCatalogo.id = "filtrosCatalogo";
     hostCatalogo.className = "filtros-visuales solo-catalogo";
     hostCatalogo.setAttribute("data-zona", "lista");
-    const ref = document.getElementById("chips");
+    // Justo debajo de la píldora de secciones (Lista / Estrenos / Sagas…), que se ve siempre en Catálogo
+    const ref = document.getElementById("selectorZona");
     if (ref && ref.parentNode) ref.parentNode.insertBefore(hostCatalogo, ref.nextSibling);
     else { const lista = document.getElementById("lista"); if (lista) lista.parentNode.insertBefore(hostCatalogo, lista); }
   }
