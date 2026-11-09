@@ -67,6 +67,8 @@
 
   // Géneros más comunes para la cuadrícula; «Ver todos» muestra el resto
   let verTodosGeneros = false;
+  // Catálogo: los filtros empiezan plegados detrás de «Más filtros»
+  let verMasFiltros = false;
   const TOP_GENEROS = 6;
 
   // Buscar: solo la cuadrícula de géneros
@@ -126,13 +128,17 @@
 
   function pintarFiltros() {
     host.innerHTML = bloqueGeneros();
-    hostCatalogo.innerHTML = CAMPOS.filter(c => !c.grid).map(bloqueCampo).join("");
+    const boton = '<div class="fv-mas-cab"><button type="button" class="fv-mas" data-accion="mas-filtros" aria-expanded="' +
+      (verMasFiltros ? "true" : "false") + '">' + (verMasFiltros ? "Menos filtros" : "Más filtros") + '</button></div>';
+    hostCatalogo.innerHTML = boton + (verMasFiltros ? CAMPOS.filter(c => !c.grid).map(bloqueCampo).join("") : "");
   }
 
   // Al tocar una opción: cambia el valor del select original y repinta la lista
   const alClic = e => {
     const v = e.target.closest && e.target.closest("[data-accion='ver-todos']");
     if (v) { verTodosGeneros = !verTodosGeneros; pintarFiltros(); return; }
+    const m = e.target.closest && e.target.closest("[data-accion='mas-filtros']");
+    if (m) { verMasFiltros = !verMasFiltros; pintarFiltros(); return; }
     const b = e.target.closest && e.target.closest("[data-campo]");
     if (!b) return;
     // Un género (no «Todos») abre su propia pantalla, con una respuesta táctil breve
