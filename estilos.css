@@ -2736,3 +2736,9 @@ body:has(#modal.abierto) #estelaMini { display:none !important; }
 /* ===== Estela: ventana anclada arriba y abajo, ocupa todo el espacio disponible sin salirse de la pantalla ===== */
 body #chatPanel.abierto { top:calc(16px + env(safe-area-inset-top,0px)) !important; bottom:calc(176px + env(safe-area-inset-bottom,0px)) !important; height:auto !important; max-height:none !important; min-height:0 !important; width:min(440px, calc(100vw - 24px)) !important; max-width:440px !important; }
 body #chatPanel.abierto #chatMensajes { flex:1 1 auto !important; min-height:0 !important; }
+
+/* ===== Buscar: círculo neutro (sin azul, sin franja, icono centrado) ===== */
+#tabbar > button[data-tab="buscar"], #tabbar > button[data-tab="buscar"].activa, #tabbar > button[data-tab="buscar"]:focus { background:#fff !important; color:#6e6e73 !important; overflow:hidden !important; backdrop-filter:none !important; -webkit-backdrop-filter:none !important; border:0 !important; outline:none !important; }
+#tabbar > button[data-tab="buscar"]::before, #tabbar > button[data-tab="buscar"]::after { display:none !important; content:none !important; }
+body.oscuro #tabbar > button[data-tab="buscar"], body.oscuro #tabbar > button[data-tab="buscar"].activa { background:#2c2c2e !important; color:#a1a1a6 !important; }
+#tabbar > button[data-tab="buscar"] .ico svg { stroke:currentColor; }
