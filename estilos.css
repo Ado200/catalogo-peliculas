@@ -2732,3 +2732,7 @@ body:has(#modal.abierto) #estelaMini { display:none !important; }
 #tabbar > button[data-tab="buscar"] .ico { display:flex !important; align-items:center !important; justify-content:center !important; width:100% !important; height:100% !important; line-height:1 !important; margin:0 !important; }
 .buscar-titulo { align-items:center !important; min-height:60px !important; padding:8px 8px 8px 18px !important; }
 .buscar-titulo .boton-voz { align-self:center !important; margin:0 !important; position:relative !important; top:0 !important; }
+
+/* ===== Estela: ventana anclada arriba y abajo, ocupa todo el espacio disponible sin salirse de la pantalla ===== */
+body #chatPanel.abierto { top:calc(16px + env(safe-area-inset-top,0px)) !important; bottom:calc(176px + env(safe-area-inset-bottom,0px)) !important; height:auto !important; max-height:none !important; min-height:0 !important; width:min(440px, calc(100vw - 24px)) !important; max-width:440px !important; }
+body #chatPanel.abierto #chatMensajes { flex:1 1 auto !important; min-height:0 !important; }
