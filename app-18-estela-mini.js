@@ -11,14 +11,10 @@
   const formulario = document.getElementById("chatForm");
   if (!panel || !mensajes || !cab || !cerrar || !campo || !formulario) return;
 
-  // Botón de minimizar en el encabezado del panel (sigue disponible)
-  const btnMin = document.createElement("button");
-  btnMin.type = "button";
-  btnMin.id = "chatMinimizar";
-  btnMin.setAttribute("aria-label", "Minimizar a barra");
-  btnMin.title = "Minimizar";
-  btnMin.textContent = "–";
-  cab.insertBefore(btnMin, cerrar);
+  // Botón de minimizar: ahora está en el marcado, dentro de .estela-controles-sup
+  const btnMin = document.getElementById("chatMinimizar");
+  const cardMode = document.getElementById("estelaCardMode");
+  if (!btnMin || !cardMode) return;
 
   // Velo que oscurece suavemente el catálogo mientras Estela escucha
   const velo = document.createElement("div");
@@ -37,7 +33,12 @@
     '<span class="em-onda" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>' +
     '<span class="em-info"><span class="em-etiqueta">Estela</span><span class="em-texto"></span></span>' +
     '<button type="button" class="em-accion"></button>';
-  document.body.appendChild(mini);
+  // La píldora vive dentro del contenedor #chatPanel, en #estelaPillMode
+  const pildora = document.createElement("div");
+  pildora.id = "estelaPillMode";
+  pildora.hidden = true;
+  pildora.appendChild(mini);
+  panel.appendChild(pildora);
   const texto = mini.querySelector(".em-texto");
   const etiqueta = mini.querySelector(".em-etiqueta");
   const accion = mini.querySelector(".em-accion");
@@ -73,6 +74,12 @@
   // Un solo lugar decide qué se ve
   function pintar() {
     const visible = estado !== "oculta";
+    // Dos modos del mismo contenedor: tarjeta (panel abierto y no minimizado) o píldora (barra)
+    const tarjeta = panel.classList.contains("abierto") && !panel.classList.contains("minimizado");
+    const enPildora = !tarjeta && visible;
+    panel.classList.toggle("modo-pildora", enPildora);
+    cardMode.hidden = !tarjeta;
+    pildora.hidden = !enPildora;
     mini.dataset.estado = estado;
     mini.classList.toggle("visible", visible);
     document.body.classList.toggle("estela-mini", visible);
