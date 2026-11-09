@@ -593,5 +593,41 @@
 <script src="app-17-filtros-visuales.js" defer></script>
 <script src="app-18-estela-mini.js" defer></script>
 <script src="app-19-pantalla-genero.js" defer></script>
+
+<!-- ========================================================
+     IOC - FASE 3: MODAL DE DETALLE INMERSIVO & EXPANSIVO
+======================================================== -->
+<div id="iocModalDetalle" class="ioc-modal-overlay" style="display: none;">
+  <div class="ioc-modal-container">
+    <button class="ioc-modal-close" onclick="cerrarIOCModal()">✕</button>
+    
+    <div class="ioc-modal-backdrop-container">
+      <img id="iocModalBackdrop" src="" alt="Backdrop" />
+      <div class="ioc-modal-gradient"></div>
+    </div>
+    
+    <div class="ioc-modal-content-body">
+      <div class="ioc-modal-header-info">
+        <span id="iocModalBadge" class="ioc-modal-badge">Recomendado por Estela</span>
+        <h2 id="iocModalTitle">Título de la Película</h2>
+        <p id="iocModalMeta" class="ioc-modal-meta">2026 • 2h 15m • Géneros</p>
+      </div>
+      
+      <p id="iocModalDesc" class="ioc-modal-desc">Descripción detallada de la película seleccionada con un enfoque inmersivo.</p>
+      
+      <div class="ioc-estela-context-box">
+        <div class="ioc-estela-avatar">✨</div>
+        <div class="ioc-estela-text">
+          <strong>Análisis de Estela:</strong> <span id="iocModalEstelaText">Ideal para tu sesión de hoy. Coincide con tus preferencias en cine de alta calidad.</span>
+        </div>
+      </div>
+      
+      <div class="ioc-modal-actions">
+        <button class="ioc-btn-primary" onclick="alert('Reproduciendo contenido...')">▶ Reproducir Ahora</button>
+        <button class="ioc-btn-secondary" onclick="alert('Guardado en tu lista')">+ Mi Lista</button>
+      </div>
+    </div>
+  </div>
+</div>
 </body>
 </html>

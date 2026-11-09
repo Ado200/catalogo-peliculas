@@ -2997,3 +2997,278 @@ body.en-buscar #filtrosCatalogo { display:none !important; }
 body.modo-oscuro .ioc-inicio {
   background-color: #000;
 }
+
+
+/* ========================================================
+   IOC - FASE 2: REDISEÑO DE LA VISTA CATÁLOGO
+======================================================== */
+
+.ioc-catalogo {
+  padding: 20px 20px 120px 20px;
+  background-color: #000;
+  color: #fff;
+  min-height: 100vh;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+.ioc-cat-header {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-bottom: 25px;
+}
+
+.ioc-cat-badge {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: #8A2BE2;
+}
+
+.ioc-cat-header h2 {
+  font-size: 32px;
+  font-weight: 800;
+  margin: 0;
+  letter-spacing: -0.5px;
+}
+
+/* Barra de búsqueda futurista */
+.ioc-search-bar {
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(20px);
+  border-radius: 20px;
+  padding: 12px 18px;
+  gap: 12px;
+  transition: all 0.3s ease;
+}
+
+.ioc-search-bar:focus-within {
+  border-color: #007aff;
+  background: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 0 20px rgba(0, 122, 255, 0.3);
+}
+
+.ioc-search-icon {
+  font-size: 16px;
+  opacity: 0.7;
+}
+
+.ioc-search-bar input {
+  flex: 1;
+  background: none;
+  border: none;
+  outline: none;
+  color: #fff;
+  font-size: 15px;
+}
+
+.ioc-search-bar input::placeholder {
+  color: #777;
+}
+
+/* Contenedor de Filtros Visuales */
+.ioc-cat-filters-wrapper {
+  margin-bottom: 30px;
+}
+
+/* Ocultar selects viejos si llegasen a existir en esta sección */
+.ioc-selects-ocultos {
+  display: none;
+}
+
+/* Cuadrícula de películas moderna tipo Apple TV / Póster flotante */
+.ioc-dynamic-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 20px;
+}
+
+/* Tarjetas individuales dentro del catálogo adaptadas al IOC */
+.ioc-dynamic-grid .card, 
+.ioc-dynamic-grid .pelicula-card, 
+.ioc-dynamic-grid div[class*="tarjeta"] {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.3s ease;
+}
+
+.ioc-dynamic-grid img {
+  width: 100%;
+  aspect-ratio: 2/3;
+  object-fit: cover;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.ioc-dynamic-grid .card:hover, 
+.ioc-dynamic-grid .pelicula-card:hover {
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.7);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+
+/* ========================================================
+   IOC - FASE 3: ESTILOS MODAL DE DETALLE INMERSIVO
+======================================================== */
+
+.ioc-modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(25px);
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: iocFadeIn 0.3s ease-out;
+}
+
+.ioc-modal-container {
+  position: relative;
+  width: 100%;
+  max-width: 650px;
+  background: #111;
+  border-radius: 30px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 25px 60px rgba(0,0,0,0.9);
+  color: #fff;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.ioc-modal-close {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  font-size: 16px;
+  cursor: pointer;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(10px);
+  transition: background 0.2s;
+}
+.ioc-modal-close:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.ioc-modal-backdrop-container {
+  position: relative;
+  width: 100%;
+  height: 280px;
+}
+
+.ioc-modal-backdrop-container img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.ioc-modal-gradient {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: linear-gradient(to top, #111 0%, rgba(17,17,17,0.5) 50%, transparent 100%);
+}
+
+.ioc-modal-content-body {
+  padding: 25px 30px 35px 30px;
+  overflow-y: auto;
+  margin-top: -40px;
+  position: relative;
+  z-index: 2;
+}
+
+.ioc-modal-badge {
+  display: inline-block;
+  background: rgba(138, 43, 226, 0.3);
+  border: 1px solid rgba(138, 43, 226, 0.5);
+  color: #d8b4fe;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 12px;
+}
+
+.ioc-modal-header-info h2 {
+  font-size: 28px;
+  font-weight: 800;
+  margin: 0 0 8px 0;
+  letter-spacing: -0.5px;
+}
+
+.ioc-modal-meta {
+  font-size: 13px;
+  color: #aaa;
+  font-weight: 500;
+  margin-bottom: 15px;
+}
+
+.ioc-modal-desc {
+  font-size: 15px;
+  line-height: 1.6;
+  color: #ddd;
+  margin-bottom: 25px;
+}
+
+.ioc-estela-context-box {
+  display: flex;
+  align-items: flex-start;
+  gap: 15px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 15px 18px;
+  border-radius: 16px;
+  margin-bottom: 25px;
+  backdrop-filter: blur(10px);
+}
+
+.ioc-estela-avatar {
+  font-size: 20px;
+  background: rgba(255, 255, 255, 0.1);
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.ioc-estela-text {
+  font-size: 13px;
+  color: #ccc;
+  line-height: 1.4;
+}
+.ioc-estela-text strong {
+  color: #fff;
+}
+
+.ioc-modal-actions {
+  display: flex;
+  gap: 15px;
+}
+
+@keyframes iocFadeIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
