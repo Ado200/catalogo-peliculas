@@ -1,4 +1,5 @@
-/* ===== Fase 3 · Módulo «filtros-visuales»: filtros rápidos y tarjetas de género con su color.
+/* ===== Fase 3 · Módulo «filtros-visuales»: cuadrícula de géneros en Buscar y, en Catálogo, los filtros
+   (tipo, duración, año, estado, tema, país y orden) directamente, sin «Más filtros».
    Usa los mismos select como fuente de verdad: al tocar una opción cambia su valor y llama a pintar(). ===== */
 (function () {
   const pestana = document.getElementById("pestanaBuscar");
@@ -41,23 +42,6 @@
     return { a: d.a, b: d.b, i: d.i, n: d.n || g };
   };
 
-  // Filtros rápidos: se muestran solo si la opción existe en los datos del catálogo
-  const RAPIDOS = [
-    { texto: "Cortas (< 1.5h)", campo: "duracion", busca: /1[.,]?5|corta|menos de/i },
-    { texto: "+2 horas", campo: "duracion", busca: /2 ?h|m[aá]s de 2|larga/i },
-    { texto: "Año 2024", campo: "anio", valor: "2024" },
-    { texto: "Mejor valoradas", campo: "estado", busca: /valorad|favorit/i }
-  ];
-  function opcionRapida(r) {
-    const campo = CAMPOS.find(c => c.clave === r.campo);
-    const s = campo && campo.select();
-    if (!s) return null;
-    const op = r.valor !== undefined
-      ? [...s.options].find(o => o.value === r.valor)
-      : [...s.options].find(o => r.busca.test(o.text));
-    return op ? { s: s, op: op, campo: r.campo } : null;
-  }
-
   // Unifica variantes de escritura (Acción / acción): "Acción" en todos los datos y en el select
   let generosNormalizados = false;
   const canonico = g => { const t = String(g || "").trim().toLowerCase(); return t ? t.charAt(0).toUpperCase() + t.slice(1) : ""; };
@@ -83,11 +67,9 @@
 
   // Géneros más comunes para la cuadrícula; «Ver todos» muestra el resto
   let verTodosGeneros = false;
-  // Filtros que se muestran plegados detrás de «Más filtros»
-  let verMasFiltros = false;
-  const PRINCIPALES = []; // todo lo demás va detrás de «Más filtros»
   const TOP_GENEROS = 6;
 
+  // Buscar: solo la cuadrícula de géneros
   let host = document.getElementById("filtrosVisuales");
   if (!host) {
     host = document.createElement("div");
@@ -96,67 +78,60 @@
     pestana.appendChild(host);
   }
 
-  function pintarFiltros() {
-    const rapidos = RAPIDOS.map(r => ({ r: r, o: opcionRapida(r) })).filter(x => x.o);
-    // Una sola fila: Todas / Por estrenar / Favoritas + filtros rápidos
-    const segs = [...document.querySelectorAll("#pestanaBuscar [data-seg]")];
-    const chipsSeg = segs.map((b, i) => '<button type="button" class="fv-rapido' + (b.classList.contains("activa") ? " activo" : "") +
-      '" data-seg-chip="' + i + '">' + esc(b.textContent.trim()) + '</button>').join("");
-    const chipsRap = rapidos.map(x => '<button type="button" class="fv-rapido' + (x.o.s.value === x.o.op.value ? " activo" : "") +
-      '" data-campo="' + x.o.campo + '" data-valor="' + esc(x.o.op.value) + '">' + esc(x.r.texto) + '</button>').join("");
-    const bloqueRapidos = (chipsSeg || chipsRap)
-      ? '<div class="fv-bloque fv-fila-unica"><div class="fv-pilas">' + chipsSeg + chipsRap + '</div></div>'
-      : "";
-
-    const mostrarCampo = c => c.grid || PRINCIPALES.includes(c.clave) || verMasFiltros;
-    const hayMas = CAMPOS.some(c => !c.grid && !PRINCIPALES.includes(c.clave));
-    const botonMas = hayMas
-      ? '<button type="button" class="fv-mas" data-accion="mas-filtros">' + (verMasFiltros ? "Menos filtros" : "Más filtros") + '</button>'
-      : "";
-
-    host.innerHTML = bloqueRapidos + CAMPOS.filter(mostrarCampo).map(c => {
-      const s = c.select();
-      if (!s) return "";
-      const opciones = [...s.options];
-      if (c.grid) {
-        const conteoG = {};
-        Nucleo.datos.peliculas().forEach(p => (p.genero || "").split(",").map(x => x.trim()).filter(Boolean)
-          .forEach(g => conteoG[g] = (conteoG[g] || 0) + 1));
-        const todas = opciones.filter(o => o.value);
-        const topVal = todas.slice().sort((a, b) => (conteoG[b.value] || 0) - (conteoG[a.value] || 0)).slice(0, TOP_GENEROS).map(o => o.value);
-        const visibles = verTodosGeneros ? opciones : opciones.filter(o => !o.value || topVal.includes(o.value) || o.value === s.value);
-        const boton = todas.length > TOP_GENEROS
-          ? '<button type="button" class="fv-ver-todos" data-accion="ver-todos">' + (verTodosGeneros ? "Ver menos" : "Ver todos") + '</button>' : "";
-        return '<div class="fv-bloque"><h3>' + esc(c.etiqueta) + '</h3><div class="fv-grid">' +
-          visibles.map(o => {
-            const e = o.value ? estiloGenero(o.value) : { a: "#6b7280", b: "#374151", i: "🎬", n: "Todos" };
-            const marcada = o.value !== "" && o.value === s.value; // «Todos» no se marca como elegido
-            return '<button type="button" class="fv-genero' + (marcada ? " activo" : "") +
-              '" data-campo="' + c.clave + '" data-valor="' + esc(o.value) + '" style="--c:' + e.a + ';--c2:' + e.b + '">' +
-              '<span class="fv-ico" aria-hidden="true">' + e.i + '</span><span class="fv-nombre">' + esc(e.n) + '</span></button>';
-          }).join("") +
-          '</div>' + boton + '</div>';
-      }
-      return '<div class="fv-bloque"><h3>' + esc(c.etiqueta) + '</h3><div class="fv-pilas">' +
-        opciones.map(o => '<button type="button" class="fv-pila' + (o.value === s.value ? " activo" : "") +
-          '" data-campo="' + c.clave + '" data-valor="' + esc(o.value) + '">' + esc(o.text) + '</button>').join("") +
-        '</div></div>';
-    }).join("") + botonMas;
+  // Catálogo: los demás filtros, directamente visibles, justo después de las chips de Todas/Por estrenar/Favoritas
+  let hostCatalogo = document.getElementById("filtrosCatalogo");
+  if (!hostCatalogo) {
+    hostCatalogo = document.createElement("div");
+    hostCatalogo.id = "filtrosCatalogo";
+    hostCatalogo.className = "filtros-visuales solo-catalogo";
+    hostCatalogo.setAttribute("data-zona", "lista");
+    const ref = document.getElementById("chips");
+    if (ref && ref.parentNode) ref.parentNode.insertBefore(hostCatalogo, ref.nextSibling);
+    else { const lista = document.getElementById("lista"); if (lista) lista.parentNode.insertBefore(hostCatalogo, lista); }
   }
 
-  // Al tocar una opción (o un filtro rápido): cambia el valor del select original y repinta la lista
-  host.addEventListener("click", e => {
-    const sg = e.target.closest && e.target.closest("[data-seg-chip]");
-    if (sg) {
-      const original = document.querySelectorAll("#pestanaBuscar [data-seg]")[Number(sg.dataset.segChip)];
-      if (original) original.click();
-      pintar();
-      return;
-    }
+  function bloqueGeneros() {
+    const c = CAMPOS.find(x => x.grid);
+    const s = c && c.select();
+    if (!s) return "";
+    const opciones = [...s.options];
+    const conteoG = {};
+    Nucleo.datos.peliculas().forEach(p => (p.genero || "").split(",").map(x => x.trim()).filter(Boolean)
+      .forEach(g => conteoG[g] = (conteoG[g] || 0) + 1));
+    const todas = opciones.filter(o => o.value);
+    const topVal = todas.slice().sort((a, b) => (conteoG[b.value] || 0) - (conteoG[a.value] || 0)).slice(0, TOP_GENEROS).map(o => o.value);
+    const visibles = verTodosGeneros ? opciones : opciones.filter(o => !o.value || topVal.includes(o.value) || o.value === s.value);
+    const boton = todas.length > TOP_GENEROS
+      ? '<button type="button" class="fv-ver-todos" data-accion="ver-todos">' + (verTodosGeneros ? "Ver menos" : "Ver todos") + '</button>' : "";
+    return '<div class="fv-bloque"><h3>' + esc(c.etiqueta) + '</h3><div class="fv-grid">' +
+      visibles.map(o => {
+        const e = o.value ? estiloGenero(o.value) : { a: "#6b7280", b: "#374151", i: "🎬", n: "Todos" };
+        const marcada = o.value !== "" && o.value === s.value; // «Todos» no se marca como elegido
+        return '<button type="button" class="fv-genero' + (marcada ? " activo" : "") +
+          '" data-campo="' + c.clave + '" data-valor="' + esc(o.value) + '" style="--c:' + e.a + ';--c2:' + e.b + '">' +
+          '<span class="fv-ico" aria-hidden="true">' + e.i + '</span><span class="fv-nombre">' + esc(e.n) + '</span></button>';
+      }).join("") +
+      '</div>' + boton + '</div>';
+  }
+
+  function bloqueCampo(c) {
+    const s = c.select();
+    if (!s) return "";
+    return '<div class="fv-bloque"><h3>' + esc(c.etiqueta) + '</h3><div class="fv-pilas">' +
+      [...s.options].map(o => '<button type="button" class="fv-pila' + (o.value === s.value ? " activo" : "") +
+        '" data-campo="' + c.clave + '" data-valor="' + esc(o.value) + '">' + esc(o.text) + '</button>').join("") +
+      '</div></div>';
+  }
+
+  function pintarFiltros() {
+    host.innerHTML = bloqueGeneros();
+    hostCatalogo.innerHTML = CAMPOS.filter(c => !c.grid).map(bloqueCampo).join("");
+  }
+
+  // Al tocar una opción: cambia el valor del select original y repinta la lista
+  const alClic = e => {
     const v = e.target.closest && e.target.closest("[data-accion='ver-todos']");
     if (v) { verTodosGeneros = !verTodosGeneros; pintarFiltros(); return; }
-    const m = e.target.closest && e.target.closest("[data-accion='mas-filtros']");
-    if (m) { verMasFiltros = !verMasFiltros; pintarFiltros(); return; }
     const b = e.target.closest && e.target.closest("[data-campo]");
     if (!b) return;
     // Un género (no «Todos») abre su propia pantalla, con una respuesta táctil breve
@@ -168,10 +143,12 @@
     const campo = CAMPOS.find(c => c.clave === b.dataset.campo);
     const s = campo && campo.select();
     if (!s) return;
-    // Tocar un filtro rápido activo lo quita
-    s.value = (b.classList.contains("activo") && b.classList.contains("fv-rapido")) ? "" : b.dataset.valor;
+    // Tocar una opción activa la quita
+    s.value = (b.classList.contains("activo") && !b.classList.contains("fv-genero")) ? "" : b.dataset.valor;
     pintar();
-  });
+  };
+  host.addEventListener("click", alClic);
+  hostCatalogo.addEventListener("click", alClic);
 
   // Cada vez que se pinta la lista, se refrescan las tarjetas (reflejan también «Limpiar» y los filtros guardados)
   const pintarOriginal = window.pintar;
@@ -208,6 +185,6 @@
   pintarFiltros();
 
   if (window.Nucleo) {
-    Nucleo.registrar("filtros-visuales", { version: "1.1", emite: [], escucha: [] });
+    Nucleo.registrar("filtros-visuales", { version: "1.2", emite: [], escucha: [] });
   }
 })();
