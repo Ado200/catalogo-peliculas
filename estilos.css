@@ -2640,3 +2640,19 @@ body.oscuro #estelaMini, body.oscuro.en-buscar #estelaMini { background:rgba(28,
 #estelaMini .em-info { flex:0 0 auto !important; }
 #estelaMini .em-onda { flex:1 1 auto !important; min-width:0; margin-left:6px !important; height:40px !important; justify-content:center !important; gap:3px !important; overflow:hidden; }
 #estelaMini .em-onda i { display:block; width:3px !important; border-radius:3px; background:linear-gradient(180deg,#c084fc 0%,#6366f1 50%,#ec4899 100%) !important; }
+
+/* ===== Mis Listas dentro de Inicio; barra con Inicio y Catálogo; Estela compacta ===== */
+/* La barra gris de zona no aparece en Inicio (en las demás pestañas sigue igual) */
+body.en-inicio #selectorZona { display:none !important; }
+/* Mis Listas vive en Inicio: su pestaña se oculta */
+#tabbar button[data-tab="listas"], #tabbar #tabEstela { display:none !important; }
+/* Tarjetas de Mis Listas más redondeadas */
+.hub-tarjeta { border-radius:28px !important; }
+.hub-listas { margin:18px 0 8px; }
+/* Estela: píldora compacta, centrada, flotando sobre la barra */
+#estelaMini { width:max-content !important; max-width:calc(100% - 32px) !important; left:0 !important; right:0 !important; margin:0 auto !important; height:auto !important; min-height:0 !important; padding:4px 12px 4px 4px !important; bottom:calc(96px + env(safe-area-inset-bottom,0px)) !important; gap:8px !important; }
+#estelaMini .em-avatar { flex:0 0 32px !important; width:32px !important; height:32px !important; }
+#estelaMini .em-avatar svg { width:15px; height:15px; }
+#estelaMini .em-etiqueta { font-size:14px !important; }
+#estelaMini .em-onda { height:20px !important; flex:0 1 auto !important; max-width:120px; }
+#estelaMini .em-onda i { width:2px !important; }

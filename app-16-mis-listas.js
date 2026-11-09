@@ -10,7 +10,9 @@
   hub.id = "hubListas";
   hub.className = "hub-listas";
   hub.hidden = true;
-  lista.parentNode.insertBefore(hub, lista);
+  const anclaInicio = document.getElementById("inicioBloques");
+  if (anclaInicio) anclaInicio.insertAdjacentElement("afterend", hub);
+  else lista.parentNode.insertBefore(hub, lista);
 
   const pestanaBuscar = document.getElementById("pestanaBuscar");
   const cabecera = document.querySelector("#app > header");
@@ -91,6 +93,7 @@
     const b = e.target.closest && e.target.closest("button[data-tab]");
     if (!b) return;
     const tab = b.dataset.tab;
+    document.body.classList.toggle("en-inicio", tab === "inicio");
     if (TITULOS[tab] || tab === "listas") animarEntrada();
     if (TITULOS[tab]) ponerTitulo(tab);
     if (tab === "listas") {
@@ -106,7 +109,12 @@
       marcarActiva("buscar");
       const campo = document.getElementById("buscar");
       if (campo) campo.focus();
-    } else if (tab === "inicio" || tab === "catalogo") {
+    } else if (tab === "inicio") {
+      mostrarBuscar(false);
+      mostrarHub(false);
+      pintarHub();
+      hub.hidden = false;
+    } else if (tab === "catalogo") {
       mostrarHub(false);
       mostrarBuscar(false);
     }
@@ -134,6 +142,12 @@
     if (cabecera) cabecera.classList.toggle("compacto", window.scrollY > 24);
   }, { passive: true });
 
+  // Al abrir la app, Inicio ya muestra Mis Listas
+  if (document.querySelector('#tabbar button[data-tab="inicio"].activa')) {
+    document.body.classList.add("en-inicio");
+    pintarHub();
+    hub.hidden = false;
+  }
   if (window.Nucleo) {
     Nucleo.registrar("mis-listas", { version: "1.0", emite: [], escucha: [] });
   }

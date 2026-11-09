@@ -258,8 +258,8 @@
   // Onda de 28 barras con alturas variadas, como en la referencia
   const ondaEl = mini.querySelector(".em-onda");
   if (ondaEl) {
-    ondaEl.innerHTML = Array.from({ length: 28 }, (_, k) => {
-      const h = 6 + Math.round(30 * Math.abs(Math.sin(k * 0.55) * Math.cos(k * 0.23)));
+    ondaEl.innerHTML = Array.from({ length: 16 }, (_, k) => {
+      const h = 4 + Math.round(16 * Math.abs(Math.sin(k * 0.55) * Math.cos(k * 0.23)));
       return "<i style=\"height:" + h + "px\"></i>";
     }).join("");
   }
