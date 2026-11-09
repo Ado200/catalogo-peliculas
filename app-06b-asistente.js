@@ -14,7 +14,8 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
   const avisoIA = document.createElement("p");
   avisoIA.id = "chatAviso";
   avisoIA.className = "chat-aviso";
-  avisoIA.textContent = "🌐 Con IA se usa internet: se envían hasta 60 películas de tu catálogo. «Sin IA» responde solo con lo que hay en este teléfono.";
+  // Sin texto visible: el aviso completo queda como etiqueta para lectores de pantalla
+  avisoIA.setAttribute("aria-label", "Con IA se usa internet: se envían hasta 60 películas de tu catálogo. «Sin IA» responde solo con lo que hay en este teléfono.");
   lista.before(avisoIA);
   const usoEl = document.getElementById("chatUso");   // el uso del grupo se muestra dentro del mismo aviso
   if (usoEl) avisoIA.appendChild(usoEl);
@@ -514,7 +515,9 @@ const CHAT_URL = "https://catalogo-chat.240300696.workers.dev";  const panel = d
     const el = document.getElementById("chatUso");
     if (!el) return;
     const pct = Math.min(100, Math.round(u.hoy / u.limite * 100));
-    el.textContent = "Uso del grupo hoy: " + pct + "% (" + u.hoy + " de " + u.limite + " consultas con IA). Se reinicia en " + tiempoParaReinicio() + ".";
+    el.textContent = pct + "%";
+    el.setAttribute("aria-label", "Uso del grupo hoy: " + pct + "%, " + u.hoy + " de " + u.limite + " consultas con IA. Se reinicia en " + tiempoParaReinicio() + ".");
+    el.title = el.getAttribute("aria-label");
     el.classList.toggle("alerta", pct >= 80);
     el.hidden = false;
   }

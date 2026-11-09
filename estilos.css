@@ -2656,3 +2656,23 @@ body.en-inicio #selectorZona { display:none !important; }
 #estelaMini .em-etiqueta { font-size:14px !important; }
 #estelaMini .em-onda { height:20px !important; flex:0 1 auto !important; max-width:120px; }
 #estelaMini .em-onda i { width:2px !important; }
+
+/* ===== Estela: panel completo, círculo de uso, sin texto; barra más compacta; píldora separada ===== */
+/* Aviso y uso: solo un círculo con el porcentaje */
+#chatAviso { background:none !important; border:0 !important; box-shadow:none !important; padding:0 !important; margin:8px auto !important; text-align:center !important; display:flex !important; justify-content:center !important; }
+#chatUso { width:58px !important; height:58px !important; border-radius:50% !important; display:flex !important; align-items:center !important; justify-content:center !important; font-size:15px !important; font-weight:700 !important; color:var(--azul) !important; background:var(--boton-suave) !important; margin:0 !important; padding:0 !important; }
+#chatUso.alerta { color:#ff453a !important; }
+/* Tablero (Con IA, racha, esta semana) fuera del panel */
+#chatTablero { display:none !important; }
+/* Panel completo, sin cortes arriba ni abajo */
+#chatPanel.abierto { bottom:calc(176px + env(safe-area-inset-bottom,0px)) !important; max-height:min(66vh, calc(100dvh - 300px)) !important; overflow:hidden !important; }
+#chatPanel.abierto #chatCab { flex:0 0 auto !important; }
+#chatPanel.abierto #chatMensajes { min-height:0 !important; }
+/* Barra más baja, con los botones compactos y bordes muy redondeados */
+#tabbar .tab-pastilla { padding:4px !important; }
+#tabbar .tab-pastilla button, #tabbar > button[data-tab="buscar"] { min-height:0 !important; }
+#tabbar .tab-pastilla button { padding:6px 4px !important; font-size:11px !important; }
+#tabbar .tab-pastilla button .ico { font-size:18px !important; }
+#tabbar > button[data-tab="buscar"] { width:52px !important; height:52px !important; flex:0 0 52px !important; max-width:52px !important; min-width:52px !important; }
+/* Píldora de Estela separada de la barra */
+#estelaMini { bottom:calc(112px + env(safe-area-inset-bottom,0px)) !important; }
