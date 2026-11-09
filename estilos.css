@@ -2711,3 +2711,6 @@ body.en-buscar .buscar-titulo #buscar { color:var(--texto) !important; backgroun
 /* Asistente: un poco más grande, sin la línea superior del encabezado */
 #chatPanel.abierto { width:min(440px, calc(100vw - 24px)) !important; max-width:440px !important; max-height:min(74vh, calc(100dvh - 240px)) !important; }
 #chatCab { border-bottom:none !important; box-shadow:none !important; }
+
+/* ===== Con una ventana abierta (ficha, estadísticas, actores, clasificador, series o ayuda), se oculta la barra inferior; Estela sigue visible ===== */
+body:has(#modal.abierto, #statsModal.abierto, #actorModal.abierto, #clasificador.abierto, #seriesModal.abierto, .ayuda-atajos) #tabbar { display:none !important; }
