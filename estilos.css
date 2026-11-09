@@ -2748,3 +2748,8 @@ body.oscuro #tabbar > button[data-tab="buscar"], body.oscuro #tabbar > button[da
 @media (max-width: 560px) { .ajustes-trio { grid-template-columns:1fr; } }
 .ajustes-trio .campo { margin:0; }
 .ajuste-vidrio { margin:8px 0 12px; }
+
+/* Buscar: «Más filtros» solo vive en Catálogo */
+body.en-buscar #filtrosCatalogo { display:none !important; }
+/* La ficha de una película se abre por encima de la pantalla de género */
+#modal { z-index:40 !important; }

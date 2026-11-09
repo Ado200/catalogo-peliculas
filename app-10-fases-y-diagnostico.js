@@ -9,7 +9,7 @@ function datoParaDecidir(p) {
     else if (min <= 100) out.push("Dura " + min + " minutos: cabe en una noche entre semana.");
     else out.push("Dura " + min + " minutos: cabe en una noche normal.");
   }
-  const tono = intensidadDe_(p);
+  const tono = intensidadMaraton(p);
   if (tono === 1) out.push("Tono ligero, para relajarte.");
   if (tono === 3) out.push("Tono intenso: mejor con tiempo para asimilarla.");
   const m = Nucleo.datos.marcas()[p.titulo] || {};
