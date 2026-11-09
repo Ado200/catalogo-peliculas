@@ -54,6 +54,7 @@ function pintar() {
     return;
   }
   lista.innerHTML = visibles.map((p, i) => vistaLista ? filaHtml(p, i) : tarjeta(p, i)).join("");
+  lista.classList.toggle("en-rejilla", !vistaLista);
   marcarAnimo();
 }
 

@@ -84,6 +84,7 @@
     <button type="button" class="boton-circular" id="verSeries" aria-label="Series" title="Series">📺</button>
      <button type="button" class="boton-circular" id="toggleAvanzados" aria-label="Filtros avanzados">⚙</button>
        </div>
+  <button type="button" id="buscarFalso" class="buscar-falso solo-catalogo" data-zona="lista" aria-label="Buscar película"><span aria-hidden="true">⌕</span> Busca por título, director o actor</button>
   <div class="colapsable">
   <div class="segmentado solo-catalogo" data-zona="lista" role="group" aria-label="Filtrar películas">
        <button type="button" data-seg="" class="activa">Todas</button>
@@ -298,6 +299,11 @@
   <div id="avisoLista" class="aviso-lista"></div>
 </div>
 
+<div id="pildorasInicio" class="pildoras-rapidas solo-catalogo" data-zona="inicio" role="group" aria-label="Accesos rápidos">
+  <button type="button" class="pildora-rapida" data-rapida="tematica">🎡 Temática</button>
+  <button type="button" class="pildora-rapida" data-rapida="azar">🎁 Al azar</button>
+  <button type="button" class="pildora-rapida" data-rapida="animo">🎭 ¿Cómo te sientes?</button>
+</div>
 <section id="hero" class="hero solo-catalogo" data-zona="inicio" style="display:none" aria-label="Destacada para ti"></section>
 <div id="queVer" class="que-ver solo-catalogo" data-zona="inicio" style="display:none">
 <section id="ahora" class="destacados solo-catalogo" style="display:none">

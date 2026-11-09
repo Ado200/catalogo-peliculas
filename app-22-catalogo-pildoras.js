@@ -3,7 +3,6 @@
    (noche, ánimo, pareja, sorpresa y género Comedia). ===== */
 (function () {
   const cont = document.getElementById("pildorasRapidas");
-  if (!cont) return;
 
   const clic = id => { const b = document.getElementById(id); if (b) b.click(); };
 
@@ -12,6 +11,8 @@
     animo: () => clic("animoBtn"),
     pareja: () => clic("parejaBtn"),
     sorpresa: () => clic("sorpresa"),
+    tematica: () => clic("nocheTema"),
+    azar: () => clic("sorpresa"),
     reir: () => {
       const sel = document.getElementById("genero");
       if (!sel) return;
@@ -23,9 +24,13 @@
     }
   };
 
-  cont.addEventListener("click", e => {
+  document.addEventListener("click", e => {
     const b = e.target.closest && e.target.closest("[data-rapida]");
-    if (!b || !acciones[b.dataset.rapida]) return;
-    acciones[b.dataset.rapida]();
+    if (b && acciones[b.dataset.rapida]) { acciones[b.dataset.rapida](); return; }
+    const busc = e.target.closest && e.target.closest("#buscarFalso");
+    if (busc) {
+      const pestanaBuscar = document.querySelector('#tabbar button[data-tab="buscar"]');
+      if (pestanaBuscar) pestanaBuscar.click();
+    }
   });
 })();

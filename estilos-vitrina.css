@@ -103,3 +103,32 @@
     transition: none; transform: none;
   }
 }
+
+
+/* ===== Acercar Inicio y Películas al boceto ===== */
+#lista.en-rejilla {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px 10px;
+}
+#lista.en-rejilla > .tarjeta.amplia {
+  display: block; padding: 0; margin: 0; background: transparent; border: 0; box-shadow: none;
+}
+#lista.en-rejilla > .tarjeta.amplia .portada,
+#lista.en-rejilla > .tarjeta.amplia .sinportada {
+  width: 100%; height: auto; aspect-ratio: 2 / 3; object-fit: cover;
+  border-radius: var(--vt-radio-poster); box-shadow: var(--vt-sombra-reposo);
+}
+#lista.en-rejilla > .tarjeta.amplia .meta,
+#lista.en-rejilla > .tarjeta.amplia .sinopsis,
+#lista.en-rejilla > .tarjeta.amplia .mini-insignias,
+#lista.en-rejilla > .tarjeta.amplia .acciones-rapidas { display: none; }
+#lista.en-rejilla > .tarjeta.amplia h2 {
+  font-size: 12px; font-weight: 600; line-height: 1.25; margin: 6px 0 0;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.buscar-falso {
+  display: flex; align-items: center; gap: 8px; width: 100%; box-sizing: border-box;
+  margin: 10px 0 0; padding: 11px 16px; border: 0; border-radius: var(--vt-radio-pildora);
+  background: var(--boton-suave); color: var(--gris); font: inherit; font-size: 14px; text-align: left; cursor: pointer;
+}
+.buscar-falso span { font-size: 16px; }
+#pildorasInicio { margin: 6px 0 12px; }
