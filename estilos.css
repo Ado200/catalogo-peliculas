@@ -2714,3 +2714,8 @@ body.en-buscar .buscar-titulo #buscar { color:var(--texto) !important; backgroun
 
 /* ===== Con una ventana abierta (ficha, estadísticas, actores, clasificador, series o ayuda), se oculta la barra inferior; Estela sigue visible ===== */
 body:has(#modal.abierto, #statsModal.abierto, #actorModal.abierto, #clasificador.abierto, #seriesModal.abierto, .ayuda-atajos) #tabbar { display:none !important; }
+
+/* ===== Buscar como píldora redondeada (con más prioridad que las reglas de la pestaña) y sin la tarjeta «Todos» ===== */
+body .pestana-buscar .buscar.buscar-titulo, body.en-buscar .pestana-buscar .buscar.buscar-titulo { border:0 !important; border-radius:999px !important; background:var(--tarjeta) !important; box-shadow:0 10px 28px rgba(0,0,0,.12) !important; padding:4px 6px 4px 18px !important; min-height:0 !important; height:auto !important; }
+body .pestana-buscar .buscar.buscar-titulo input, body.en-buscar .pestana-buscar .buscar.buscar-titulo input { border:0 !important; background:transparent !important; padding:12px 0 !important; color:var(--texto) !important; }
+body .pestana-buscar .fv-genero[data-valor=""] { display:none !important; }
