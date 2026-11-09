@@ -71,6 +71,7 @@
 <header>
   <div class="cabecera-app">
     <h1 class="titulo-grande">Películas</h1>
+    <button type="button" id="btnColumnas" class="boton-circular" aria-label="Cambiar a 4 columnas" title="Columnas"></button>
     <button type="button" id="toggleMas" class="boton-circular" aria-label="Más opciones" title="Más opciones">⋯</button>
   </div>
   <div id="selectorZona" class="segmentado selector-zona" role="group" aria-label="Secciones" style="display:none"></div>
@@ -84,7 +85,8 @@
     <button type="button" class="boton-circular" id="verSeries" aria-label="Series" title="Series">📺</button>
      <button type="button" class="boton-circular" id="toggleAvanzados" aria-label="Filtros avanzados">⚙</button>
        </div>
-  <button type="button" id="buscarFalso" class="buscar-falso solo-catalogo" data-zona="lista" aria-label="Buscar película"><span aria-hidden="true">⌕</span> Busca por título, director o actor</button>
+  <button type="button" id="buscarFalso" class="buscar-falso solo-catalogo" data-zona="ninguna" aria-label="Buscar película"><span aria-hidden="true">⌕</span> Busca por título, director o actor</button>
+  <div id="contadoresListas" class="contadores-listas solo-catalogo" data-zona="ninguna"></div>
   <div class="colapsable">
   <div class="segmentado solo-catalogo" data-zona="lista" role="group" aria-label="Filtrar películas">
        <button type="button" data-seg="" class="activa">Todas</button>
@@ -97,6 +99,9 @@
     <button type="button" class="pildora-rapida" data-rapida="pareja">💑 En pareja</button>
     <button type="button" class="pildora-rapida" data-rapida="sorpresa">🎁 Sorpréndeme</button>
     <button type="button" class="pildora-rapida" data-rapida="reir">😂 Reír</button>
+    <button type="button" class="pildora-rapida" data-rapida="descubrir">🔎 Descubrir</button>
+    <button type="button" class="pildora-rapida" data-rapida="conAlguien">👥 Con alguien</button>
+    <button type="button" class="pildora-rapida" data-rapida="planear">🗓 Planear</button>
   </div>
   <div id="chips" class="solo-catalogo" data-zona="lista"></div>
   </div>
@@ -270,6 +275,7 @@
     </div>
     <div class="grupo-menu grupo-peligro">
       <span class="grupo-titulo">Cuenta</span>
+      <button id="abrirAjustes" class="pildora">⚙ Ajustes y cuenta</button>
       <button id="salirDispositivo" class="pildora">🚪 Salir de este dispositivo</button>
       <button id="borrarMarcas" class="pildora">🗑 Borrar mis marcas</button>
       <p class="nota-peligro">Borrar elimina tus marcas y los respaldos semanales de tu Drive. Los archivos que descargaste a tu computadora no se borran.</p>
@@ -299,12 +305,17 @@
   <div id="avisoLista" class="aviso-lista"></div>
 </div>
 
+<section id="inteligente" class="inteligente solo-catalogo" data-zona="inicio" aria-label="Resumen de hoy"></section>
 <div id="pildorasInicio" class="pildoras-rapidas solo-catalogo" data-zona="inicio" role="group" aria-label="Accesos rápidos">
   <button type="button" class="pildora-rapida" data-rapida="tematica">🎡 Temática</button>
   <button type="button" class="pildora-rapida" data-rapida="azar">🎁 Al azar</button>
   <button type="button" class="pildora-rapida" data-rapida="animo">🎭 ¿Cómo te sientes?</button>
 </div>
 <section id="hero" class="hero solo-catalogo" data-zona="inicio" style="display:none" aria-label="Destacada para ti"></section>
+<section id="tuNoche" class="bloque-ia solo-catalogo" data-zona="inicio" aria-label="Tu noche"></section>
+<section id="proximosInicio" class="bloque-ia solo-catalogo" data-zona="inicio" aria-label="Próximos en cine"></section>
+<section id="porCalificar" class="bloque-ia solo-catalogo" data-zona="inicio" aria-label="Por calificar"></section>
+<section id="tuSemana" class="bloque-ia solo-catalogo" data-zona="inicio" aria-label="Tu semana"></section>
 <div id="queVer" class="que-ver solo-catalogo" data-zona="inicio" style="display:none">
 <section id="ahora" class="destacados solo-catalogo" style="display:none">
   <h3 id="tituloAhora">Para esta hora</h3>
@@ -615,6 +626,8 @@
 <script src="app-20-vitrina-color.js" defer></script>
 <script src="app-21-hero.js" defer></script>
 <script src="app-22-catalogo-pildoras.js" defer></script>
+<script src="app-23-inicio-inteligente.js" defer></script>
+<script src="app-24-neon.js" defer></script>
 <script src="app-19-pantalla-genero.js" defer></script>
 </body>
 </html>
