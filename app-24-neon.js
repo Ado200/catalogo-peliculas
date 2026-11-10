@@ -72,44 +72,47 @@
   }
   aplicarIconos();
 
-  // "Más filtros" va como primera píldora de la fila de accesos
-  (function moverMasFiltros() {
-    const fila = document.getElementById("pildorasRapidas");
-    const host = fila && fila.nextElementSibling;
-    if (fila && host && host.id !== "selectorZona" && host.id !== "buscarFalso" && host.querySelector("button")) {
-      fila.prepend(host);
-    }
-  })();
-
   // Íconos de cabecera: filtros abre "Más filtros"; configuración abre la ventana grande
   function botonMasFiltros() {
     const fila = document.getElementById("pildorasRapidas");
     if (!fila) return null;
     return Array.from(fila.querySelectorAll("button")).find(b => /Más filtros/.test(b.textContent)) || null;
   }
-  function ocultarMasFiltrosPildora() {
-    const b = botonMasFiltros();
-    if (b) b.style.display = "none";
+  // El panel de Más filtros va debajo de la fila de píldoras y se pliega/despliega con el ícono de filtros
+  function colocarPanelMas() {
+    const host = document.getElementById("filtrosCatalogo");
+    const fila = document.getElementById("pildorasRapidas");
+    if (host && fila && fila.nextElementSibling !== host) fila.after(host);
   }
+  function sincronizarMasFiltros() {
+    colocarPanelMas();
+    const boton = document.querySelector("#filtrosCatalogo [data-accion=\"mas-filtros\"]");
+    const abierto = !!boton && boton.getAttribute("aria-expanded") === "true";
+    document.body.classList.toggle("mas-filtros-abiertos", abierto);
+    const ico = document.getElementById("toggleAvanzados");
+    if (ico) ico.classList.toggle("activo", abierto);
+  }
+  function ocultarMasFiltrosPildora() { sincronizarMasFiltros(); }
   const btnFiltros = document.getElementById("toggleAvanzados");
   if (btnFiltros) btnFiltros.addEventListener("click", e => {
     e.stopImmediatePropagation();
     if (typeof pestana !== "undefined" && pestana === "catalogo" && zonaPeli === "inicio") { zonaPeli = "lista"; aplicarEstadoTabs(); pintar(); }
-    const b = botonMasFiltros();
-    if (b) b.click();
+    const boton = document.querySelector("#filtrosCatalogo [data-accion=\"mas-filtros\"]");
+    if (boton) boton.click();
+    sincronizarMasFiltros();
   }, true);
   const btnConfig = document.getElementById("toggleMas");
   if (btnConfig) btnConfig.addEventListener("click", e => {
     e.stopImmediatePropagation();
     alternarPanel("panelAvanzados");
   }, true);
-  ocultarMasFiltrosPildora();
+  sincronizarMasFiltros();
 
   aplicarClase();
   const pintarOriginal = window.pintar;
   window.pintar = function () {
     const r = pintarOriginal.apply(this, arguments);
-    try { aplicarClase(); marcarTarjetas(); aplicarIconos(); aplicarColumnas(); ocultarMasFiltrosPildora(); } catch (e) { /* sin datos aún */ }
+    try { aplicarClase(); marcarTarjetas(); aplicarIconos(); aplicarColumnas(); sincronizarMasFiltros(); } catch (e) { /* sin datos aún */ }
     return r;
   };
   if (typeof peliculas !== "undefined" && peliculas.length) { try { aplicarClase(); marcarTarjetas(); } catch (e) {} }

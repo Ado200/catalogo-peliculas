@@ -283,3 +283,18 @@ body.barra-compacta #app > header #chips { display: none !important; }
   font-size: 18px; line-height: 1;
 }
 #app > header .grupo-cabecera > button svg { display: block; }
+
+
+/* ===== Más filtros: se despliega y se pliega con el ícono de filtros ===== */
+#filtrosCatalogo { display: none; }
+body.mas-filtros-abiertos #filtrosCatalogo { display: block; margin: 8px 0 10px; }
+#filtrosCatalogo .fv-mas-cab { display: none; }
+#app > header #toggleAvanzados.activo { border-color: var(--azul); color: var(--azul); }
+
+/* ===== Buscar: solo se ve configuración; lo del catálogo queda en Catálogo ===== */
+body.en-buscar #app > header .grupo-cabecera > button:not(#toggleMas) { display: none !important; }
+body.en-buscar #app > header #pildorasRapidas,
+body.en-buscar #app > header #filtrosCatalogo,
+body.en-buscar #app > header #selectorZona,
+body.en-buscar #app > header #selectorColumnas { display: none !important; }
+body.en-buscar #app > header #filtrosCatalogo { display: none !important; }
