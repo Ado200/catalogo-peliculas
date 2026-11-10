@@ -398,7 +398,7 @@
   }
 
   document.addEventListener("visibilitychange", () => {
-    if (!document.hidden) { try { revisarSesiones(); } catch (e) { /* sin datos aún */ } }
+    if (!document.hidden) { try { revisarSesiones(); } catch (e) { /* sin datos aún */ } cargarClima(); }
   });
   // Refresco periódico: franjas del día, cuenta de días de próximos estrenos y horarios de Tu noche
   setInterval(() => { try { renderTodo(); } catch (e) { /* sin datos aún */ } }, 5 * 60 * 1000);
