@@ -71,27 +71,9 @@
 <header>
   <div class="cabecera-app">
     <h1 class="titulo-grande">Películas</h1>
+    <button type="button" class="boton-circular" id="toggleAvanzados" aria-label="Más filtros" title="Más filtros"></button>
     <button type="button" id="btnColumnas" class="boton-circular" aria-label="Cambiar a 4 columnas" title="Columnas"></button>
     <button type="button" id="toggleMas" class="boton-circular" aria-label="Más opciones" title="Más opciones">⋯</button>
-  </div>
-  <div id="selectorZona" class="segmentado selector-zona" role="group" aria-label="Secciones" style="display:none"></div>
-</header>
-<section id="pestanaBuscar" class="pestana-buscar" aria-label="Buscar y filtrar" hidden>
-  <div class="buscar buscar-titulo"><span aria-hidden="true">⌕</span><input id="buscar" type="search" placeholder="Busca por título, director o actor"><datalist id="sugerencias"></datalist><button id="voz" class="boton-voz" title="Buscar por voz" aria-label="Buscar por voz" hidden><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button></div>
-  <div class="botones-barra">
-    <button type="button" class="boton-circular" id="aleatorio" aria-label="Sugerir una película al azar" title="Aleatorio">🎲</button>
-    <button type="button" class="boton-circular" id="btnCuriosidad" aria-label="Curiosidad" title="Curiosidad">✨</button>
-    <button type="button" class="boton-circular" id="queVerNoche" aria-label="Qué ver esta noche" title="Qué ver esta noche">🍿</button>
-    <button type="button" class="boton-circular" id="verSeries" aria-label="Series" title="Series">📺</button>
-     <button type="button" class="boton-circular" id="toggleAvanzados" aria-label="Filtros avanzados">⚙</button>
-       </div>
-  <button type="button" id="buscarFalso" class="buscar-falso solo-catalogo" data-zona="ninguna" aria-label="Buscar película"><span aria-hidden="true">⌕</span> Busca por título, director o actor</button>
-  <div id="contadoresListas" class="contadores-listas solo-catalogo" data-zona="ninguna"></div>
-  <div class="colapsable">
-  <div class="segmentado solo-catalogo" data-zona="lista" role="group" aria-label="Filtrar películas">
-       <button type="button" data-seg="" class="activa">Todas</button>
-    <button type="button" data-seg="sin_ver">Por estrenar</button>
-    <button type="button" data-seg="favoritas">Favoritas</button>
   </div>
   <div id="pildorasRapidas" class="pildoras-rapidas solo-catalogo" data-zona="lista" role="group" aria-label="Accesos rápidos">
     <button type="button" class="pildora-rapida" data-rapida="noche">🍿 Para esta noche</button>
@@ -102,6 +84,24 @@
     <button type="button" class="pildora-rapida" data-rapida="descubrir">🔎 Descubrir</button>
     <button type="button" class="pildora-rapida" data-rapida="conAlguien">👥 Con alguien</button>
     <button type="button" class="pildora-rapida" data-rapida="planear">🗓 Planear</button>
+  </div>
+  <div id="selectorZona" class="segmentado selector-zona" role="group" aria-label="Secciones" style="display:none"></div>
+</header>
+<section id="pestanaBuscar" class="pestana-buscar" aria-label="Buscar y filtrar" hidden>
+  <div class="buscar buscar-titulo"><span aria-hidden="true">⌕</span><input id="buscar" type="search" placeholder="Busca por título, director o actor"><datalist id="sugerencias"></datalist><button id="voz" class="boton-voz" title="Buscar por voz" aria-label="Buscar por voz" hidden><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button></div>
+  <div class="botones-barra">
+    <button type="button" class="boton-circular" id="aleatorio" aria-label="Sugerir una película al azar" title="Aleatorio">🎲</button>
+    <button type="button" class="boton-circular" id="btnCuriosidad" aria-label="Curiosidad" title="Curiosidad">✨</button>
+    <button type="button" class="boton-circular" id="queVerNoche" aria-label="Qué ver esta noche" title="Qué ver esta noche">🍿</button>
+    <button type="button" class="boton-circular" id="verSeries" aria-label="Series" title="Series">📺</button>
+       </div>
+  <button type="button" id="buscarFalso" class="buscar-falso solo-catalogo" data-zona="ninguna" aria-label="Buscar película"><span aria-hidden="true">⌕</span> Busca por título, director o actor</button>
+  <div id="contadoresListas" class="contadores-listas solo-catalogo" data-zona="ninguna"></div>
+  <div class="colapsable">
+  <div class="segmentado solo-catalogo" data-zona="lista" role="group" aria-label="Filtrar películas">
+       <button type="button" data-seg="" class="activa">Todas</button>
+    <button type="button" data-seg="sin_ver">Por estrenar</button>
+    <button type="button" data-seg="favoritas">Favoritas</button>
   </div>
   <div id="chips" class="solo-catalogo" data-zona="lista"></div>
   </div>

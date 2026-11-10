@@ -255,3 +255,10 @@ body.barra-compacta #app > header #chips { display: none !important; }
 #lista.en-rejilla > .tarjeta.amplia .estrella,
 #lista.en-rejilla > .tarjeta.amplia .estrellas { display: none !important; }
 #lista.en-rejilla > .tarjeta.amplia > div:last-child:not(.portada):not(h2) { display: none; }
+
+/* Cabecera de Catálogo: título y botones en una fila visible; píldoras fuera del bloque plegable */
+#app > header .fila-titulo { display: flex !important; align-items: center; gap: 8px; }
+#app > header .fila-titulo #toggleAvanzados,
+#app > header .fila-titulo #btnColumnas,
+#app > header .fila-titulo #toggleMas { display: inline-flex !important; }
+#app > header #pildorasRapidas { display: flex !important; }
