@@ -147,6 +147,13 @@
     }).observe(modal, { attributes: true, attributeFilter: ["class"] });
   })();
 
+  // El aviso de TMDB vive en la ventana de configuración (no en Inicio ni en Catálogo)
+  (function moverAvisoTmdb() {
+    const pie = document.querySelector("footer.pie");
+    const config = document.getElementById("panelAvanzados");
+    if (pie && config && pie.parentElement !== config) config.appendChild(pie);
+  })();
+
   aplicarClase();
   const pintarOriginal = window.pintar;
   window.pintar = function () {

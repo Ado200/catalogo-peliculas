@@ -506,3 +506,8 @@ body.oscuro .ia-cabecera h3, body.oscuro .hu-titulo, body.oscuro .pc-titulo { co
   }
   #inteligente .ia-frase:active, .ia-fila:active, .ia-contador:active, .ia-cont:active, .ia-poster:active { transform: none !important; }
 }
+
+/* ===== Inicio: lo que no está en el boceto ===== */
+body.zona-inicio #tarjetaDia { display: none !important; }
+body.zona-inicio footer.pie { display: none !important; }
+.duo:has(#porCalificar:empty) > #tuSemana { grid-column: 1 / -1; }
