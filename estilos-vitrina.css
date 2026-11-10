@@ -242,3 +242,16 @@ body.neon .pildora-rapida:hover { border-color: var(--neon, #7c3aed); }
 /* ===== Catálogo según el boceto ===== */
 #btnColumnas.activo { border-color: var(--azul); color: var(--azul); }
 body.oscuro #btnColumnas.activo { box-shadow: 0 0 0 3px rgba(34,211,238,.25); }
+
+/* ===== Catálogo: corregir lo que faltaba frente al boceto ===== */
+/* 1) y 2) Al bajar la lista, la barra compacta ya no oculta los filtros, columnas, configuración ni las píldoras */
+body.barra-compacta #app > header .colapsable { display: block !important; }
+body.barra-compacta #app > header #toggleMas,
+body.barra-compacta #app > header #btnColumnas,
+body.barra-compacta #app > header #toggleAvanzados { display: inline-flex !important; }
+body.barra-compacta #app > header #chips { display: none !important; }
+/* 4) En la rejilla no se muestran los botones de estado ni las estrellas: el estado va en el póster */
+#lista.en-rejilla > .tarjeta.amplia .chipc,
+#lista.en-rejilla > .tarjeta.amplia .estrella,
+#lista.en-rejilla > .tarjeta.amplia .estrellas { display: none !important; }
+#lista.en-rejilla > .tarjeta.amplia > div:last-child:not(.portada):not(h2) { display: none; }
