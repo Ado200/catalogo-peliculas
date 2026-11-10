@@ -269,3 +269,17 @@ body.barra-compacta #app > header #chips { display: none !important; }
 /* "Más filtros" dentro de la fila de píldoras */
 #pildorasRapidas { flex-wrap: wrap; overflow-x: visible; }
 #pildorasRapidas > * { flex: 0 0 auto; }
+
+/* Los tres íconos superiores (filtros, columnas, configuración): mismo tamaño y misma línea */
+#app > header .fila-titulo { align-items: center !important; }
+#app > header .grupo-cabecera {
+  display: flex !important; align-items: center !important; gap: 8px; margin-left: auto;
+  align-self: center; height: 40px;
+}
+#app > header .grupo-cabecera > button {
+  display: inline-flex !important; align-items: center; justify-content: center; align-self: center;
+  width: 38px !important; height: 38px !important; min-width: 38px; min-height: 38px;
+  margin: 0 !important; padding: 0 !important; top: auto !important; transform: none !important;
+  font-size: 18px; line-height: 1;
+}
+#app > header .grupo-cabecera > button svg { display: block; }

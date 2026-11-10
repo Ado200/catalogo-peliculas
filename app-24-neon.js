@@ -81,11 +81,35 @@
     }
   })();
 
+  // Íconos de cabecera: filtros abre "Más filtros"; configuración abre la ventana grande
+  function botonMasFiltros() {
+    const fila = document.getElementById("pildorasRapidas");
+    if (!fila) return null;
+    return Array.from(fila.querySelectorAll("button")).find(b => /Más filtros/.test(b.textContent)) || null;
+  }
+  function ocultarMasFiltrosPildora() {
+    const b = botonMasFiltros();
+    if (b) b.style.display = "none";
+  }
+  const btnFiltros = document.getElementById("toggleAvanzados");
+  if (btnFiltros) btnFiltros.addEventListener("click", e => {
+    e.stopImmediatePropagation();
+    if (typeof pestana !== "undefined" && pestana === "catalogo" && zonaPeli === "inicio") { zonaPeli = "lista"; aplicarEstadoTabs(); pintar(); }
+    const b = botonMasFiltros();
+    if (b) b.click();
+  }, true);
+  const btnConfig = document.getElementById("toggleMas");
+  if (btnConfig) btnConfig.addEventListener("click", e => {
+    e.stopImmediatePropagation();
+    alternarPanel("panelAvanzados");
+  }, true);
+  ocultarMasFiltrosPildora();
+
   aplicarClase();
   const pintarOriginal = window.pintar;
   window.pintar = function () {
     const r = pintarOriginal.apply(this, arguments);
-    try { aplicarClase(); marcarTarjetas(); aplicarIconos(); aplicarColumnas(); } catch (e) { /* sin datos aún */ }
+    try { aplicarClase(); marcarTarjetas(); aplicarIconos(); aplicarColumnas(); ocultarMasFiltrosPildora(); } catch (e) { /* sin datos aún */ }
     return r;
   };
   if (typeof peliculas !== "undefined" && peliculas.length) { try { aplicarClase(); marcarTarjetas(); } catch (e) {} }
