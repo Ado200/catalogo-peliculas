@@ -49,6 +49,10 @@ function cambiarEstado(titulo, cambios) {
     delete nuevo.descartadaDesde;
     delete nuevo.revisionHecha;
   }
+  if (cambios.pendiente === true && !previo.pendiente) nuevo.pendienteDesde = hoyLocalISO();
+  if (cambios.pendiente === false) delete nuevo.pendienteDesde;
+  if (cambios.vista === true && !previo.vista) nuevo.vistaDesde = hoyLocalISO();
+  if (cambios.vista === false) delete nuevo.vistaDesde;
   const eventos = [];
   if (cambios.pendiente === true && !previo.pendiente) eventos.push("pendiente");
   if (cambios.vista === true && !previo.vista) eventos.push("vista");

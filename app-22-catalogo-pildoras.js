@@ -6,7 +6,19 @@
 
   const clic = id => { const b = document.getElementById(id); if (b) b.click(); };
 
+  function clicEnHoy(txt) {
+    const hoy = document.getElementById("hoy");
+    if (!hoy) return;
+    const c = Array.from(hoy.querySelectorAll("*"))
+      .filter(el => el.children.length <= 3 && (el.textContent || "").trim().indexOf(txt) === 0)
+      .sort((a, b) => a.textContent.length - b.textContent.length);
+    if (c[0]) c[0].click();
+  }
+
   const acciones = {
+    descubrir: () => clicEnHoy("Descubrir"),
+    conAlguien: () => clicEnHoy("Con alguien"),
+    planear: () => clicEnHoy("Planear"),
     noche: () => clic("queVerNoche"),
     animo: () => clic("animoBtn"),
     pareja: () => clic("parejaBtn"),
