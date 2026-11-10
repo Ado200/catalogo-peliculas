@@ -108,11 +108,53 @@
   }, true);
   sincronizarMasFiltros();
 
+  // Ficha de película: campo para guardar hasta qué minuto llegaste (alimenta Continuar en Inicio)
+  (function fichaProgreso() {
+    const modal = document.getElementById("modal");
+    if (!modal) return;
+    function duracionMin(p) {
+      const s = String(p.duracion || "");
+      const h = s.match(/(\d+)\s*h/i), m = s.match(/(\d+)\s*min/i);
+      if (h || m) return (h ? Number(h[1]) * 60 : 0) + (m ? Number(m[1]) : 0);
+      const n = s.match(/^\s*(\d+)\s*$/);
+      return n ? Number(n[1]) : 0;
+    }
+    function pintarControl() {
+      const det = document.getElementById("detalle");
+      if (!det) return;
+      det.querySelectorAll(".ficha-progreso").forEach(n => n.remove());
+      const p = typeof detalleActual !== "undefined" ? detalleActual : null;
+      if (!p || String(p.tipo || "").toLowerCase() === "serie") return;
+      const total = duracionMin(p);
+      const actual = Number((Nucleo.datos.marcas()[p.titulo] || {}).progresoMin || 0);
+      const div = document.createElement("div");
+      div.className = "ficha-progreso";
+      div.innerHTML = '<p class="fp-titulo">¿Hasta qué minuto llegaste?</p>' +
+        '<div class="fp-fila"><input type="number" min="0" ' + (total ? 'max="' + total + '" ' : '') +
+        'value="' + (actual || "") + '" placeholder="min" aria-label="Minuto">' +
+        '<button type="button" class="fp-guardar">Guardar</button></div>' +
+        '<p class="fp-sub">Así aparece en Continuar, en tu Inicio.</p>';
+      div.querySelector(".fp-guardar").addEventListener("click", () => {
+        const v = Math.max(0, Math.min(total || 99999, Math.round(Number(div.querySelector("input").value) || 0)));
+        cambiarEstado(p.titulo, { progresoMin: v });
+        if (window.refrescarInicioIA) window.refrescarInicioIA();
+        div.querySelector(".fp-sub").textContent = "Guardado: minuto " + v + ".";
+      });
+      det.appendChild(div);
+    }
+    new MutationObserver(() => {
+      if (modal.classList.contains("abierto")) setTimeout(pintarControl, 0);
+    }).observe(modal, { attributes: true, attributeFilter: ["class"] });
+  })();
+
   aplicarClase();
   const pintarOriginal = window.pintar;
   window.pintar = function () {
     const r = pintarOriginal.apply(this, arguments);
-    try { aplicarClase(); marcarTarjetas(); aplicarIconos(); aplicarColumnas(); sincronizarMasFiltros(); } catch (e) { /* sin datos aún */ }
+    try {
+      document.body.classList.toggle("zona-inicio", typeof pestana !== "undefined" && pestana === "catalogo" && typeof zonaPeli !== "undefined" && zonaPeli === "inicio");
+      aplicarClase(); marcarTarjetas(); aplicarIconos(); aplicarColumnas(); sincronizarMasFiltros();
+    } catch (e) { /* sin datos aún */ }
     return r;
   };
   if (typeof peliculas !== "undefined" && peliculas.length) { try { aplicarClase(); marcarTarjetas(); } catch (e) {} }

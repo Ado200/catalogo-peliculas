@@ -298,3 +298,211 @@ body.en-buscar #app > header #filtrosCatalogo,
 body.en-buscar #app > header #selectorZona,
 body.en-buscar #app > header #selectorColumnas { display: none !important; }
 body.en-buscar #app > header #filtrosCatalogo { display: none !important; }
+
+
+/* ===== Inicio limpio: solo título y configuración arriba; sin píldoras ni tarjeta de "Para esta noche" ===== */
+body.zona-inicio #app > header .grupo-cabecera > button:not(#toggleMas) { display: none !important; }
+body.zona-inicio #app > header #pildorasRapidas,
+body.zona-inicio #app > header #filtrosCatalogo,
+body.zona-inicio #app > header #selectorZona,
+body.zona-inicio #app > header #selectorColumnas { display: none !important; }
+body.zona-inicio #pildorasInicio,
+body.zona-inicio #queVer { display: none !important; }
+
+
+/* ===== Inicio · Fase 1: encabezado (fecha, frase editorial y aviso) ===== */
+#inteligente { padding: 0 0 4px; display: flex; flex-direction: column; gap: 12px; }
+#inteligente .ia-fecha { margin: 0; font-size: 10px; font-weight: 600; letter-spacing: .6px; text-transform: uppercase; color: var(--gris); }
+#inteligente .ia-frase {
+  display: flex; gap: 10px; align-items: stretch; width: 100%; box-sizing: border-box;
+  margin: 0; padding: 0; border: 0; background: transparent; text-align: left; cursor: pointer; color: inherit; font: inherit;
+}
+#inteligente .ia-frase-barra { width: 3px; border-radius: 2px; background: var(--vt-acento, var(--azul)); flex: 0 0 3px; }
+#inteligente .ia-frase-texto { font-size: 14px; font-style: italic; line-height: 1.4; color: var(--texto); }
+#inteligente .ia-aviso {
+  display: flex; align-items: center; gap: 10px; width: 100%; box-sizing: border-box;
+  padding: 10px 12px; border: 0; border-radius: 16px; cursor: pointer; text-align: left; font: inherit;
+  background: #fff3d6; color: #6b4a12;
+}
+#inteligente .ia-aviso-icono {
+  width: 18px; height: 18px; border-radius: 50%; background: #b7791f; color: #fff;
+  font-size: 11px; font-weight: 700; line-height: 18px; text-align: center; flex: 0 0 18px;
+}
+#inteligente .ia-aviso-texto { flex: 1; font-size: 12px; line-height: 1.35; }
+#inteligente .ia-aviso-ver { font-size: 12px; font-weight: 600; color: #b7791f; }
+body.oscuro #inteligente .ia-aviso { background: #2a2212; border: 1px solid #6b5418; color: #f5e6bf; }
+body.oscuro #inteligente .ia-aviso-ver { color: #fbbf24; }
+body.oscuro #inteligente .ia-frase-texto { color: #c5cde0; }
+body.oscuro #inteligente .ia-frase-barra { background: var(--vt-acento, #22d3ee); }
+
+
+/* ===== Inicio · Fase 2: clima ===== */
+#clima:empty { display: none; }
+.ia-clima {
+  display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 18px;
+  background: var(--tarjeta); border: 1px solid var(--borde);
+}
+.ia-clima-icono { display: flex; flex: 0 0 24px; width: 24px; height: 24px; }
+.ia-clima-icono svg { display: block; }
+.ia-clima-texto { min-width: 0; }
+.ia-clima-titulo { margin: 0; font-size: 13px; font-weight: 600; color: var(--texto); }
+.ia-clima-sub { margin: 3px 0 0; font-size: 11px; color: var(--gris); }
+
+
+/* ===== Inicio · Fase 3: principal y Continuar ===== */
+#principal:empty, #continuar:empty { display: none; }
+.ia-principal { position: relative; height: 124px; border-radius: 22px; overflow: hidden; background: #1c1c1e; }
+.ia-principal-fondo { position: absolute; inset: 0; }
+.ia-principal-fondo img { width: 100%; height: 100%; object-fit: cover; filter: blur(14px) saturate(1.1); transform: scale(1.15); }
+.ia-principal::after {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(to top, rgba(0,0,0,.85) 10%, rgba(0,0,0,.25) 70%);
+}
+.ia-principal-texto { position: absolute; left: 0; right: 0; bottom: 0; padding: 14px; z-index: 1; color: #fff; }
+.ia-principal-etiqueta { margin: 0 0 2px; font-size: 10px; letter-spacing: .3px; color: #d4d4d8; }
+.ia-principal-titulo { margin: 0 0 8px; font-size: 17px; font-weight: 700; color: #fff; }
+.ia-boton-primario {
+  border: 0; border-radius: 999px; padding: 6px 14px; background: #fff; color: #1c1c1e;
+  font: inherit; font-size: 12px; font-weight: 600; cursor: pointer;
+}
+body.oscuro .ia-boton-primario { background: var(--vt-acento, #22d3ee); color: #0a0d14; }
+.ia-cabecera h3 { margin: 0 0 8px; font-size: 14px; font-weight: 600; color: var(--texto); }
+.ia-cont-fila { display: flex; gap: 10px; overflow-x: auto; scrollbar-width: none; padding-bottom: 4px; }
+.ia-cont-fila::-webkit-scrollbar { display: none; }
+.ia-cont { flex: 0 0 128px; padding: 9px; border-radius: 18px; background: var(--tarjeta); border: 1px solid var(--borde); }
+.ia-cont-poster { height: 64px; border-radius: 12px; overflow: hidden; background: var(--boton-suave); }
+.ia-cont-poster img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.ia-cont-titulo { margin: 7px 0 4px; font-size: 11px; font-weight: 600; color: var(--texto); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ia-cont-barra { height: 4px; border-radius: 999px; background: var(--boton-suave); overflow: hidden; }
+.ia-cont-barra span { display: block; height: 100%; border-radius: 999px; background: var(--azul); }
+.ia-cont-sub { margin: 4px 0 6px; font-size: 10px; color: var(--gris); }
+.ia-cont-accion { border: 0; background: transparent; padding: 0; font: inherit; font-size: 10px; font-weight: 600; color: var(--azul); cursor: pointer; }
+
+
+/* ===== Campo de minuto en la ficha ===== */
+.ficha-progreso { margin: 14px 0 0; padding: 12px; border-radius: 16px; background: var(--boton-suave); }
+.ficha-progreso .fp-titulo { margin: 0 0 8px; font-size: 13px; font-weight: 600; color: var(--texto); }
+.ficha-progreso .fp-fila { display: flex; gap: 8px; align-items: center; }
+.ficha-progreso input { width: 110px; padding: 9px 12px; border: 0; border-radius: 12px; font: inherit; font-size: 14px; background: var(--tarjeta); color: var(--texto); }
+.ficha-progreso .fp-guardar { border: 0; border-radius: 999px; padding: 9px 16px; background: var(--azul); color: #fff; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+.ficha-progreso .fp-sub { margin: 8px 0 0; font-size: 11px; color: var(--gris); }
+
+
+/* ===== Inicio · Fase 4: Tu noche, Tu huella y Por calificar ===== */
+.duo { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 0 0 22px; align-items: start; }
+.duo > section { margin: 0; }
+.hu-tarjeta, .pc-tarjeta {
+  padding: 12px; border-radius: 18px; background: var(--tarjeta); border: 1px solid var(--borde);
+  display: flex; flex-direction: column; align-items: flex-start; box-sizing: border-box; width: 100%;
+}
+.hu-titulo, .pc-titulo { margin: 0 0 8px; font-size: 12px; font-weight: 600; color: var(--texto); }
+.hu-anillo {
+  width: 64px; height: 64px; border-radius: 50%;
+  background: conic-gradient(var(--azul) calc(var(--p, 0) * 1%), var(--boton-suave) 0);
+  display: flex; align-items: center; justify-content: center;
+}
+.hu-anillo span {
+  width: 50px; height: 50px; border-radius: 50%; background: var(--tarjeta);
+  display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 700; color: var(--texto);
+}
+.hu-sub, .pc-sub { margin: 8px 0 0; font-size: 10px; color: var(--gris); }
+.pc-cab { all: unset; cursor: pointer; display: flex; flex-direction: column; align-items: flex-start; width: 100%; box-sizing: border-box; }
+.pc-num { font-size: 26px; font-weight: 700; line-height: 1; color: var(--texto); }
+.pc-lista { width: 100%; margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
+.pc-lista[hidden] { display: none; }
+.pc-lista .ia-fila { margin: 0; padding: 8px 10px; }
+.pc-lista .ia-tit { font-size: 12px; }
+#tuNoche .ia-fila { border-radius: 16px; }
+#tuNoche .ia-hora { color: var(--azul); }
+
+
+/* ===== Inicio · Fase 5: próximos en cine y pulido final ===== */
+.ia-poster small { display: block; font-size: 10px; color: var(--azul); font-weight: 600; margin-top: 1px; }
+.ia-poster .ia-tit { font-size: 11px; line-height: 1.25; margin-top: 6px; }
+.ia-poster { min-height: 44px; }
+.ia-cabecera h3 { font-size: 15px; font-weight: 600; letter-spacing: -.1px; }
+#inteligente .ia-frase, #inteligente .ia-aviso, .ia-pastilla, .ia-fila, .ia-contador, .ia-alerta, .ia-cont-accion, .pc-cab, .hu-tarjeta, .pc-tarjeta {
+  min-height: 44px;
+}
+#app .ia-cont-accion, #app .ia-boton-primario, #app .ia-pastilla { display: inline-flex; align-items: center; }
+#inicioTodo :focus-visible, #inteligente :focus-visible, #tuNoche :focus-visible, #proximosInicio :focus-visible,
+#principal :focus-visible, #continuar :focus-visible, #tuSemana :focus-visible, #porCalificar :focus-visible,
+#clima :focus-visible {
+  outline: 2px solid var(--azul); outline-offset: 2px; border-radius: 12px;
+}
+@media (prefers-reduced-motion: reduce) {
+  #principal *, #continuar *, #proximosInicio *, #tuSemana *, #porCalificar *, #inteligente * {
+    transition: none !important; animation: none !important;
+  }
+}
+
+
+/* ===== Inicio · Pulido máximo: sistema único de tipografía, espacio, superficies y sombras ===== */
+/* Escala tipográfica */
+#inteligente .ia-fecha { font-size: 10px; letter-spacing: .7px; font-weight: 600; }
+#inteligente .ia-frase-texto { font-size: 14px; letter-spacing: .1px; line-height: 1.45; }
+#inteligente .ia-aviso-texto { font-size: 12px; line-height: 1.4; }
+.ia-cabecera h3, .bloque-ia > .ia-cabecera h3 { font-size: 15px; font-weight: 600; letter-spacing: -.15px; margin: 0 0 10px; }
+.ia-sub { font-size: 11px; letter-spacing: .1px; margin: 0 0 10px; }
+.ia-tit { font-size: 13px; line-height: 1.3; }
+.ia-tit small { font-size: 11px; }
+.ia-poster .ia-tit { font-size: 11px; font-weight: 600; }
+.ia-poster small { font-size: 10px; font-weight: 600; letter-spacing: .1px; }
+.ia-cont-titulo { font-size: 11px; font-weight: 600; }
+.ia-cont-sub { font-size: 10px; letter-spacing: .1px; }
+
+/* Ritmo de espaciado: una sola escala (4 / 8 / 12 / 16 / 22) */
+.bloque-ia { margin: 0 0 22px; }
+#inteligente { gap: 12px; padding: 0 0 6px; }
+.ia-fila { margin: 0 0 8px; padding: 11px 14px; gap: 12px; }
+.ia-contador { padding: 14px 8px; gap: 4px; }
+
+/* Superficies: tarjetas con el mismo lenguaje */
+.ia-clima, .hu-tarjeta, .pc-tarjeta, .ia-cont, .ia-fila, .ia-contador, .ia-alerta {
+  border-radius: 20px;
+  background: var(--tarjeta);
+  border: 1px solid var(--borde);
+  box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 8px 20px -12px rgba(0,0,0,.12);
+}
+body.oscuro .ia-clima, body.oscuro .hu-tarjeta, body.oscuro .pc-tarjeta, body.oscuro .ia-cont,
+body.oscuro .ia-fila, body.oscuro .ia-contador, body.oscuro .ia-alerta {
+  box-shadow: 0 0 0 1px rgba(255,255,255,.03), 0 10px 24px -14px rgba(0,0,0,.6);
+}
+.ia-cont { border-radius: 20px; padding: 10px; }
+.ia-cont-poster { border-radius: 14px; }
+.ia-poster img, .ia-sinposter { border-radius: 14px; }
+.ia-clima { padding: 14px 16px; }
+.hu-tarjeta, .pc-tarjeta { padding: 14px; }
+
+/* Barras de progreso más finas y con respiro */
+.ia-cont-barra { height: 5px; }
+.ia-barra { height: 6px; }
+
+/* Movimiento: suave y con intención */
+#inteligente .ia-frase, #inteligente .ia-aviso, .ia-pastilla, .ia-fila, .ia-contador, .ia-cont,
+.ia-poster, .ia-boton-primario, .ia-cont-accion, .pc-cab {
+  transition: transform .18s cubic-bezier(.2,.8,.2,1), background-color .18s ease, box-shadow .18s ease, opacity .18s ease;
+}
+#inteligente .ia-frase:active, .ia-pastilla:active, .ia-fila:active, .ia-contador:active,
+.ia-cont:active, .ia-poster:active, .ia-boton-primario:active, .ia-alerta:active, .pc-cab:active {
+  transform: scale(.98); opacity: .9;
+}
+
+/* Contraste y estados */
+.ia-cont-accion { color: var(--azul); font-weight: 600; }
+.ia-etq { font-size: 10px; font-weight: 600; letter-spacing: .1px; }
+.ia-boton-primario:focus-visible, .ia-pastilla:focus-visible, .ia-contador:focus-visible,
+.ia-alerta:focus-visible, .ia-frase:focus-visible, .ia-cont-accion:focus-visible, .pc-cab:focus-visible {
+  outline: 2px solid var(--azul); outline-offset: 3px;
+}
+body.oscuro #inteligente .ia-fecha, body.oscuro .ia-sub, body.oscuro .hu-sub,
+body.oscuro .pc-sub, body.oscuro .ia-cont-sub { color: #98a2b8; }
+body.oscuro .ia-cabecera h3, body.oscuro .hu-titulo, body.oscuro .pc-titulo { color: #eef2ff; }
+
+/* Movimiento reducido: sin transiciones ni escalas */
+@media (prefers-reduced-motion: reduce) {
+  #inteligente *, .bloque-ia *, .ia-fila, .ia-contador, .ia-cont, .ia-poster {
+    transition: none !important; transform: none !important;
+  }
+  #inteligente .ia-frase:active, .ia-fila:active, .ia-contador:active, .ia-cont:active, .ia-poster:active { transform: none !important; }
+}
