@@ -72,6 +72,15 @@
   }
   aplicarIconos();
 
+  // "Más filtros" va como primera píldora de la fila de accesos
+  (function moverMasFiltros() {
+    const fila = document.getElementById("pildorasRapidas");
+    const host = fila && fila.nextElementSibling;
+    if (fila && host && host.id !== "selectorZona" && host.id !== "buscarFalso" && host.querySelector("button")) {
+      fila.prepend(host);
+    }
+  })();
+
   aplicarClase();
   const pintarOriginal = window.pintar;
   window.pintar = function () {

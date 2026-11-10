@@ -262,3 +262,10 @@ body.barra-compacta #app > header #chips { display: none !important; }
 #app > header .fila-titulo #btnColumnas,
 #app > header .fila-titulo #toggleMas { display: inline-flex !important; }
 #app > header #pildorasRapidas { display: flex !important; }
+
+/* Botones de la cabecera: filtros, columnas y configuración juntos a la derecha, en ese orden */
+#app > header .fila-titulo { justify-content: space-between; }
+#app > header .grupo-cabecera { display: flex !important; align-items: center; gap: 8px; margin-left: auto; flex: 0 0 auto; }
+/* "Más filtros" dentro de la fila de píldoras */
+#pildorasRapidas { flex-wrap: wrap; overflow-x: visible; }
+#pildorasRapidas > * { flex: 0 0 auto; }
