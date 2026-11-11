@@ -665,3 +665,24 @@ body.en-buscar:not(.buscando) #lista > .tarjeta { display: none !important; }
 /* Ficha de película abierta: se ocultan las ventanas de filtros y búsqueda para que la ficha quede al frente */
 body.ficha-abierta #capaVentanas,
 body.ficha-abierta #velo { display: none !important; }
+
+/* ===== Estela: botón de cerrar (×) más fino y en el tema de la píldora ===== */
+#estelaMini .em-accion {
+  width: 36px !important; height: 36px !important; min-width: 36px; padding: 0 !important; margin: 0;
+  border: 0 !important; border-radius: 50% !important; cursor: pointer;
+  background: var(--boton-suave, #f2f2f7) !important; color: var(--texto, #1c1c1e) !important;
+  font-size: 14px; line-height: 1; display: flex; align-items: center; justify-content: center;
+  box-shadow: none !important; transition: background-color .18s ease, transform .18s cubic-bezier(.2,.8,.2,1);
+}
+#estelaMini .em-accion:hover { background: #e5e5ea !important; }
+#estelaMini .em-accion:active { transform: scale(.94); }
+#estelaMini .em-accion:focus-visible { outline: 2px solid var(--azul, #0a84ff); outline-offset: 2px; }
+#estelaMini[data-estado="minimizada"] .em-accion {
+  font-size: 0 !important; color: transparent !important;
+  background-color: var(--boton-suave, #f2f2f7) !important;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M6 6l12 12M18 6L6 18' fill='none' stroke='%231c1c1e' stroke-width='2' stroke-linecap='round'/></svg>") !important;
+  background-position: center !important; background-size: 14px 14px !important; background-repeat: no-repeat !important;
+}
+body.oscuro #estelaMini[data-estado="minimizada"] .em-accion {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M6 6l12 12M18 6L6 18' fill='none' stroke='%23eef2ff' stroke-width='2' stroke-linecap='round'/></svg>") !important;
+}
