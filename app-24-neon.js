@@ -184,6 +184,14 @@
     document.body.classList.toggle("ventana-abierta", filtros || buscando);
   }
 
+  // Mientras la ficha de una película está abierta, las ventanas de filtros y búsqueda se ocultan
+  (function vigilarFicha() {
+    const modal = document.getElementById("modal");
+    if (!modal) return;
+    new MutationObserver(() => {
+      document.body.classList.toggle("ficha-abierta", modal.classList.contains("abierto"));
+    }).observe(modal, { attributes: true, attributeFilter: ["class"] });
+  })();
   // Cierre de filtros: el estado se actualiza de forma directa y luego se vuelve a confirmar
   function cerrarFiltros() {
     const b = document.querySelector("#filtrosCatalogo [data-accion=\"mas-filtros\"]");

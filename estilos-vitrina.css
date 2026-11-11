@@ -661,3 +661,7 @@ body.ventana-abierta #chatAbrir { display: none !important; }
 
 /* Buscar sin texto: solo el explorador de géneros; las películas aparecen al escribir */
 body.en-buscar:not(.buscando) #lista > .tarjeta { display: none !important; }
+
+/* Ficha de película abierta: se ocultan las ventanas de filtros y búsqueda para que la ficha quede al frente */
+body.ficha-abierta #capaVentanas,
+body.ficha-abierta #velo { display: none !important; }
