@@ -343,7 +343,12 @@
       return { tipo: "serie", s: s, pr: pr };
     }).filter(x => x.pr.vistos > 0 && x.pr.vistos < x.pr.total);
     const items = pelis.concat(series).slice(0, 6);
-    if (!items.length) { el.innerHTML = ""; return; }
+    if (!items.length) {
+      el.innerHTML = '<div class="ia-cabecera"><h3>Continuar</h3></div>' +
+        '<div class="ia-continuar-vacio"><span class="ia-continuar-icono" aria-hidden="true">▶</span>' +
+        '<p class="ia-continuar-texto">Aquí verás lo que empieces. Toca <b>Reanudar</b> en una película o guarda el minuto en su ficha.</p></div>';
+      return;
+    }
     const tarjetas = items.map(x => {
       if (x.tipo === "peli") {
         const p = x.p;

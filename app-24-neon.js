@@ -160,6 +160,10 @@
     const r = pintarOriginal.apply(this, arguments);
     try {
       document.body.classList.toggle("zona-inicio", typeof pestana !== "undefined" && pestana === "catalogo" && typeof zonaPeli !== "undefined" && zonaPeli === "inicio");
+      if (typeof pestana !== "undefined" && pestana === "catalogo") {
+        const h1 = document.querySelector(".titulo-grande");
+        if (h1) h1.textContent = typeof zonaPeli !== "undefined" && zonaPeli === "inicio" ? "Inicio" : "Películas";
+      }
       aplicarClase(); marcarTarjetas(); aplicarIconos(); aplicarColumnas(); sincronizarMasFiltros();
     } catch (e) { /* sin datos aún */ }
     return r;

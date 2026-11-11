@@ -511,3 +511,16 @@ body.oscuro .ia-cabecera h3, body.oscuro .hu-titulo, body.oscuro .pc-titulo { co
 body.zona-inicio #tarjetaDia { display: none !important; }
 body.zona-inicio footer.pie { display: none !important; }
 .duo:has(#porCalificar:empty) > #tuSemana { grid-column: 1 / -1; }
+
+/* Continuar sin progreso: mensaje que explica cómo empezar */
+.ia-continuar-vacio {
+  display: flex; gap: 12px; align-items: center; padding: 14px 16px; border-radius: 20px;
+  background: var(--tarjeta); border: 1px solid var(--borde);
+  box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 8px 20px -12px rgba(0,0,0,.12);
+}
+.ia-continuar-icono {
+  width: 34px; height: 34px; border-radius: 50%; flex: 0 0 34px;
+  background: var(--boton-suave); color: var(--azul); display: flex; align-items: center; justify-content: center; font-size: 13px;
+}
+.ia-continuar-texto { margin: 0; font-size: 12px; line-height: 1.4; color: var(--gris); }
+.ia-continuar-texto b { color: var(--texto); font-weight: 600; }
