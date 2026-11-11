@@ -552,3 +552,64 @@ body.en-buscar.buscando #lista > :not(.tarjeta) { display: none !important; }
 
 /* Configuración: siempre visible en Inicio, Catálogo y Buscar */
 #app > header #toggleMas { display: inline-flex !important; }
+
+
+/* ===== Ventanas flotantes centradas: filtros y resultados de búsqueda ===== */
+body.mas-filtros-abiertos #filtrosCatalogo {
+  position: fixed; left: 50%; top: 50%; right: auto; bottom: auto; transform: translate(-50%, -50%);
+  width: min(560px, calc(100vw - 32px)); max-height: min(78vh, 720px); overflow-y: auto;
+  margin: 0 !important; display: block !important; z-index: 36;
+  background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 26px;
+  padding: 22px 22px 20px; box-sizing: border-box;
+  box-shadow: 0 24px 60px -12px rgba(0,0,0,.35);
+}
+body.en-buscar.buscando #lista {
+  position: fixed; left: 50%; top: calc(var(--cab-h, 120px) + 12px); bottom: auto; right: auto;
+  transform: translateX(-50%);
+  width: min(640px, calc(100vw - 32px));
+  max-height: calc(100vh - var(--cab-h, 120px) - 40px); overflow-y: auto;
+  margin: 0; box-sizing: border-box; z-index: 35;
+  background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 26px;
+  padding: 18px; display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px 12px;
+  box-shadow: 0 24px 60px -12px rgba(0,0,0,.35);
+}
+body.en-buscar.buscando #velo { display: block; }
+
+
+/* ===== Filtros y búsqueda: mismo estilo que la ficha de película ===== */
+body.mas-filtros-abiertos #filtrosCatalogo {
+  position: fixed; left: 50%; top: 50%; right: auto; bottom: auto; transform: translate(-50%, -50%);
+  width: min(560px, calc(100vw - 32px)); max-width: 560px; max-height: 90vh; overflow-y: auto;
+  margin: 0 !important; display: block !important; z-index: 36; box-sizing: border-box;
+  background: var(--tarjeta); color: var(--texto); border-radius: var(--radio-grande);
+  padding: 24px; box-shadow: 0 24px 60px -12px rgba(0,0,0,.35);
+}
+body.en-buscar.buscando #lista {
+  position: fixed; left: 50%; top: calc(var(--cab-h, 120px) + 12px); bottom: auto; right: auto;
+  transform: translateX(-50%);
+  width: min(640px, calc(100vw - 32px)); max-width: 640px;
+  max-height: calc(100vh - var(--cab-h, 120px) - 40px); overflow-y: auto;
+  margin: 0; box-sizing: border-box; z-index: 35;
+  background: var(--tarjeta); color: var(--texto); border-radius: var(--radio-grande);
+  padding: 24px; display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px 12px;
+  box-shadow: 0 24px 60px -12px rgba(0,0,0,.35);
+}
+.cerrar-ventana {
+  position: absolute; top: 12px; right: 12px; z-index: 4;
+  width: 34px; height: 34px; border-radius: 50%; border: 0;
+  background: var(--boton-suave); color: var(--texto); font-size: 18px; line-height: 1; cursor: pointer;
+}
+
+
+/* ===== Filtros y búsqueda: diseño de ficha adaptado ===== */
+.vt-cab-ventana { padding: 0 34px 14px 0; }
+.vt-cab-ventana .vt-titulo { margin: 0 0 4px; font-size: 20px; font-weight: 700; color: var(--texto); letter-spacing: -.2px; }
+.vt-cab-ventana .vt-sub { margin: 0; font-size: 12px; color: var(--gris); }
+#lista.en-rejilla .vt-cab-ventana, body.en-buscar.buscando #lista .vt-cab-ventana { grid-column: 1 / -1; }
+.vt-pie-ventana { display: flex; gap: 8px; margin-top: 16px; }
+.vt-btn { flex: 1; border: 0; border-radius: 999px; padding: 11px 0; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
+.vt-btn-sec { background: var(--boton-suave); color: var(--texto); }
+.vt-btn-pri { background: var(--azul); color: #fff; }
+#filtrosCatalogo { position: fixed; }

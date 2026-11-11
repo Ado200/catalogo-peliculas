@@ -100,6 +100,7 @@
     const boton = document.querySelector("#filtrosCatalogo [data-accion=\"mas-filtros\"]");
     if (boton) boton.click();
     sincronizarMasFiltros();
+    asegurarCierres();
   }, true);
   const btnConfig = document.getElementById("toggleMas");
   if (btnConfig) btnConfig.addEventListener("click", e => {
@@ -159,6 +160,59 @@
   if (campoBuscar) campoBuscar.addEventListener("input", () => {
     document.body.classList.toggle("buscando", campoBuscar.value.trim() !== "");
   });
+  // Ventanas de filtros y búsqueda, con el mismo diseño que la ficha
+  function asegurarCierres() {
+    const f = document.getElementById("filtrosCatalogo");
+    if (f) {
+      if (!f.querySelector(".cerrar-ventana")) {
+        f.insertAdjacentHTML("afterbegin",
+          '<button type="button" class="cerrar-ventana" data-cerrar-filtros aria-label="Cerrar filtros">×</button>' +
+          '<div class="vt-cab-ventana"><p class="vt-titulo">Filtros</p><p class="vt-sub">Ajusta lo que quieres ver</p></div>');
+      }
+      if (!f.querySelector(".vt-pie-ventana")) {
+        f.insertAdjacentHTML("beforeend",
+          '<div class="vt-pie-ventana"><button type="button" class="vt-btn vt-btn-sec" data-filtros-limpiar>Limpiar</button>' +
+          '<button type="button" class="vt-btn vt-btn-pri" data-cerrar-filtros>Aplicar</button></div>');
+      }
+    }
+    const l = document.getElementById("lista");
+    if (l && document.body.classList.contains("buscando")) {
+      const q = campoBuscar ? campoBuscar.value.trim() : "";
+      const n = l.querySelectorAll(".tarjeta").length;
+      let cab = l.querySelector(".vt-cab-ventana");
+      if (!cab) {
+        l.insertAdjacentHTML("afterbegin",
+          '<button type="button" class="cerrar-ventana" data-cerrar-buscar aria-label="Cerrar búsqueda">×</button>' +
+          '<div class="vt-cab-ventana"><p class="vt-titulo">Resultados</p><p class="vt-sub"></p></div>');
+        cab = l.querySelector(".vt-cab-ventana");
+      }
+      cab.querySelector(".vt-sub").textContent = "\u201c" + q + "\u201d · " + n + (n === 1 ? " película" : " películas");
+    }
+  }
+  document.addEventListener("click", e => {
+    if (e.target.closest && e.target.closest("[data-filtros-limpiar]")) {
+      const lim = document.getElementById("limpiar");
+      if (lim) lim.click();
+      return;
+    }
+    if (e.target.closest && e.target.closest("[data-cerrar-filtros]")) {
+      const b = document.querySelector("#filtrosCatalogo [data-accion=\"mas-filtros\"]");
+      if (b) b.click();
+      sincronizarMasFiltros();
+      return;
+    }
+    if (e.target.closest && e.target.closest("[data-cerrar-buscar]") && campoBuscar) {
+      campoBuscar.value = "";
+      campoBuscar.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+  });
+  // Tocar el fondo oscuro también cierra la búsqueda (borra el texto)
+  document.getElementById("velo").addEventListener("click", () => {
+    if (document.body.classList.contains("buscando") && campoBuscar) {
+      campoBuscar.value = "";
+      campoBuscar.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+  });
   // La cabecera mide su altura para que las ventanas empiecen justo debajo
   function medirCabecera() {
     const h = document.querySelector("#app > header");
@@ -187,6 +241,7 @@
       }
       aplicarClase(); marcarTarjetas(); aplicarIconos(); aplicarColumnas(); sincronizarMasFiltros();
       if (!document.body.classList.contains("en-buscar")) document.body.classList.remove("buscando");
+      asegurarCierres();
       medirCabecera();
     } catch (e) { /* sin datos aún */ }
     return r;
