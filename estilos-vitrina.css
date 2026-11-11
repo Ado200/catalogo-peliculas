@@ -524,3 +524,31 @@ body.zona-inicio footer.pie { display: none !important; }
 }
 .ia-continuar-texto { margin: 0; font-size: 12px; line-height: 1.4; color: var(--gris); }
 .ia-continuar-texto b { color: var(--texto); font-weight: 600; }
+
+
+/* ===== Ventanas: filtros y búsqueda, y una sola fila de píldoras ===== */
+/* Píldoras de Catálogo: una sola fila deslizable */
+#app > header #pildorasRapidas { flex-wrap: nowrap !important; overflow-x: auto !important; scrollbar-width: none; }
+#app > header #pildorasRapidas::-webkit-scrollbar { display: none; }
+#app > header #pildorasRapidas > * { flex: 0 0 auto; }
+
+/* Filtros: ventana inferior en lugar de desplegarse debajo */
+body.mas-filtros-abiertos #filtrosCatalogo {
+  position: fixed; left: 0; right: 0; bottom: 0; top: auto; margin: 0 !important; display: block !important;
+  max-height: 75vh; overflow-y: auto; z-index: 36; background: var(--tarjeta);
+  border-radius: 24px 24px 0 0; padding: 18px 16px calc(18px + env(safe-area-inset-bottom, 0px));
+  box-shadow: 0 -12px 40px rgba(0,0,0,.25);
+}
+body.mas-filtros-abiertos #velo { display: block; }
+
+/* Búsqueda: los resultados aparecen en una ventana, no debajo de los géneros */
+body.en-buscar.buscando #lista {
+  position: fixed; top: var(--cab-h, 120px); left: 0; right: 0; bottom: 0; z-index: 35;
+  background: var(--fondo, #f2f2f7); overflow-y: auto; margin: 0; box-sizing: border-box;
+  padding: 14px 14px 120px; display: grid !important;
+  grid-template-columns: repeat(var(--cols, 3), minmax(0, 1fr)); gap: 14px 10px;
+}
+body.en-buscar.buscando #lista > :not(.tarjeta) { display: none !important; }
+
+/* Configuración: siempre visible en Inicio, Catálogo y Buscar */
+#app > header #toggleMas { display: inline-flex !important; }

@@ -154,6 +154,27 @@
     if (pie && config && pie.parentElement !== config) config.appendChild(pie);
   })();
 
+  // Ventana de búsqueda: los resultados se abren sobre el contenido al escribir
+  const campoBuscar = document.getElementById("buscar");
+  if (campoBuscar) campoBuscar.addEventListener("input", () => {
+    document.body.classList.toggle("buscando", campoBuscar.value.trim() !== "");
+  });
+  // La cabecera mide su altura para que las ventanas empiecen justo debajo
+  function medirCabecera() {
+    const h = document.querySelector("#app > header");
+    if (h) document.documentElement.style.setProperty("--cab-h", h.offsetHeight + "px");
+  }
+  window.addEventListener("resize", medirCabecera);
+  medirCabecera();
+  // Tocar el fondo oscuro cierra la ventana de filtros
+  document.getElementById("velo").addEventListener("click", () => {
+    if (document.body.classList.contains("mas-filtros-abiertos")) {
+      const b = document.querySelector("#filtrosCatalogo [data-accion=\"mas-filtros\"]");
+      if (b) b.click();
+      sincronizarMasFiltros();
+    }
+  });
+
   aplicarClase();
   const pintarOriginal = window.pintar;
   window.pintar = function () {
@@ -165,6 +186,8 @@
         if (h1) h1.textContent = typeof zonaPeli !== "undefined" && zonaPeli === "inicio" ? "Inicio" : "Películas";
       }
       aplicarClase(); marcarTarjetas(); aplicarIconos(); aplicarColumnas(); sincronizarMasFiltros();
+      if (!document.body.classList.contains("en-buscar")) document.body.classList.remove("buscando");
+      medirCabecera();
     } catch (e) { /* sin datos aún */ }
     return r;
   };
