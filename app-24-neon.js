@@ -101,6 +101,7 @@
     if (boton) boton.click();
     sincronizarMasFiltros();
     asegurarCierres();
+    sincronizarCapa();
   }, true);
   const btnConfig = document.getElementById("toggleMas");
   if (btnConfig) btnConfig.addEventListener("click", e => {
@@ -155,10 +156,39 @@
     if (pie && config && pie.parentElement !== config) config.appendChild(pie);
   })();
 
+  // Capa propia para las ventanas: fuera de la cabecera y del contenido, siempre centrada
+  const capa = document.createElement("div");
+  capa.id = "capaVentanas";
+  document.body.appendChild(capa);
+  const origenVentana = new Map();
+  function llevarA(el, dentro) {
+    if (!el) return;
+    if (dentro) {
+      if (el.parentElement !== capa) {
+        origenVentana.set(el, { parent: el.parentElement, next: el.nextSibling });
+        capa.appendChild(el);
+      }
+    } else if (origenVentana.has(el)) {
+      const o = origenVentana.get(el);
+      origenVentana.delete(el);
+      if (o.next && o.next.parentNode === o.parent) o.parent.insertBefore(el, o.next);
+      else o.parent.appendChild(el);
+    }
+  }
+  function sincronizarCapa() {
+    const filtros = document.body.classList.contains("mas-filtros-abiertos");
+    const buscando = document.body.classList.contains("en-buscar") && document.body.classList.contains("buscando");
+    llevarA(document.getElementById("filtrosCatalogo"), filtros);
+    llevarA(document.getElementById("lista"), buscando);
+    document.body.classList.toggle("ventana-abierta", filtros || buscando);
+  }
+
   // Ventana de búsqueda: los resultados se abren sobre el contenido al escribir
   const campoBuscar = document.getElementById("buscar");
   if (campoBuscar) campoBuscar.addEventListener("input", () => {
     document.body.classList.toggle("buscando", campoBuscar.value.trim() !== "");
+    asegurarCierres();
+    sincronizarCapa();
   });
   // Ventanas de filtros y búsqueda, con el mismo diseño que la ficha
   function asegurarCierres() {
@@ -242,6 +272,7 @@
       aplicarClase(); marcarTarjetas(); aplicarIconos(); aplicarColumnas(); sincronizarMasFiltros();
       if (!document.body.classList.contains("en-buscar")) document.body.classList.remove("buscando");
       asegurarCierres();
+      sincronizarCapa();
       medirCabecera();
     } catch (e) { /* sin datos aún */ }
     return r;

@@ -613,3 +613,48 @@ body.en-buscar.buscando #lista {
 .vt-btn-sec { background: var(--boton-suave); color: var(--texto); }
 .vt-btn-pri { background: var(--azul); color: #fff; }
 #filtrosCatalogo { position: fixed; }
+
+/* ===== Estela: la onda solo se mueve cuando habla (o cuando escucha) ===== */
+#estelaMini:not(.hablando):not([data-estado="escuchando"]) .em-onda i { animation: none !important; opacity: .45; }
+#estelaMini.hablando .em-onda { display: flex !important; flex: 1; justify-content: center; align-items: center; gap: 5px; height: 40px; }
+#estelaMini.hablando .em-onda i { animation: emOnda .9s ease-in-out infinite !important; opacity: 1; }
+
+/* Palabras de Estela marcadas mientras las dice */
+.estela-palabra { border-radius: 4px; transition: background-color .15s ease, color .15s ease; }
+.estela-palabra.actual { background: var(--azul); color: #fff; }
+
+
+/* ===== Ventanas en capa propia: centradas y del ancho correcto ===== */
+#capaVentanas {
+  position: fixed; inset: 0; z-index: 40; display: none;
+  align-items: center; justify-content: center; padding: 16px; box-sizing: border-box; pointer-events: none;
+}
+body.ventana-abierta #capaVentanas { display: flex; }
+body.ventana-abierta #velo { display: block !important; }
+#capaVentanas > * {
+  pointer-events: auto !important; position: relative !important; left: auto !important; top: auto !important;
+  right: auto !important; bottom: auto !important; transform: none !important; margin: 0 !important;
+  box-sizing: border-box !important; background: var(--tarjeta) !important; color: var(--texto) !important;
+  border: 1px solid var(--borde) !important; border-radius: var(--radio-grande) !important;
+  box-shadow: 0 24px 60px -12px rgba(0,0,0,.35) !important; overflow-y: auto !important; overflow-x: hidden !important;
+  max-height: 88vh !important; padding: 24px !important;
+}
+#capaVentanas > #filtrosCatalogo {
+  display: block !important; width: min(560px, 100%) !important; max-width: 560px !important; z-index: auto !important;
+}
+#capaVentanas > #lista {
+  display: grid !important; width: min(640px, 100%) !important; max-width: 640px !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important; gap: 14px 12px !important; z-index: auto !important;
+}
+#capaVentanas .cerrar-ventana { position: absolute !important; top: 12px !important; right: 12px !important; }
+
+/* ===== Ventanas por encima de todo; mientras están abiertas se ocultan la barra y Estela ===== */
+body.ventana-abierta #velo { z-index: 999 !important; }
+body.ventana-abierta #capaVentanas { z-index: 1000 !important; }
+body.ventana-abierta #tabbar,
+body.ventana-abierta #estelaPillMode,
+body.ventana-abierta #estelaMini,
+body.ventana-abierta #chatPanel,
+body.ventana-abierta #chatAbrir { display: none !important; }
+#capaVentanas { left: 0 !important; right: 0 !important; top: 0 !important; bottom: 0 !important; width: 100vw !important; height: 100vh !important; }
+#capaVentanas > #lista { left: auto !important; right: auto !important; }
