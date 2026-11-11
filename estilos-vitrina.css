@@ -658,3 +658,6 @@ body.ventana-abierta #chatPanel,
 body.ventana-abierta #chatAbrir { display: none !important; }
 #capaVentanas { left: 0 !important; right: 0 !important; top: 0 !important; bottom: 0 !important; width: 100vw !important; height: 100vh !important; }
 #capaVentanas > #lista { left: auto !important; right: auto !important; }
+
+/* Buscar sin texto: solo el explorador de géneros; las películas aparecen al escribir */
+body.en-buscar:not(.buscando) #lista > .tarjeta { display: none !important; }

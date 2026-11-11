@@ -102,6 +102,7 @@
     sincronizarMasFiltros();
     asegurarCierres();
     sincronizarCapa();
+    setTimeout(() => { sincronizarMasFiltros(); asegurarCierres(); sincronizarCapa(); }, 80);
   }, true);
   const btnConfig = document.getElementById("toggleMas");
   if (btnConfig) btnConfig.addEventListener("click", e => {
@@ -183,6 +184,14 @@
     document.body.classList.toggle("ventana-abierta", filtros || buscando);
   }
 
+  // Cierre de filtros: el estado se actualiza de forma directa y luego se vuelve a confirmar
+  function cerrarFiltros() {
+    const b = document.querySelector("#filtrosCatalogo [data-accion=\"mas-filtros\"]");
+    if (b) b.click();
+    document.body.classList.remove("mas-filtros-abiertos");
+    sincronizarCapa();
+    setTimeout(() => { sincronizarMasFiltros(); sincronizarCapa(); }, 80);
+  }
   // Ventana de búsqueda: los resultados se abren sobre el contenido al escribir
   const campoBuscar = document.getElementById("buscar");
   if (campoBuscar) campoBuscar.addEventListener("input", () => {
@@ -226,9 +235,7 @@
       return;
     }
     if (e.target.closest && e.target.closest("[data-cerrar-filtros]")) {
-      const b = document.querySelector("#filtrosCatalogo [data-accion=\"mas-filtros\"]");
-      if (b) b.click();
-      sincronizarMasFiltros();
+      cerrarFiltros();
       return;
     }
     if (e.target.closest && e.target.closest("[data-cerrar-buscar]") && campoBuscar) {
@@ -252,11 +259,7 @@
   medirCabecera();
   // Tocar el fondo oscuro cierra la ventana de filtros
   document.getElementById("velo").addEventListener("click", () => {
-    if (document.body.classList.contains("mas-filtros-abiertos")) {
-      const b = document.querySelector("#filtrosCatalogo [data-accion=\"mas-filtros\"]");
-      if (b) b.click();
-      sincronizarMasFiltros();
-    }
+    if (document.body.classList.contains("mas-filtros-abiertos")) cerrarFiltros();
   });
 
   aplicarClase();
